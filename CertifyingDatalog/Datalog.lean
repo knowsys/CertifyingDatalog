@@ -1,4 +1,5 @@
 import Mathlib.Data.Finset.Basic
+import Mathlib.Data.List.Defs
 
 -- basic definitions
 structure signature :=
@@ -6,6 +7,8 @@ structure signature :=
   (vars: Type)
   (relationSymbols: Type)
   (relationArity: relationSymbols → ℕ)
+
+lemma finset_union_empty_iff {A: Type} {s1 s2: Finset A}: (s1 ∪ s2 = ∅) ↔ s1 = ∅ ∧ s2 = ∅ := sorry
 
 section basic
 variable (τ: signature)
@@ -36,10 +39,10 @@ def termVariables: term τ → Finset τ.vars
 | (term.variableDL v) => {v}
 
 def collectResultsToFinset {A: Type} (f: A → Finset τ.vars): List A → Finset τ.vars
-| [] => ∅ 
+| [] => ∅
 | hd::tl => (f hd) ∪ (collectResultsToFinset f tl)
 
-def atomVariables (a: atom τ) : Finset τ.vars := collectResultsToFinset τ (termVariables τ) a.atom_terms 
+def atomVariables (a: atom τ) : Finset τ.vars := collectResultsToFinset τ (termVariables τ) a.atom_terms
 
 structure groundAtom :=
   (atom: atom τ)
@@ -73,10 +76,10 @@ by
     unfold applyGroundingTerm
     unfold termVariables
     simp
-    
 
 
-lemma applyGroundingTermPreservesLength (g:grounding τ) (a: atom τ): (List.map (applyGroundingTerm τ g) a.atom_terms ).length = τ.relationArity a.symbol := 
+
+lemma applyGroundingTermPreservesLength (g:grounding τ) (a: atom τ): (List.map (applyGroundingTerm τ g) a.atom_terms ).length = τ.relationArity a.symbol :=
 by
   rcases a with ⟨symbol, terms, term_length⟩
   simp
@@ -91,7 +94,7 @@ by
   unfold atomVariables
   simp
   induction a.atom_terms with
-  | nil => 
+  | nil =>
     unfold collectResultsToFinset
     simp
   | cons hd tl ih =>
@@ -119,8 +122,17 @@ lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariable
 
 def ruleGrounding (r: rule τ) (g:grounding τ): groundRule τ := {rule := applyGroundingRule τ r g, grounded := groundingRemovesRuleVariables τ r g}
 
-def groundProgram (p: Program τ): Finset (groundRule τ) := sorry
+lemma headOfGroundRuleIsGrounded (r: groundRule τ): atomVariables τ r.rule.head = ∅ := sorry
 
+def groundRuleHead (r: groundRule τ): groundAtom τ := {atom:= r.rule.head, grounded := headOfGroundRuleIsGrounded τ r}
+
+lemma bodyOfGroundRuleIsGrounded (r: groundRule τ) (a: atom τ) (mem: a ∈ r.rule.body): atomVariables τ a = ∅ := sorry
+
+def groundRuleBodySet (r: groundRule τ): Set (groundAtom τ) := sorry
+
+def groundRuleFromAtoms (head: groundAtom τ) (body: List (groundAtom τ)): groundRule τ := sorry
+
+def groundProgram (P: Set (rule τ)) := {r: groundRule τ | ∃ (r': rule τ) (g: grounding τ), r' ∈ P ∧ r = ruleGrounding τ r' g}
 
 end grounding
 section semantics
@@ -128,5 +140,28 @@ variable (τ:signature) [DecidableEq τ.vars]
 
 class database:=
   (contains: groundAtom τ → Prop)
+
+inductive proofTree
+| node: (groundAtom τ) → List proofTree →  proofTree
+
+def root: proofTree τ → groundAtom τ
+| proofTree.node a _ => a
+
+def children: proofTree τ → List (proofTree τ)
+| proofTree.node _ l => l
+
+def isValid (P: Set (rule τ)) (d: database τ) (t: proofTree τ): Prop := ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding τ r g = groundRuleFromAtoms τ (root τ t) (List.map (root τ) (children τ t)) ) ∨ (children τ t = [] ∧ d.contains (root τ t))
+
+def proofTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∃ (t: proofTree τ), root τ t = a ∧ isValid τ P d t}
+
+def ruleTrue (r: groundRule τ) (i: Set (groundAtom τ)): Prop := groundRuleBodySet τ r ⊆ i → groundRuleHead τ r ∈ i
+
+def model (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) : Prop := ∀ (r: groundRule τ), r ∈ groundProgram τ P → ruleTrue τ r i ∧ ∀ (a: groundAtom τ), d.contains a → a ∈ i
+
+theorem proofTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model τ P d (proofTheoreticSemantics τ P d) := sorry
+
+def modelTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= sorry
+
+theorem SemanticsEquivalence (P: Set (rule τ)) (d: database τ): proofTheoreticSemantics τ P d = modelTheoreticSemantics τ P d := sorry
 
 end semantics
