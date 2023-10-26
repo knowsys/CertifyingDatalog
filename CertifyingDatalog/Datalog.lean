@@ -8,7 +8,6 @@ structure signature :=
   (relationSymbols: Type)
   (relationArity: relationSymbols → ℕ)
 
-lemma finset_union_empty_iff {A: Type} {s1 s2: Finset A}: (s1 ∪ s2 = ∅) ↔ s1 = ∅ ∧ s2 = ∅ := sorry
 
 section basic
 variable (τ: signature)
@@ -25,8 +24,6 @@ structure atom :=
 structure rule :=
   (head: atom τ)
   (body: List (atom τ))
-
-def Program: Type := Finset (rule τ)
 
 end basic
 -- grounding
@@ -150,7 +147,22 @@ def root: proofTree τ → groundAtom τ
 def children: proofTree τ → List (proofTree τ)
 | proofTree.node _ l => l
 
-def isValid (P: Set (rule τ)) (d: database τ) (t: proofTree τ): Prop := ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding τ r g = groundRuleFromAtoms τ (root τ t) (List.map (root τ) (children τ t)) ) ∨ (children τ t = [] ∧ d.contains (root τ t))
+def isValid (P: Set (rule τ)) (d: database τ) (t: proofTree τ): Prop := ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding τ r g = groundRuleFromAtoms τ (root τ t) (List.map (root τ) (children τ t)) ∧ List.All₂ (isValid P d) (children τ t)) ∨ (children τ t = [] ∧ d.contains (root τ t))
+
+lemma databaseElementsHaveValidProofTree (P: Set (rule τ)) (d: database τ) (a: groundAtom τ) (mem: d.contains a): ∃ (t: proofTree τ), root τ t = a ∧ isValid τ P d t:=
+by
+  use (proofTree.node a [])
+  constructor
+  unfold root
+  simp
+  unfold isValid
+  right
+  constructor
+  unfold children
+  simp
+  unfold root
+  simp
+  apply mem
 
 def proofTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∃ (t: proofTree τ), root τ t = a ∧ isValid τ P d t}
 
@@ -158,10 +170,38 @@ def ruleTrue (r: groundRule τ) (i: Set (groundAtom τ)): Prop := groundRuleBody
 
 def model (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) : Prop := ∀ (r: groundRule τ), r ∈ groundProgram τ P → ruleTrue τ r i ∧ ∀ (a: groundAtom τ), d.contains a → a ∈ i
 
-theorem proofTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model τ P d (proofTheoreticSemantics τ P d) := sorry
+theorem proofTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model τ P d (proofTheoreticSemantics τ P d) :=
+by
+  unfold model
+  intros r rGP
+  constructor
+  unfold ruleTrue
+  intro h
+  admit
+  intros a mem
+  unfold proofTheoreticSemantics
+  simp
+  apply databaseElementsHaveValidProofTree
+  apply mem
 
-def modelTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= sorry
+def modelTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∀ (i: Set (groundAtom τ)), model τ P d i → a ∈ i}
 
-theorem SemanticsEquivalence (P: Set (rule τ)) (d: database τ): proofTheoreticSemantics τ P d = modelTheoreticSemantics τ P d := sorry
+lemma leastModel (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) (m: model τ P d i): modelTheoreticSemantics τ P d ⊆ i :=
+by
+  unfold modelTheoreticSemantics
+  rw [Set.subset_def]
+  intro a
+  rw [Set.mem_setOf]
+  intro h
+  apply h
+  apply m
+
+
+theorem SemanticsEquivalence (P: Set (rule τ)) (d: database τ): proofTheoreticSemantics τ P d = modelTheoreticSemantics τ P d :=
+by
+  apply Set.Subset.antisymm
+  admit
+  apply leastModel
+  apply proofTheoreticSemanticsIsModel
 
 end semantics
