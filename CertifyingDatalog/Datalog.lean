@@ -31,15 +31,20 @@ end basic
 section grounding
 variable (τ: signature) [DecidableEq τ.vars]
 
-def termVariables: term τ → Finset τ.vars
+def termVariables: term τ → Set τ.vars
 | (term.constant _) => ∅
 | (term.variableDL v) => {v}
 
-def collectResultsToFinset {A: Type} (f: A → Finset τ.vars): List A → Finset τ.vars
+def collectResultsToFinset {A: Type} (f: A → Set τ.vars): List A → Set τ.vars
 | [] => ∅
 | hd::tl => (f hd) ∪ (collectResultsToFinset f tl)
 
-def atomVariables (a: atom τ) : Finset τ.vars := collectResultsToFinset τ (termVariables τ) a.atom_terms
+lemma collectResultsToFinset_Empty{A: Type} (f: A → Set τ.vars) (l: List A): collectResultsToFinset τ f l = ∅ ↔ ∀(a:A), a ∈ l → f a = ∅ := sorry
+
+lemma collectResultsToFinsetIsEmptyIfMemberAre{A: Type} (f: A → Set τ.vars) (l: List A)(a: A)(mem: a ∈ l) (empty: collectResultsToFinset τ f l = ∅): f a = ∅ := sorry
+
+
+def atomVariables (a: atom τ) : Set τ.vars := collectResultsToFinset τ (termVariables τ) a.atom_terms
 
 structure groundAtom :=
   (atom: atom τ)
@@ -47,7 +52,7 @@ structure groundAtom :=
 
 def groundAtom.toAtom (ga: groundAtom τ) := ga.atom
 
-def ruleVariables (r: rule τ): Finset τ.vars := (atomVariables τ r.head) ∪ (collectResultsToFinset τ (atomVariables τ) r.body)
+def ruleVariables (r: rule τ): Set τ.vars := (atomVariables τ r.head) ∪ (collectResultsToFinset τ (atomVariables τ) r.body)
 
 structure groundRule :=
   (rule: rule τ)
@@ -97,7 +102,9 @@ by
   | cons hd tl ih =>
     unfold collectResultsToFinset
     simp
-    rw [ih, Finset.union_empty, applyGroundingTermRemovesVariables]
+    constructor
+    rw [applyGroundingTermRemovesVariables]
+    apply ih
 
 def atomGrounding (a: atom τ) (g: grounding τ): groundAtom τ := {atom := applyGroundingAtom τ g a, grounded := groundingRemovesAtomVariables τ a g}
 
@@ -107,7 +114,7 @@ lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariable
   unfold applyGroundingRule
   unfold ruleVariables
   simp
-  rw [groundingRemovesAtomVariables, Finset.empty_union]
+  rw [groundingRemovesAtomVariables]
   induction r.body with
   | nil =>
     unfold collectResultsToFinset
@@ -115,19 +122,64 @@ lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariable
   | cons hd tl ih =>
     unfold collectResultsToFinset
     simp
-    rw [ih, groundingRemovesAtomVariables, Finset.empty_union]
+    constructor
+    rw [groundingRemovesAtomVariables]
+    rcases ih with ⟨_, right⟩
+    apply right
+
 
 def ruleGrounding (r: rule τ) (g:grounding τ): groundRule τ := {rule := applyGroundingRule τ r g, grounded := groundingRemovesRuleVariables τ r g}
 
-lemma headOfGroundRuleIsGrounded (r: groundRule τ): atomVariables τ r.rule.head = ∅ := sorry
+lemma headOfGroundRuleIsGrounded (r: groundRule τ): atomVariables τ r.rule.head = ∅ :=
+by
+  have rground: ruleVariables τ r.rule = ∅
+  apply r.grounded
+  unfold ruleVariables at rground
+  rw [Set.union_empty_iff] at rground
+  rcases rground with ⟨left,_⟩
+  apply left
 
 def groundRuleHead (r: groundRule τ): groundAtom τ := {atom:= r.rule.head, grounded := headOfGroundRuleIsGrounded τ r}
 
-lemma bodyOfGroundRuleIsGrounded (r: groundRule τ) (a: atom τ) (mem: a ∈ r.rule.body): atomVariables τ a = ∅ := sorry
+lemma bodyOfGroundRuleIsGrounded (r: groundRule τ) (a: atom τ) (mem: a ∈ r.rule.body): atomVariables τ a = ∅ :=
+by
+  have rground: ruleVariables τ r.rule = ∅
+  apply r.grounded
+  unfold ruleVariables at rground
+  rw [Set.union_empty_iff] at rground
+  apply collectResultsToFinsetIsEmptyIfMemberAre
+  apply mem
+  rcases rground with ⟨_,right⟩
+  apply right
+
+def groundAtomFromBody (r: groundRule τ)(a: atom τ) (mem: a ∈ r.rule.body): groundAtom τ := {atom:= a, grounded:= bodyOfGroundRuleIsGrounded τ r a mem}
+
 
 def groundRuleBodySet (r: groundRule τ): Set (groundAtom τ) := sorry
 
-def groundRuleFromAtoms (head: groundAtom τ) (body: List (groundAtom τ)): groundRule τ := sorry
+def ruleFromGroundAtoms (head: groundAtom τ) (body: List (groundAtom τ)): rule τ := {head := head.atom,body := List.map (groundAtom.toAtom τ) body}
+
+lemma ruleFromGroundAtomsHasNoVars (head: groundAtom τ) (body: List (groundAtom τ)): ruleVariables τ (ruleFromGroundAtoms τ head body) = ∅ :=
+by
+  unfold ruleVariables
+  rw [Set.union_empty_iff]
+  constructor
+  unfold ruleFromGroundAtoms
+  simp
+  apply head.grounded
+  unfold ruleFromGroundAtoms
+  simp
+  rw [collectResultsToFinset_Empty]
+  intro a
+  simp
+  intros x _ xa
+  have xground: atomVariables τ x.atom = ∅
+  apply x.grounded
+  unfold groundAtom.toAtom at xa
+  rw [xa] at xground
+  exact xground
+
+def groundRuleFromAtoms (head: groundAtom τ) (body: List (groundAtom τ)): groundRule τ := {rule := ruleFromGroundAtoms τ head body, grounded := ruleFromGroundAtomsHasNoVars τ head body }
 
 def groundProgram (P: Set (rule τ)) := {r: groundRule τ | ∃ (r': rule τ) (g: grounding τ), r' ∈ P ∧ r = ruleGrounding τ r' g}
 
@@ -146,6 +198,13 @@ def root: proofTree τ → groundAtom τ
 
 def children: proofTree τ → List (proofTree τ)
 | proofTree.node _ l => l
+
+def listMax {A: Type} (f: A → ℕ): List A → ℕ
+| [] => 0
+| (hd::tl) => if f hd > listMax f tl then f hd else listMax f tl
+
+def height: proofTree τ → ℕ
+| proofTree.node a l => 1 + listMax height l
 
 def isValid (P: Set (rule τ)) (d: database τ) (t: proofTree τ): Prop := ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding τ r g = groundRuleFromAtoms τ (root τ t) (List.map (root τ) (children τ t)) ∧ List.All₂ (isValid P d) (children τ t)) ∨ (children τ t = [] ∧ d.contains (root τ t))
 
@@ -176,7 +235,10 @@ by
   intros r rGP
   constructor
   unfold ruleTrue
+  unfold proofTheoreticSemantics
+  simp
   intro h
+
   admit
   intros a mem
   unfold proofTheoreticSemantics
@@ -185,6 +247,15 @@ by
   apply mem
 
 def modelTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∀ (i: Set (groundAtom τ)), model τ P d i → a ∈ i}
+
+lemma modelTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model τ P d (modelTheoreticSemantics τ P d) :=
+by
+  unfold model
+  intros r rGP
+  constructor
+  unfold ruleTrue
+  sorry
+  sorry
 
 lemma leastModel (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) (m: model τ P d i): modelTheoreticSemantics τ P d ⊆ i :=
 by
@@ -200,6 +271,11 @@ by
 theorem SemanticsEquivalence (P: Set (rule τ)) (d: database τ): proofTheoreticSemantics τ P d = modelTheoreticSemantics τ P d :=
 by
   apply Set.Subset.antisymm
+  unfold proofTheoreticSemantics
+  rw [Set.subset_def]
+  intro x
+  rw [Set.mem_setOf]
+
   admit
   apply leastModel
   apply proofTheoreticSemanticsIsModel
