@@ -193,6 +193,10 @@ class database:=
 inductive proofTree
 | node: (groundAtom τ) → List proofTree →  proofTree
 
+def member (t1 t2: proofTree τ): Prop :=
+  match t1 with
+    | proofTree.node _ l => t2 ∈ l
+
 def root: proofTree τ → groundAtom τ
 | proofTree.node a _ => a
 
@@ -203,10 +207,26 @@ def listMax {A: Type} (f: A → ℕ): List A → ℕ
 | [] => 0
 | (hd::tl) => if f hd > listMax f tl then f hd else listMax f tl
 
-def height: proofTree τ → ℕ
-| proofTree.node a l => 1 + listMax height l
 
-def isValid (P: Set (rule τ)) (d: database τ) (t: proofTree τ): Prop := ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding τ r g = groundRuleFromAtoms τ (root τ t) (List.map (root τ) (children τ t)) ∧ List.All₂ (isValid P d) (children τ t)) ∨ (children τ t = [] ∧ d.contains (root τ t))
+def height: proofTree τ → ℕ
+| proofTree.node a l => 1 + listMax (fun ⟨x, _h⟩ => height x) l.attach
+termination_by height t => sizeOf t
+decreasing_by
+  simp_wf
+  apply Nat.lt_trans (m:= sizeOf l)
+  apply List.sizeOf_lt_of_mem _h
+  simp
+
+def isValid(P: Set (rule τ)) (d: database τ) (t: proofTree τ): Prop :=
+  match t with
+  | proofTree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding τ r g = groundRuleFromAtoms τ a (List.map (root τ) l) ∧ l.attach.All₂ (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
+termination_by isValid t => sizeOf t
+decreasing_by
+  simp_wf
+  apply Nat.lt_trans (m:= sizeOf l)
+  apply List.sizeOf_lt_of_mem _h
+  simp
+
 
 lemma databaseElementsHaveValidProofTree (P: Set (rule τ)) (d: database τ) (a: groundAtom τ) (mem: d.contains a): ∃ (t: proofTree τ), root τ t = a ∧ isValid τ P d t:=
 by
@@ -217,29 +237,29 @@ by
   unfold isValid
   right
   constructor
-  unfold children
-  simp
-  unfold root
-  simp
+  rfl
   apply mem
 
 def proofTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∃ (t: proofTree τ), root τ t = a ∧ isValid τ P d t}
 
 def ruleTrue (r: groundRule τ) (i: Set (groundAtom τ)): Prop := groundRuleBodySet τ r ⊆ i → groundRuleHead τ r ∈ i
 
-def model (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) : Prop := ∀ (r: groundRule τ), r ∈ groundProgram τ P → ruleTrue τ r i ∧ ∀ (a: groundAtom τ), d.contains a → a ∈ i
+def model (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) : Prop := (∀ (r: groundRule τ), r ∈ groundProgram τ P → ruleTrue τ r i) ∧ ∀ (a: groundAtom τ), d.contains a → a ∈ i
+
+lemma createProofTreeForRule (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (rGP: r ∈ groundProgram τ P)(subs: groundRuleBodySet τ r ⊆ proofTheoreticSemantics τ P d): ∃ t, root τ t = groundRuleHead τ r ∧ isValid τ P d t :=
+by
+  sorry
 
 theorem proofTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model τ P d (proofTheoreticSemantics τ P d) :=
 by
   unfold model
-  intros r rGP
   constructor
+  intros r rGP
   unfold ruleTrue
   unfold proofTheoreticSemantics
   simp
   intro h
-
-  admit
+  apply createProofTreeForRule _ _ _ _ rGP h
   intros a mem
   unfold proofTheoreticSemantics
   simp
@@ -247,15 +267,6 @@ by
   apply mem
 
 def modelTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∀ (i: Set (groundAtom τ)), model τ P d i → a ∈ i}
-
-lemma modelTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model τ P d (modelTheoreticSemantics τ P d) :=
-by
-  unfold model
-  intros r rGP
-  constructor
-  unfold ruleTrue
-  sorry
-  sorry
 
 lemma leastModel (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) (m: model τ P d i): modelTheoreticSemantics τ P d ⊆ i :=
 by
@@ -267,16 +278,63 @@ by
   apply h
   apply m
 
+lemma modelTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model τ P d (modelTheoreticSemantics τ P d) :=
+by
+  unfold model
+  constructor
+  intros r rGP
+  unfold ruleTrue
+  intro h
+  unfold modelTheoreticSemantics
+  simp [Set.mem_setOf]
+  by_contra h'
+  push_neg at h'
+  rcases h' with ⟨i, m, n_head⟩
+  have m': model τ P d i
+  apply m
+  unfold model at m
+  rcases m with ⟨left,_⟩
+  have r_true: ruleTrue τ r i
+  apply left
+  apply rGP
+  unfold ruleTrue at r_true
+  have head: groundRuleHead τ r ∈ i
+  apply r_true
+  apply subset_trans h
+  apply leastModel (m:= m')
+  exact absurd head n_head
+
+  intros a a_db
+  unfold modelTheoreticSemantics
+  rw [Set.mem_setOf]
+  by_contra h
+  push_neg at h
+  rcases h with ⟨i, m, a_n_i⟩
+  unfold model at m
+  have a_i: a ∈ i
+  rcases m with ⟨_, right⟩
+  apply right
+  apply a_db
+  exact absurd a_i a_n_i
+
+
+
+lemma proofTreeAtomsInEveryModel (P: Set (rule τ)) (d: database τ) (a: groundAtom τ) (pt: a ∈ proofTheoreticSemantics τ P d)(i: Set (groundAtom τ)) (m: model τ P d i): a ∈ i := by
+  unfold proofTheoreticSemantics at pt
+  rw [Set.mem_setOf] at pt
+  rcases pt with ⟨t, root_t, valid_t⟩
+  induction (height τ t) with
+    | zero =>
+      sorry
+    | succ n ih =>
+      sorry
 
 theorem SemanticsEquivalence (P: Set (rule τ)) (d: database τ): proofTheoreticSemantics τ P d = modelTheoreticSemantics τ P d :=
 by
   apply Set.Subset.antisymm
-  unfold proofTheoreticSemantics
   rw [Set.subset_def]
-  intro x
-  rw [Set.mem_setOf]
+  apply proofTreeAtomsInEveryModel
 
-  admit
   apply leastModel
   apply proofTheoreticSemanticsIsModel
 
