@@ -55,6 +55,7 @@ def atomVariables (a: atom τ) : Set τ.vars := collectResultsToFinset τ (termV
 
 def ruleVariables (r: rule τ): Set τ.vars := (atomVariables τ r.head) ∪ (collectResultsToFinset τ (atomVariables τ) r.body)
 
+-- ext for groundRuleEquality
 @[ext]
 structure groundRule where
   head: groundAtom τ
@@ -232,6 +233,7 @@ lemma listMax_le_f_member {A: Type} (f: A → ℕ) (l: List A) (a:A) (mem: a ∈
       apply fhd_listMax
       rw [if_neg fhd_listMax]
 
+-- alternative way of writing listMax, since List.map allows removing the coercion easier
 lemma listMax_iff_natList_max_map {A: Type} (f: A → ℕ) (l: List A): listMax f l = natList_max (List.map f l) :=
 by
   induction l with
@@ -255,7 +257,6 @@ decreasing_by
   apply Nat.lt_trans (m:= sizeOf l)
   apply List.sizeOf_lt_of_mem _h
   simp
-
 
 lemma height_case (a: groundAtom τ) (l: List (proofTree τ)): height (proofTree.node a l) = 1 + listMax height l :=
 by
@@ -303,10 +304,98 @@ def ruleTrue (r: groundRule τ) (i: Set (groundAtom τ)): Prop := groundRuleBody
 def model (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) : Prop := (∀ (r: groundRule τ), r ∈ groundProgram τ P → ruleTrue r i) ∧ ∀ (a: groundAtom τ), d.contains a → a ∈ i
 
 
+noncomputable def proofTreeForElement (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body): proofTree τ := Classical.choose (subs a mem)
+
+lemma proofTreeForElementSemantics (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body) (t: proofTree τ) (h: t = proofTreeForElement P d r subs a mem): root t = a ∧ isValid P d t:=
+by
+  rw [h]
+  unfold proofTreeForElement
+  apply Classical.choose_spec (h:= subs a mem)
+
+noncomputable def proofTreeList (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): List (proofTree τ) := List.map (fun ⟨x, _h⟩ => proofTreeForElement P d r subs x _h) r.body.attach
+
+lemma proofTreeListHasValidTrees (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (t: proofTree τ) (mem: t ∈ proofTreeList P d r subs): isValid P d t :=
+by
+  unfold proofTreeList at mem
+  rw [List.mem_map] at mem
+  simp at mem
+  rcases mem with ⟨a,b,c⟩
+  have h: root t = a ∧ isValid P d t
+  apply proofTreeForElementSemantics
+  symm
+  apply c
+  rcases h with ⟨_,right⟩
+  apply right
+
+lemma replaceFuncInMap {A B: Type} {f g: A → B} (h: f = g): ∀ l, List.map f l = List.map g l :=
+by
+  intro l
+  induction l with
+  | nil =>
+    rw [List.map_nil]
+    rw [List.map_nil]
+  | cons hd tl ih =>
+    rw [List.map_cons]
+    rw [List.map_cons]
+    rw [ih]
+    rw [h]
+
+
+lemma rootProofTreeListIsOriginal (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): r.body = List.map root (proofTreeList P d r subs) :=
+by
+  unfold proofTreeList
+  simp
+
+  sorry
+/-
+noncomputable def proofTreeList (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): List (proofTree τ) :=
+List.map (fun ⟨x, _h⟩ => Classical.choose (subs x _h)) r.body.attach
+
+lemma cancel_and_under_exists_right {A: Type} {p q: A → Prop} (h: ∃ a, p a ∧ q a ): ∃ a, q a :=
+by
+  rcases h with ⟨a,_,qa⟩
+  use a
+
+lemma proofTreeListHasValidTrees (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (t: proofTree τ) (mem: t ∈ proofTreeList P d r subs): isValid P d t :=
+by
+  unfold proofTreeList at mem
+  rw [List.mem_map] at mem
+  simp at mem
+  rcases mem with ⟨a,b,c⟩
+  have h: root t = a ∧ isValid P d t
+  rw [← c]
+  apply Classical.choose_spec (h:= subs a b)
+  rcases h with ⟨_,right⟩
+  apply right
+-/
+
 lemma createProofTreeForRule (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (rGP: r ∈ groundProgram τ P)(subs: groundRuleBodySet τ r ⊆ proofTheoreticSemantics P d): ∃ t, root t = r.head ∧ isValid P d t :=
 by
-  sorry
-
+  simp [proofTheoreticSemantics, Set.subset_def, ← groundRuleBodySet_iff_groundRuleBody] at subs
+  use proofTree.node r.head (proofTreeList P d r subs)
+  constructor
+  unfold root
+  simp
+  unfold isValid
+  unfold groundProgram at rGP
+  rw [Set.mem_setOf] at rGP
+  rcases rGP with ⟨r', g, rP, r_ground⟩
+  left
+  use r'
+  use g
+  constructor
+  exact rP
+  constructor
+  unfold groundRuleFromAtoms
+  rw [← r_ground, groundRuleEquality]
+  constructor
+  simp
+  simp
+  unfold proofTreeList
+  apply rootProofTreeListIsOriginal
+  rw [List.all₂_iff_forall]
+  simp
+  apply proofTreeListHasValidTrees
 
 theorem proofTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model P d (proofTheoreticSemantics P d) :=
 by
