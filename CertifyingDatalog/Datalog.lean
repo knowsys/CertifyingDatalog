@@ -312,6 +312,14 @@ by
   unfold proofTreeForElement
   apply Classical.choose_spec (h:= subs a mem)
 
+lemma proofTreeRootPreserved (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body): root (proofTreeForElement P d r subs a mem) = a :=
+by
+  have h: root (proofTreeForElement P d r subs a mem) = a ∧ isValid P d (proofTreeForElement P d r subs a mem)
+  apply proofTreeForElementSemantics P d r subs a mem
+  rfl
+  rcases h with ⟨left,_⟩
+  exact left
+
 noncomputable def proofTreeList (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): List (proofTree τ) := List.map (fun ⟨x, _h⟩ => proofTreeForElement P d r subs x _h) r.body.attach
 
 lemma proofTreeListHasValidTrees (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (t: proofTree τ) (mem: t ∈ proofTreeList P d r subs): isValid P d t :=
@@ -327,47 +335,16 @@ by
   rcases h with ⟨_,right⟩
   apply right
 
-lemma replaceFuncInMap {A B: Type} {f g: A → B} (h: f = g): ∀ l, List.map f l = List.map g l :=
-by
-  intro l
-  induction l with
-  | nil =>
-    rw [List.map_nil]
-    rw [List.map_nil]
-  | cons hd tl ih =>
-    rw [List.map_cons]
-    rw [List.map_cons]
-    rw [ih]
-    rw [h]
-
 
 lemma rootProofTreeListIsOriginal (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): r.body = List.map root (proofTreeList P d r subs) :=
 by
   unfold proofTreeList
-  simp
-
-  sorry
-/-
-noncomputable def proofTreeList (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): List (proofTree τ) :=
-List.map (fun ⟨x, _h⟩ => Classical.choose (subs x _h)) r.body.attach
-
-lemma cancel_and_under_exists_right {A: Type} {p q: A → Prop} (h: ∃ a, p a ∧ q a ): ∃ a, q a :=
-by
-  rcases h with ⟨a,_,qa⟩
-  use a
-
-lemma proofTreeListHasValidTrees (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (t: proofTree τ) (mem: t ∈ proofTreeList P d r subs): isValid P d t :=
-by
-  unfold proofTreeList at mem
-  rw [List.mem_map] at mem
-  simp at mem
-  rcases mem with ⟨a,b,c⟩
-  have h: root t = a ∧ isValid P d t
-  rw [← c]
-  apply Classical.choose_spec (h:= subs a b)
-  rcases h with ⟨_,right⟩
-  apply right
--/
+  apply List.ext_get
+  rw [List.length_map, List.length_map, List.length_attach]
+  intros n h1 h2
+  rw [List.get_map, List.get_map]
+  simp[List.get_attach]
+  rw [proofTreeRootPreserved]
 
 lemma createProofTreeForRule (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (rGP: r ∈ groundProgram τ P)(subs: groundRuleBodySet τ r ⊆ proofTheoreticSemantics P d): ∃ t, root t = r.head ∧ isValid P d t :=
 by
