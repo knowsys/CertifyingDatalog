@@ -16,21 +16,57 @@ inductive term : Type
 | constant : τ.constants → term
 | variableDL : τ.vars → term
 
+instance: Coe (τ.constants) (term τ) where
+ coe
+    | c => term.constant c
+
+@[ext]
 structure atom :=
   (symbol: τ.relationSymbols)
   (atom_terms: List (term τ ))
   (term_length: atom_terms.length = τ.relationArity symbol)
 
+lemma atomEquality {τ: signature} (a1 a2: atom τ): a1 = a2 ↔ a1.symbol = a2.symbol ∧ a1.atom_terms = a2.atom_terms :=
+by
+  constructor
+  intro h
+  rw [h]
+  simp
+
+  intro h
+  rcases h with ⟨left, right⟩
+  ext
+  apply left
+  rw [right]
+
+@[ext]
 structure rule :=
   (head: atom τ)
   (body: List (atom τ))
+
+lemma ruleEquality {τ: signature} (r1 r2: rule τ): r1 = r2 ↔ r1.head = r2.head ∧ r1.body = r2.body :=
+by
+  constructor
+  intro h
+  rw [h]
+  simp
+
+  intro h
+  rcases h with ⟨left, right⟩
+  ext
+  rw [left]
+  rw [left]
+  rw [right]
+
+abbrev program := Finset (rule τ)
 
 end basic
 -- grounding
 
 section grounding
-variable (τ: signature) [DecidableEq τ.vars]
+variable {τ: signature} [DecidableEq τ.vars]
 
+@[ext]
 structure groundAtom (τ: signature) where
   symbol: τ.relationSymbols
   atom_terms: List (τ.constants )
@@ -41,7 +77,42 @@ by
   rw [List.length_map]
   apply ga.term_length
 
-def groundAtom.toAtom {τ:signature} (ga: groundAtom τ): atom τ:= {symbol:=ga.symbol, atom_terms:= List.map term.constant ga.atom_terms,term_length:= listMapPreservesTermLength τ ga}
+lemma groundAtomEquality (a1 a2: groundAtom τ): a1 = a2 ↔ a1.symbol = a2.symbol ∧ a1.atom_terms = a2.atom_terms :=
+by
+  constructor
+  intro h
+  rw [h]
+  simp
+
+  intro h
+  rcases h with ⟨left,right⟩
+  ext
+  apply left
+  rw [right]
+
+
+def groundAtom.toAtom {τ:signature} (ga: groundAtom τ): atom τ:= {symbol:=ga.symbol, atom_terms:= List.map term.constant ga.atom_terms,term_length:= listMapPreservesTermLength ga}
+
+lemma groundAtomToAtomEquality (a1 a2: groundAtom τ): a1 = a2 ↔ a1.toAtom = a2.toAtom :=
+by
+  constructor
+  intro h
+  rw [h]
+
+  unfold groundAtom.toAtom
+  simp
+  intros sym terms
+  rw [groundAtomEquality]
+  constructor
+  apply sym
+  apply List.ext_get
+  admit
+  intros n h1 h2
+  admit
+
+instance: Coe (groundAtom τ) (atom τ) where
+  coe
+    | a => a.toAtom
 
 def termVariables: term τ → Set τ.vars
 | (term.constant _) => ∅
@@ -51,17 +122,67 @@ def collectResultsToFinset {A: Type} (f: A → Set τ.vars): List A → Set τ.v
 | [] => ∅
 | hd::tl => (f hd) ∪ (collectResultsToFinset f tl)
 
-def atomVariables (a: atom τ) : Set τ.vars := collectResultsToFinset τ (termVariables τ) a.atom_terms
+lemma memberResultIsSubsetCollectResultsToFinset (f: A → Set τ.vars) (a:A) (l: List A) (mem: a ∈ l): f a ⊆ collectResultsToFinset f l :=
+by
+  induction l with
+  | nil =>
+    simp at mem
+  | cons hd tl ih =>
+    simp at mem
+    cases mem with
+    | inl h =>
+      rw [h]
+      unfold collectResultsToFinset
+      simp
+    | inr h =>
+      unfold collectResultsToFinset
+      rw [← Set.empty_union (f a)]
+      apply Set.union_subset_union
+      simp
+      apply ih
+      apply h
 
-def ruleVariables (r: rule τ): Set τ.vars := (atomVariables τ r.head) ∪ (collectResultsToFinset τ (atomVariables τ) r.body)
+def atomVariables (a: atom τ) : Set τ.vars := collectResultsToFinset termVariables  a.atom_terms
+
+lemma atomVariablesSubsetImpltermVariablesSubset {a: atom τ} {t: term τ}{S: Set τ.vars}(mem: t ∈ a.atom_terms) (subs: atomVariables a ⊆ S): termVariables t ⊆ S :=
+by
+  apply Set.Subset.trans (b:= atomVariables a)
+  unfold atomVariables
+  apply memberResultIsSubsetCollectResultsToFinset _ _ _ mem
+  apply subs
+
+
+def ruleVariables (r: rule τ): Set τ.vars := (atomVariables  r.head) ∪ (collectResultsToFinset atomVariables  r.body)
+
+lemma ruleVariablesSubsetImplAtomVariablesSubset {r: rule τ} {a: atom τ}{S: Set τ.vars}(mem: a = r.head ∨ a ∈ r.body) (subs: ruleVariables r ⊆ S): atomVariables a ⊆ S :=
+by
+  apply Set.Subset.trans (b:= ruleVariables r) (bc:= subs)
+  unfold ruleVariables
+  cases mem with
+  | inl h =>
+    rw [h]
+    nth_rw 1 [← Set.union_empty (atomVariables r.head)]
+    apply Set.union_subset_union
+    apply Set.Subset.rfl
+    simp
+  | inr h =>
+    nth_rw 1 [← Set.empty_union (atomVariables a)]
+    apply Set.union_subset_union
+    simp
+    apply memberResultIsSubsetCollectResultsToFinset (mem:=h)
+
 
 -- ext for groundRuleEquality
 @[ext]
-structure groundRule where
+structure groundRule (τ: signature) where
   head: groundAtom τ
   body: List (groundAtom τ)
 
 def groundRule.toRule (r: groundRule τ): rule τ := {head:= r.head.toAtom, body := List.map groundAtom.toAtom r.body}
+
+instance: Coe (groundRule τ) (rule τ) where
+  coe
+    | r => r.toRule
 
 lemma groundRuleEquality (r1 r2: groundRule τ): r1 = r2 ↔ r1.head = r2.head ∧ r1.body = r2.body :=
 by
@@ -72,17 +193,29 @@ by
   intro h
   rcases h with ⟨left,right⟩
   ext
-  apply left
+  rw [left]
+  rw [left]
   rw [right]
 
-def grounding:= τ.vars → τ.constants
+lemma groundRuleToRuleEquality (r1 r2: groundRule τ): r1 = r2 ↔ r1.toRule = r2.toRule :=
+by
+  constructor
+  intro h
+  rw [h]
+
+  unfold groundRule.toRule
+  rw [groundRuleEquality]
+  intro h
+  simp at h
+
+def grounding (τ: signature):= τ.vars → τ.constants
 
 def applyGroundingTerm (g: grounding τ) (t: term τ): term τ :=
   match t with
   | term.constant c => term.constant c
   | term.variableDL v => term.constant (g v)
 
-lemma applyGroundingTermRemovesVariables (g: grounding τ) (t: term τ): termVariables τ (applyGroundingTerm τ g t) = ∅ :=
+lemma applyGroundingTermRemovesVariables (g: grounding τ) (t: term τ): termVariables (applyGroundingTerm g t) = ∅ :=
 by
   cases t with
   | constant c =>
@@ -94,16 +227,16 @@ by
     unfold termVariables
     simp
 
-lemma applyGroundingTermPreservesLength (g:grounding τ) (a: atom τ): (List.map (applyGroundingTerm τ g) a.atom_terms ).length = τ.relationArity a.symbol :=
+lemma applyGroundingTermPreservesLength (g:grounding τ) (a: atom τ): (List.map (applyGroundingTerm g) a.atom_terms ).length = τ.relationArity a.symbol :=
 by
   rcases a with ⟨symbol, terms, term_length⟩
   simp
   rw [ term_length]
 
 
-def applyGroundingAtom (g: grounding τ) (a: atom τ): atom τ := {symbol:= a.symbol, atom_terms:= List.map (applyGroundingTerm τ g) a.atom_terms, term_length := applyGroundingTermPreservesLength τ g a}
+def applyGroundingAtom (g: grounding τ) (a: atom τ): atom τ := {symbol:= a.symbol, atom_terms:= List.map (applyGroundingTerm g) a.atom_terms, term_length := applyGroundingTermPreservesLength g a}
 
-lemma groundingRemovesAtomVariables (a: atom τ) (g: grounding τ): atomVariables τ (applyGroundingAtom τ g a) = ∅ :=
+lemma groundingRemovesAtomVariables (a: atom τ) (g: grounding τ): atomVariables (applyGroundingAtom g a) = ∅ :=
 by
   unfold applyGroundingAtom
   unfold atomVariables
@@ -124,16 +257,16 @@ def applyGroundingTerm'(g: grounding τ) (t: term τ): τ.constants :=
   | term.constant c =>  c
   | term.variableDL v => (g v)
 
-lemma applyGroundingTerm'PreservesLength (g: grounding τ) (a: atom τ): (List.map (applyGroundingTerm' τ g) a.atom_terms ).length = τ.relationArity a.symbol :=
+lemma applyGroundingTerm'PreservesLength (g: grounding τ) (a: atom τ): (List.map (applyGroundingTerm' g) a.atom_terms ).length = τ.relationArity a.symbol :=
 by
   rw [List.length_map]
   apply a.term_length
 
-def atomGrounding (g: grounding τ) (a: atom τ): groundAtom τ := {symbol := a.symbol, atom_terms := List.map (applyGroundingTerm' τ g) a.atom_terms, term_length := applyGroundingTerm'PreservesLength τ g a}
+def atomGrounding (g: grounding τ) (a: atom τ): groundAtom τ := {symbol := a.symbol, atom_terms := List.map (applyGroundingTerm'  g) a.atom_terms, term_length := applyGroundingTerm'PreservesLength  g a}
 
-def applyGroundingRule (r: rule τ) (g: grounding τ): rule τ := {head := applyGroundingAtom τ g r.head, body := List.map (applyGroundingAtom τ g) r.body }
+def applyGroundingRule (r: rule τ) (g: grounding τ): rule τ := {head := applyGroundingAtom  g r.head, body := List.map (applyGroundingAtom  g) r.body }
 
-lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariables τ (applyGroundingRule τ r g) = ∅ := by
+lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariables  (applyGroundingRule r g) = ∅ := by
   unfold applyGroundingRule
   unfold ruleVariables
   simp
@@ -151,7 +284,7 @@ lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariable
     apply right
 
 
-def ruleGrounding (r: rule τ) (g:grounding τ): groundRule τ := {head:=atomGrounding τ g r.head, body:= List.map (atomGrounding τ g) r.body }
+def ruleGrounding (r: rule τ) (g:grounding τ): groundRule τ := {head:=atomGrounding g r.head, body:= List.map (atomGrounding g) r.body }
 
 def listToSet {A: Type} (l:List A): Set A :=
   match l with
@@ -160,7 +293,7 @@ def listToSet {A: Type} (l:List A): Set A :=
 
 def groundRuleBodySet (r: groundRule τ): Set (groundAtom τ) := listToSet r.body
 
-lemma groundRuleBodySet_iff_groundRuleBody (a: groundAtom τ) (r: groundRule τ): a ∈ r.body ↔ a ∈ groundRuleBodySet τ r :=
+lemma groundRuleBodySet_iff_groundRuleBody (a: groundAtom τ) (r: groundRule τ): a ∈ r.body ↔ a ∈ groundRuleBodySet r :=
 by
   unfold groundRuleBodySet
   induction r.body with
@@ -177,14 +310,200 @@ def ruleFromGroundAtoms (head: groundAtom τ) (body: List (groundAtom τ)): rule
 
 def groundRuleFromAtoms (head: groundAtom τ) (body: List (groundAtom τ)): groundRule τ := {head := head, body := body}
 
-def groundProgram (P: Set (rule τ)) := {r: groundRule τ | ∃ (r': rule τ) (g: grounding τ), r' ∈ P ∧ r = ruleGrounding τ r' g}
+def groundProgram (P: program τ) := {r: groundRule τ | ∃ (r': rule τ) (g: grounding τ), r' ∈ P ∧ r = ruleGrounding r' g}
 
 end grounding
+section substitutions
+variable {τ: signature}
+
+def substitution (τ: signature):= τ.vars → Option (τ.constants)
+
+def substitution_domain (s: substitution τ): Set (τ.vars) := {v | Option.isSome (s v) = true}
+
+def applySubstitutionTerm (s: substitution τ) (t: term τ): term τ :=
+  match t with
+  | term.constant c => term.constant c
+  | term.variableDL v => if p: Option.isSome (s v) then term.constant (Option.get (s v) p) else term.variableDL v
+
+lemma applySubstitutionTermMapPreservesLength (s: substitution τ) (a: atom τ): (List.map (applySubstitutionTerm s) a.atom_terms ).length = τ.relationArity a.symbol :=
+by
+  rw [List.length_map]
+  apply a.term_length
+
+def applySubstitutionAtom (s: substitution τ) (a: atom τ) : atom τ :=
+{symbol := a.symbol, atom_terms := List.map (applySubstitutionTerm s) a.atom_terms, term_length := applySubstitutionTermMapPreservesLength s a}
+
+def applySubstitutionRule (s: substitution τ) (r: rule τ): rule τ := {head := applySubstitutionAtom s r.head, body := List.map (applySubstitutionAtom s) r.body}
+
+lemma VarInDomainIffApplySubstitutionTermIsConst {v: τ.vars}  {s: substitution τ}: v ∈ substitution_domain s ↔ ∃ (c: τ.constants), applySubstitutionTerm s (term.variableDL v) = term.constant c :=
+by
+  constructor
+  intro h
+  unfold substitution_domain at h
+  rw [Set.mem_setOf] at h
+  simp [applySubstitutionTerm, h]
+
+  intro h
+  rcases h with ⟨c, c_prop⟩
+  unfold applySubstitutionTerm at c_prop
+  simp at c_prop
+  by_cases p: Option.isSome (s v) = true
+  unfold substitution_domain
+  rw [Set.mem_setOf]
+  apply p
+  simp [p] at c_prop
+
+lemma VarsSubsetDomainIffApplySubstitutionAtomIsGround {a: atom τ}  {s: substitution τ}: atomVariables a ⊆ substitution_domain s ↔ ∃ (ga: groundAtom τ), applySubstitutionAtom s a = ga :=
+by
+  sorry
+
+lemma VarsSubsetDomainIffApplySubstitutionRuleIsGround {r: rule τ}  {s: substitution τ}: ruleVariables r ⊆ substitution_domain s ↔ ∃ (r': groundRule τ), applySubstitutionRule s r = r' :=
+by
+  sorry
+
+def groundingToSubstitution (g: grounding τ): substitution τ := fun x => Option.some (g x)
+
+lemma groundingToSubsitutionEquivTerm (t: term τ) (g: grounding τ): applyGroundingTerm' g t = applySubstitutionTerm (groundingToSubstitution g) t :=
+by
+  simp
+  unfold applyGroundingTerm'
+  unfold groundingToSubstitution
+  unfold applySubstitutionTerm
+  cases t with
+  | constant c =>
+    simp
+  | variableDL v =>
+    simp
+
+
+lemma groundingToSubsitutionEquivAtom (a: atom τ) (g: grounding τ): atomGrounding g a = applySubstitutionAtom (groundingToSubstitution g) a :=
+by
+  simp
+  rw [atomEquality]
+  unfold atomGrounding
+  unfold applySubstitutionAtom
+  simp
+  constructor
+  unfold groundAtom.toAtom
+  simp
+
+  unfold groundAtom.toAtom
+  simp
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intro n h1 h2
+  simp
+  rw [groundingToSubsitutionEquivTerm]
+
+lemma groundingToSubsitutionEquivRule (r: rule τ) (g: grounding τ): ruleGrounding r g = applySubstitutionRule (groundingToSubstitution g) r :=
+by
+  simp
+  unfold ruleGrounding
+  unfold applySubstitutionRule
+  unfold groundRule.toRule
+  rw [ruleEquality]
+  constructor
+  simp
+  apply groundingToSubsitutionEquivAtom
+
+  simp
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intro n h1 h2
+  rw [List.get_map]
+  simp
+  rw [groundingToSubsitutionEquivAtom]
+
+noncomputable def substitutionToGrounding [ex: Nonempty τ.constants] (s: substitution τ): grounding τ := fun x => if p:Option.isSome (s x) then Option.get (s x) p else Classical.choice ex
+
+lemma substitutionToGroundingEquivTerm [Nonempty τ.constants] (t: term τ) (s: substitution τ) (h: termVariables t ⊆ substitution_domain s): term.constant (applyGroundingTerm' (substitutionToGrounding s) t) = applySubstitutionTerm s t :=
+by
+  unfold substitutionToGrounding
+  unfold applyGroundingTerm'
+  unfold applySubstitutionTerm
+  simp
+  cases t with
+  | constant c =>
+    simp
+  | variableDL v =>
+    simp
+    by_cases p: Option.isSome (s v) = true
+    simp [p]
+    simp [p]
+    unfold termVariables at h
+    simp at h
+    unfold substitution_domain at h
+    simp at h
+    exact absurd h p
+
+lemma substitutionToGroundingEquivAtom [Nonempty τ.constants] (a: atom τ) (s: substitution τ) (h: atomVariables a ⊆ substitution_domain s): groundAtom.toAtom (atomGrounding  (substitutionToGrounding s) a) = applySubstitutionAtom s a :=
+by
+  unfold atomGrounding
+  unfold groundAtom.toAtom
+  unfold applySubstitutionAtom
+  rw [atomEquality]
+  simp
+
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intro n h1 h2
+  simp
+  apply substitutionToGroundingEquivTerm
+  apply atomVariablesSubsetImpltermVariablesSubset
+  apply List.get_mem
+  exact h
+
+lemma substitutionToGroundingEquivRule [Nonempty τ.constants] (r: rule τ) (s: substitution τ) (h: ruleVariables r ⊆ substitution_domain s ): groundRule.toRule (ruleGrounding r (substitutionToGrounding s)) = applySubstitutionRule s r :=
+by
+  unfold groundRule.toRule
+  unfold ruleGrounding
+  unfold applySubstitutionRule
+  rw [ruleEquality]
+  simp
+  constructor
+  apply substitutionToGroundingEquivAtom
+  apply ruleVariablesSubsetImplAtomVariablesSubset (a:=r.head) (r:=r)
+  left
+  rfl
+  apply h
+
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intro n h1 h2
+  simp
+  apply substitutionToGroundingEquivAtom
+  apply ruleVariablesSubsetImplAtomVariablesSubset (r:=r)
+  right
+  apply List.get_mem
+  apply h
+
+theorem groundingSubstitutionEquivalence [Nonempty τ.constants](r: groundRule τ) (r': rule τ): (∃ (g: grounding τ), ruleGrounding r' g = r) ↔ (∃ (s: substitution τ), applySubstitutionRule s r'= r) :=
+by
+  simp
+  constructor
+  intro h
+  rcases h with ⟨g, g_prop⟩
+  use groundingToSubstitution g
+  rw [← g_prop]
+  simp [groundingToSubsitutionEquivRule]
+
+  intro h
+  rcases h with ⟨s, s_prop⟩
+  use substitutionToGrounding s
+  rw [groundRuleToRuleEquality]
+  rw [← s_prop]
+  apply substitutionToGroundingEquivRule
+  rw [VarsSubsetDomainIffApplySubstitutionRuleIsGround]
+  use r
+
+end substitutions
 section semantics
 variable {τ:signature} [DecidableEq τ.vars]
 
 class database (τ: signature):=
   (contains: groundAtom τ → Prop)
+
+abbrev interpretation (τ: signature) := Set (groundAtom τ)
 
 inductive proofTree (τ: signature)
 | node: (groundAtom τ) → List (proofTree τ) →  proofTree τ
@@ -274,9 +593,9 @@ by
     apply listMax_le_f_member _ _ _ mem
 
 
-def isValid(P: Set (rule τ)) (d: database τ) (t: proofTree τ): Prop :=
+def isValid(P: program τ) (d: database τ) (t: proofTree τ): Prop :=
   match t with
-  | proofTree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding τ r g = groundRuleFromAtoms τ a (List.map root l) ∧ l.attach.All₂ (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
+  | proofTree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms a (List.map root l) ∧ l.attach.All₂ (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
 termination_by isValid t => sizeOf t
 decreasing_by
   simp_wf
@@ -285,7 +604,7 @@ decreasing_by
   simp
 
 
-lemma databaseElementsHaveValidProofTree (P: Set (rule τ)) (d: database τ) (a: groundAtom τ) (mem: d.contains a): ∃ (t: proofTree τ), root t = a ∧ isValid P d t:=
+lemma databaseElementsHaveValidProofTree (P: program τ) (d: database τ) (a: groundAtom τ) (mem: d.contains a): ∃ (t: proofTree τ), root t = a ∧ isValid P d t:=
 by
   use (proofTree.node a [])
   constructor
@@ -297,22 +616,22 @@ by
   rfl
   apply mem
 
-def proofTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∃ (t: proofTree τ), root t = a ∧ isValid P d t}
+def proofTheoreticSemantics (P: program τ) (d: database τ): interpretation τ:= {a: groundAtom τ | ∃ (t: proofTree τ), root t = a ∧ isValid P d t}
 
-def ruleTrue (r: groundRule τ) (i: Set (groundAtom τ)): Prop := groundRuleBodySet τ r ⊆ i → r.head ∈ i
+def ruleTrue (r: groundRule τ) (i: interpretation τ): Prop := groundRuleBodySet r ⊆ i → r.head ∈ i
 
-def model (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) : Prop := (∀ (r: groundRule τ), r ∈ groundProgram τ P → ruleTrue r i) ∧ ∀ (a: groundAtom τ), d.contains a → a ∈ i
+def model (P: program τ) (d: database τ) (i: interpretation τ) : Prop := (∀ (r: groundRule τ), r ∈ groundProgram P → ruleTrue r i) ∧ ∀ (a: groundAtom τ), d.contains a → a ∈ i
 
 
-noncomputable def proofTreeForElement (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body): proofTree τ := Classical.choose (subs a mem)
+noncomputable def proofTreeForElement (P: program τ) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body): proofTree τ := Classical.choose (subs a mem)
 
-lemma proofTreeForElementSemantics (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body) (t: proofTree τ) (h: t = proofTreeForElement P d r subs a mem): root t = a ∧ isValid P d t:=
+lemma proofTreeForElementSemantics (P: program τ) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body) (t: proofTree τ) (h: t = proofTreeForElement P d r subs a mem): root t = a ∧ isValid P d t:=
 by
   rw [h]
   unfold proofTreeForElement
   apply Classical.choose_spec (h:= subs a mem)
 
-lemma proofTreeRootPreserved (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body): root (proofTreeForElement P d r subs a mem) = a :=
+lemma proofTreeRootPreserved (P: program τ) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (a: groundAtom τ) (mem: a ∈ r.body): root (proofTreeForElement P d r subs a mem) = a :=
 by
   have h: root (proofTreeForElement P d r subs a mem) = a ∧ isValid P d (proofTreeForElement P d r subs a mem)
   apply proofTreeForElementSemantics P d r subs a mem
@@ -320,9 +639,9 @@ by
   rcases h with ⟨left,_⟩
   exact left
 
-noncomputable def proofTreeList (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): List (proofTree τ) := List.map (fun ⟨x, _h⟩ => proofTreeForElement P d r subs x _h) r.body.attach
+noncomputable def proofTreeList (P: program τ) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): List (proofTree τ) := List.map (fun ⟨x, _h⟩ => proofTreeForElement P d r subs x _h) r.body.attach
 
-lemma proofTreeListHasValidTrees (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (t: proofTree τ) (mem: t ∈ proofTreeList P d r subs): isValid P d t :=
+lemma proofTreeListHasValidTrees (P: program τ) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t) (t: proofTree τ) (mem: t ∈ proofTreeList P d r subs): isValid P d t :=
 by
   unfold proofTreeList at mem
   rw [List.mem_map] at mem
@@ -336,7 +655,7 @@ by
   apply right
 
 
-lemma rootProofTreeListIsOriginal (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): r.body = List.map root (proofTreeList P d r subs) :=
+lemma rootProofTreeListIsOriginal (P: program τ) (d: database τ) (r: groundRule τ) (subs: ∀ (x : groundAtom τ), x ∈ r.body → ∃ t, root t = x ∧ isValid P d t): r.body = List.map root (proofTreeList P d r subs) :=
 by
   unfold proofTreeList
   apply List.ext_get
@@ -346,7 +665,7 @@ by
   simp[List.get_attach]
   rw [proofTreeRootPreserved]
 
-lemma createProofTreeForRule (P: Set (rule τ)) (d: database τ) (r: groundRule τ) (rGP: r ∈ groundProgram τ P)(subs: groundRuleBodySet τ r ⊆ proofTheoreticSemantics P d): ∃ t, root t = r.head ∧ isValid P d t :=
+lemma createProofTreeForRule (P: program τ) (d: database τ) (r: groundRule τ) (rGP: r ∈ groundProgram P)(subs: groundRuleBodySet r ⊆ proofTheoreticSemantics P d): ∃ t, root t = r.head ∧ isValid P d t :=
 by
   simp [proofTheoreticSemantics, Set.subset_def, ← groundRuleBodySet_iff_groundRuleBody] at subs
   use proofTree.node r.head (proofTreeList P d r subs)
@@ -374,7 +693,7 @@ by
   simp
   apply proofTreeListHasValidTrees
 
-theorem proofTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model P d (proofTheoreticSemantics P d) :=
+theorem proofTheoreticSemanticsIsModel (P: program τ) (d: database τ): model P d (proofTheoreticSemantics P d) :=
 by
   unfold model
   constructor
@@ -390,9 +709,9 @@ by
   apply databaseElementsHaveValidProofTree
   apply mem
 
-def modelTheoreticSemantics (P: Set (rule τ)) (d: database τ): Set (groundAtom τ ):= {a: groundAtom τ | ∀ (i: Set (groundAtom τ)), model P d i → a ∈ i}
+def modelTheoreticSemantics (P: program τ) (d: database τ): interpretation τ := {a: groundAtom τ | ∀ (i: interpretation τ), model P d i → a ∈ i}
 
-lemma leastModel (P: Set (rule τ)) (d: database τ) (i: Set (groundAtom τ)) (m: model P d i): modelTheoreticSemantics P d ⊆ i :=
+lemma leastModel (P: program τ) (d: database τ) (i: interpretation τ) (m: model P d i): modelTheoreticSemantics P d ⊆ i :=
 by
   unfold modelTheoreticSemantics
   rw [Set.subset_def]
@@ -402,7 +721,7 @@ by
   apply h
   apply m
 
-lemma modelTheoreticSemanticsIsModel (P: Set (rule τ)) (d: database τ): model P d (modelTheoreticSemantics P d) :=
+lemma modelTheoreticSemanticsIsModel (P: program τ) (d: database τ): model P d (modelTheoreticSemantics P d) :=
 by
   unfold model
   constructor
@@ -441,7 +760,7 @@ by
   apply a_db
   exact absurd a_i a_n_i
 
-lemma proofTreeAtomsInEveryModel (P: Set (rule τ)) (d: database τ) (a: groundAtom τ) (pt: a ∈ proofTheoreticSemantics P d)(i: Set (groundAtom τ)) (m: model P d i): a ∈ i := by
+lemma proofTreeAtomsInEveryModel (P: program τ) (d: database τ) (a: groundAtom τ) (pt: a ∈ proofTheoreticSemantics P d)(i: interpretation τ) (m: model P d i): a ∈ i := by
   unfold proofTheoreticSemantics at pt
   rw [Set.mem_setOf] at pt
   rcases pt with ⟨t, root_t, valid_t⟩
@@ -453,14 +772,14 @@ lemma proofTreeAtomsInEveryModel (P: Set (rule τ)) (d: database τ) (a: groundA
   cases valid_t with
   | inl ruleCase =>
     rcases ruleCase with ⟨r,g,rP, r_ground, all⟩
-    have r_true: ruleTrue (ruleGrounding τ r g) i
+    have r_true: ruleTrue (ruleGrounding r g) i
     apply ruleModel
     unfold groundProgram
     rw [Set.mem_setOf]
     use r
     use g
     unfold ruleTrue at r_true
-    have head_a: (ruleGrounding τ r g).head = a
+    have head_a: (ruleGrounding r g).head = a
     unfold root at root_t
     simp at root_t
     rw [← root_t, r_ground]
@@ -493,7 +812,7 @@ lemma proofTreeAtomsInEveryModel (P: Set (rule τ)) (d: database τ) (a: groundA
     apply dbModel
     apply contains
 
-theorem SemanticsEquivalence (P: Set (rule τ)) (d: database τ): proofTheoreticSemantics P d = modelTheoreticSemantics P d :=
+theorem SemanticsEquivalence (P: program τ) (d: database τ): proofTheoreticSemantics P d = modelTheoreticSemantics P d :=
 by
   apply Set.Subset.antisymm
   rw [Set.subset_def]
