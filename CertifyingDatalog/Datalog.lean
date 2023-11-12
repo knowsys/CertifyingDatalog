@@ -16,6 +16,7 @@ inductive term : Type
 | constant : τ.constants → term
 | variableDL : τ.vars → term
 
+
 instance: Coe (τ.constants) (term τ) where
  coe
     | c => term.constant c
@@ -93,6 +94,10 @@ by
 
 def groundAtom.toAtom {τ:signature} (ga: groundAtom τ): atom τ:= {symbol:=ga.symbol, atom_terms:= List.map term.constant ga.atom_terms,term_length:= listMapPreservesTermLength ga}
 
+lemma listMapInjectiveEquality {A B: Type} (l1 l2: List A) (f: A → B)(inj: Function.Injective f): l1 = l2 ↔ List.map f l1 = List.map f l2 :=
+by
+  sorry
+
 lemma groundAtomToAtomEquality (a1 a2: groundAtom τ): a1 = a2 ↔ a1.toAtom = a2.toAtom :=
 by
   constructor
@@ -105,10 +110,9 @@ by
   rw [groundAtomEquality]
   constructor
   apply sym
-  apply List.ext_get
-  admit
-  intros n h1 h2
-  admit
+  rw [listMapInjectiveEquality]
+  apply terms
+  sorry
 
 instance: Coe (groundAtom τ) (atom τ) where
   coe
@@ -207,6 +211,7 @@ by
   rw [groundRuleEquality]
   intro h
   simp at h
+  sorry
 
 def grounding (τ: signature):= τ.vars → τ.constants
 
