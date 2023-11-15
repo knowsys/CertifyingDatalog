@@ -9,13 +9,13 @@ def match_term (t: term τ)(c: τ.constants) (s: substitution τ): Option (subst
   match t with
   | term.constant c' =>
     if c = c'
-      then s
+      then Option.some s
       else Option.none
   | term.variableDL v =>
     if p:Option.isSome (s v)
     then  if Option.get (s v) p = c
           then
-            s
+            Option.some s
           else
               Option.none
     else
@@ -60,6 +60,5 @@ by
   | variableDL v =>
     unfold match_term at none
     simp at none
-
 
 end matching

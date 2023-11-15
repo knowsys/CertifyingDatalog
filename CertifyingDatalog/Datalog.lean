@@ -96,7 +96,33 @@ def groundAtom.toAtom {τ:signature} (ga: groundAtom τ): atom τ:= {symbol:=ga.
 
 lemma listMapInjectiveEquality {A B: Type} (l1 l2: List A) (f: A → B)(inj: Function.Injective f): l1 = l2 ↔ List.map f l1 = List.map f l2 :=
 by
-  sorry
+  constructor
+  intro h
+  rw [h]
+
+  induction l1 generalizing l2 with
+  | nil =>
+    cases l2 with
+    | nil =>
+      simp
+    | cons hd tl =>
+      intro f_map
+      exfalso
+      simp at f_map
+  | cons hd tl ih =>
+    cases l2 with
+    | nil =>
+      intro h
+      exfalso
+      simp at h
+    | cons hd' tl' =>
+      unfold List.map
+      simp
+      intros f_hd f_tl
+      constructor
+      unfold Function.Injective at inj
+      apply inj f_hd
+      apply ih tl' f_tl
 
 lemma groundAtomToAtomEquality (a1 a2: groundAtom τ): a1 = a2 ↔ a1.toAtom = a2.toAtom :=
 by
@@ -112,7 +138,9 @@ by
   apply sym
   rw [listMapInjectiveEquality]
   apply terms
-  sorry
+  unfold Function.Injective
+  intros a1 a2 term_eq
+  injections
 
 instance: Coe (groundAtom τ) (atom τ) where
   coe
@@ -125,6 +153,34 @@ def termVariables: term τ → Set τ.vars
 def collectResultsToFinset {A: Type} (f: A → Set τ.vars): List A → Set τ.vars
 | [] => ∅
 | hd::tl => (f hd) ∪ (collectResultsToFinset f tl)
+
+lemma collectResultsToFinsetMemberIffListMember {A: Type} (f: A → Set τ.vars) (v: τ.vars) (l: List A): v ∈ collectResultsToFinset f l ↔ ∃ (a:A), a ∈ l ∧ v ∈ f a :=
+by
+  induction l with
+  | nil =>
+    unfold collectResultsToFinset
+    simp
+  | cons hd tl ih =>
+    simp [collectResultsToFinset]
+    constructor
+    intro h
+    cases h with
+    | inl h =>
+      left
+      apply h
+    | inr h =>
+      rw [← ih]
+      right
+      apply h
+    intro h
+    cases h with
+    | inl h =>
+      left
+      apply h
+    | inr h =>
+      rw [ih]
+      right
+      apply h
 
 lemma memberResultIsSubsetCollectResultsToFinset (f: A → Set τ.vars) (a:A) (l: List A) (mem: a ∈ l): f a ⊆ collectResultsToFinset f l :=
 by
@@ -145,6 +201,25 @@ by
       simp
       apply ih
       apply h
+
+lemma collectResultsToFinsetIsSubsetIffListElementsAre {A: Type} {S: Set (τ.vars)} {l: List A}{f: A → (Set τ.vars)}: collectResultsToFinset f l ⊆ S ↔ ∀ (a:A), a ∈ l → (f a) ⊆ S :=
+by
+  constructor
+  intros h a a_l
+  apply Set.Subset.trans (b:= collectResultsToFinset f l)
+  apply memberResultIsSubsetCollectResultsToFinset
+  apply a_l
+  apply h
+
+  intro h
+  rw [Set.subset_def]
+  intros x x_mem
+  rw [collectResultsToFinsetMemberIffListMember] at x_mem
+  rcases x_mem with ⟨a, a_l, x_fa⟩
+  apply Set.mem_of_subset_of_mem
+  apply h
+  apply a_l
+  apply x_fa
 
 def atomVariables (a: atom τ) : Set τ.vars := collectResultsToFinset termVariables  a.atom_terms
 
@@ -184,6 +259,11 @@ structure groundRule (τ: signature) where
 
 def groundRule.toRule (r: groundRule τ): rule τ := {head:= r.head.toAtom, body := List.map groundAtom.toAtom r.body}
 
+lemma groundRuletoRulePreservesLength (r: groundRule τ): List.length r.body = List.length r.toRule.body :=
+by
+  unfold groundRule.toRule
+  simp
+
 instance: Coe (groundRule τ) (rule τ) where
   coe
     | r => r.toRule
@@ -211,7 +291,18 @@ by
   rw [groundRuleEquality]
   intro h
   simp at h
-  sorry
+  rcases h with ⟨head_eq, body_eq⟩
+  have inj_toAtom: Function.Injective groundAtom.toAtom
+  unfold Function.Injective
+  intros a1 a2 h
+  rw [groundAtomToAtomEquality]
+  apply h
+  exact τ
+  constructor
+  unfold Function.Injective at inj_toAtom
+  apply inj_toAtom head_eq
+  rw [listMapInjectiveEquality (inj:=inj_toAtom)]
+  apply body_eq
 
 def grounding (τ: signature):= τ.vars → τ.constants
 
@@ -358,13 +449,87 @@ by
   apply p
   simp [p] at c_prop
 
-lemma VarsSubsetDomainIffApplySubstitutionAtomIsGround {a: atom τ}  {s: substitution τ}: atomVariables a ⊆ substitution_domain s ↔ ∃ (ga: groundAtom τ), applySubstitutionAtom s a = ga :=
-by
-  sorry
 
-lemma VarsSubsetDomainIffApplySubstitutionRuleIsGround {r: rule τ}  {s: substitution τ}: ruleVariables r ⊆ substitution_domain s ↔ ∃ (r': groundRule τ), applySubstitutionRule s r = r' :=
+-- Adopted from Mathlibs List.get_map which didn't work in the way I needed it
+lemma List.get_map' {A B: Type} (f: A → B) (l: List A) (n: ℕ)(isLt1: n < l.length) (isLt2: n < (List.map f l).length): List.get (List.map f l) {val:=n, isLt:= isLt2} = f (List.get l {val:=n, isLt:= isLt1}) := by
+  apply Option.some.inj
+  rw [← get?_eq_get, get?_map, get?_eq_get]
+  rfl
+
+lemma applySubstitutionAtomIsGroundImplVarsSubsetDomain {a: atom τ} {s: substitution τ} (subs_ground: ∃ (a': groundAtom τ), applySubstitutionAtom s a = a'): atomVariables a ⊆ substitution_domain s :=
 by
-  sorry
+  unfold atomVariables
+  simp at subs_ground
+  rcases subs_ground with ⟨a', a'_prop⟩
+  unfold applySubstitutionAtom at a'_prop
+  unfold groundAtom.toAtom at a'_prop
+  rw [atomEquality] at a'_prop
+  simp at a'_prop
+  rcases a'_prop with ⟨_, terms_eq⟩
+  rw [collectResultsToFinsetIsSubsetIffListElementsAre]
+  intros t t_mem
+  cases t with
+  | constant c =>
+    unfold termVariables
+    simp
+  | variableDL v =>
+    unfold termVariables
+    simp
+    rw [VarInDomainIffApplySubstitutionTermIsConst]
+    rw [List.mem_iff_get] at t_mem
+    rcases t_mem with ⟨v_pos, v_pos_proof⟩
+    rw [← v_pos_proof]
+    rcases v_pos with ⟨v_pos, v_pos_a⟩
+    have v_pos_a': v_pos < List.length a'.atom_terms
+    rw [← List.length_map (f:= term.constant),←  terms_eq, List.length_map]
+    apply v_pos_a
+    use List.get a'.atom_terms {val:= v_pos, isLt:= v_pos_a'}
+    rw [← List.get_map' (f:= applySubstitutionTerm s), ← List.get_map' (f:= term.constant)]
+    apply List.get_of_eq terms_eq
+    rw [List.length_map]
+    apply v_pos_a
+
+
+lemma applySubstitutionRuleIsGroundImplVarsSubsetDomain {r: rule τ} {s: substitution τ} (subs_ground: ∃ (r': groundRule τ), applySubstitutionRule s r = r'): ruleVariables r ⊆ substitution_domain s :=
+by
+  unfold ruleVariables
+  simp at subs_ground
+  rcases subs_ground with ⟨r', r'_prop⟩
+  unfold applySubstitutionRule at r'_prop
+  rw [ruleEquality] at r'_prop
+  simp at r'_prop
+  rcases r'_prop with ⟨left,right⟩
+  apply Set.union_subset
+  apply applySubstitutionAtomIsGroundImplVarsSubsetDomain
+  simp
+  use r'.head
+  rw [left]
+  unfold groundRule.toRule
+  simp
+  rw [collectResultsToFinsetIsSubsetIffListElementsAre]
+  intros a a_mem
+  apply applySubstitutionAtomIsGroundImplVarsSubsetDomain
+  unfold groundRule.toRule at right
+  simp at right
+  simp
+  rw [List.mem_iff_get] at a_mem
+  rcases a_mem with ⟨a_pos, pos_prop⟩
+  rcases a_pos with ⟨a_pos, a_pos_proof⟩
+  have a_pos_proof': a_pos < List.length r'.body
+  rw [← List.length_map r'.body groundAtom.toAtom, ← right, List.length_map r.body]
+  apply a_pos_proof
+  use List.get r'.body (Fin.mk a_pos a_pos_proof')
+  rw [← pos_prop]
+  have h: a_pos < (List.map (applySubstitutionAtom s) r.body ).length
+  rw [List.length_map]
+  apply a_pos_proof
+  have h': a_pos < (List.map groundAtom.toAtom r'.body ).length
+  rw [List.length_map]
+  apply a_pos_proof'
+  rw [← List.get_map' (applySubstitutionAtom s) r.body a_pos a_pos_proof h, ← List.get_map' groundAtom.toAtom r'.body a_pos a_pos_proof' h']
+  apply List.get_of_eq
+  apply right
+
 
 def groundingToSubstitution (g: grounding τ): substitution τ := fun x => Option.some (g x)
 
@@ -498,8 +663,82 @@ by
   rw [groundRuleToRuleEquality]
   rw [← s_prop]
   apply substitutionToGroundingEquivRule
-  rw [VarsSubsetDomainIffApplySubstitutionRuleIsGround]
+  apply applySubstitutionRuleIsGroundImplVarsSubsetDomain
   use r
+
+def substitution_subs (s1 s2: substitution τ): Prop :=
+  ∀ (v: τ.vars),
+    match (s1 v) with
+    | Option.some c =>
+      match (s2 v) with
+      | Option.some c' => c = c'
+      | Option.none => False
+    | Option.none => True
+
+instance: HasSubset (substitution τ) where
+  Subset := substitution_subs
+
+lemma substitution_subs_get (s1 s2: substitution τ) (subs: s1 ⊆ s2)(c: τ.constants) (v: τ.vars) (h: s1 v = Option.some c): s2 v = Option.some c :=
+by
+  unfold_projs at subs
+  unfold substitution_subs at subs
+  specialize subs v
+  simp [h] at subs
+  cases p: s2 v with
+  | some c' =>
+    simp [p] at subs
+    rw [subs]
+  | none =>
+    simp [p] at *
+
+lemma substitution_subs_none (s1 s2: substitution τ) (subs: s1 ⊆ s2) (v: τ.vars) (h: s2 v = Option.none): s1 v = Option.none :=
+by
+  unfold_projs at subs
+  unfold substitution_subs at subs
+  specialize subs v
+  cases p: s1 v with
+  | some c =>
+    simp [p, h] at subs
+  | none =>
+    rfl
+
+lemma substitution_subs_refl (s: substitution τ): s ⊆ s :=
+by
+  unfold_projs
+  unfold substitution_subs
+  intro v
+  by_cases sv: s v = Option.none
+  simp [sv]
+  push_neg at sv
+  rw [Option.ne_none_iff_exists] at sv
+  rcases sv with ⟨x, some_x⟩
+  simp [← some_x]
+
+lemma substitution_subs_antisymm (s1 s2: substitution τ) (s1s2: s1 ⊆ s2)(s2s1: s2 ⊆ s1): s1 = s2 :=
+by
+  funext x
+  cases p: s1 x with
+  | some c =>
+    apply Eq.symm
+    apply substitution_subs_get s1 s2 s1s2 c x p
+  | none =>
+    apply Eq.symm
+    apply substitution_subs_none s2 s1 s2s1 x p
+
+lemma substitution_subs_trans (s1 s2 s3: substitution τ) (s1s2: s1 ⊆ s2) (s2s3: s2 ⊆ s3): s1 ⊆ s3 :=
+by
+  unfold_projs
+  unfold substitution_subs
+  intro v
+  cases p:s1 v with
+  | some c =>
+    simp
+    have q: s3 v = some c
+    apply substitution_subs_get s2 s3 s2s3
+    apply substitution_subs_get s1 s2 s1s2 c v p
+    simp [q]
+  | none =>
+    simp
 
 end substitutions
 section semantics
