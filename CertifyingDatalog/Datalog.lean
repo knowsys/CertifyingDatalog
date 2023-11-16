@@ -666,6 +666,8 @@ by
   apply applySubstitutionRuleIsGroundImplVarsSubsetDomain
   use r
 
+def emptySubstitution: substitution τ := (fun _ => none)
+
 def substitution_subs (s1 s2: substitution τ): Prop :=
   ∀ (v: τ.vars),
     match (s1 v) with
@@ -677,6 +679,14 @@ def substitution_subs (s1 s2: substitution τ): Prop :=
 
 instance: HasSubset (substitution τ) where
   Subset := substitution_subs
+
+lemma emptySubstitutionIsMinimal (s: substitution τ): emptySubstitution ⊆ s :=
+by
+  unfold_projs
+  unfold substitution_subs
+  intro v
+  unfold emptySubstitution
+  simp
 
 lemma substitution_subs_get (s1 s2: substitution τ) (subs: s1 ⊆ s2)(c: τ.constants) (v: τ.vars) (h: s1 v = Option.some c): s2 v = Option.some c :=
 by
