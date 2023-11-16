@@ -740,6 +740,43 @@ by
   | none =>
     simp
 
+lemma option_get_iff_eq_some {A: Type} (o: Option A) (a:A) (h: Option.isSome o): Option.get o h = a ↔ o = some a :=
+by
+  constructor
+  intro h'
+  cases p: o with
+  | some a' =>
+    simp [p] at h'
+    rw [h']
+  | none =>
+    exfalso
+    simp [p] at h
+
+  intro h'
+  simp [h']
+
+lemma subs_ext_groundTerm {s1 s2: substitution τ} {t: term τ} {c: τ.constants} (subs: s1 ⊆ s2) (eq: applySubstitutionTerm s1 t = c): applySubstitutionTerm s2 t = c :=
+by
+  simp at *
+  cases t with
+  | constant c' =>
+    unfold applySubstitutionTerm
+    simp
+    unfold applySubstitutionTerm at eq
+    simp at eq
+    apply eq
+  | variableDL v =>
+    unfold applySubstitutionTerm at *
+    simp at *
+    have p: Option.isSome (s1 v) = true
+    by_contra h'
+    simp [h'] at eq
+    simp [p] at eq
+    rw [option_get_iff_eq_some] at eq
+    have s2_v: s2 v = some c
+    apply substitution_subs_get s1 s2 subs _ _ eq
+    simp [s2_v]
+
 end substitutions
 section semantics
 variable {τ:signature} [DecidableEq τ.vars]
