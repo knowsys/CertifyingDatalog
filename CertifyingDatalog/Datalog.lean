@@ -787,6 +787,39 @@ by
     apply substitution_subs_get s1 s2 subs _ _ eq
     simp [s2_v]
 
+lemma subs_ext_listConstant {s1 s2: substitution τ} {l1: List (term τ)} {l2: List (τ.constants)} (subs: s1 ⊆ s2) (eq: List.map (applySubstitutionTerm s1) l1 = List.map term.constant l2): List.map (applySubstitutionTerm s2) l1 = List.map term.constant l2 :=
+by
+  induction l1 generalizing l2 with
+  | nil =>
+    cases l2 with
+    | nil =>
+      simp
+    | cons hd tl =>
+      simp at eq
+  | cons hd tl ih =>
+    cases l2 with
+    | nil =>
+      simp at eq
+    | cons hd' tl' =>
+      simp at eq
+      rcases eq with ⟨left,right⟩
+      simp
+      constructor
+      apply subs_ext_groundTerm (subs:= subs) (eq:=left)
+      apply ih
+      apply right
+
+lemma subs_ext_groundAtom {s1 s2: substitution τ} {a: atom τ} {ga: groundAtom τ} (subs: s1 ⊆ s2) (eq: applySubstitutionAtom s1 a = ga): applySubstitutionAtom s2 a = ga :=
+by
+  unfold applySubstitutionAtom at *
+  unfold groundAtom.toAtom at *
+  simp at *
+  rcases eq with ⟨left,right⟩
+  constructor
+  apply left
+  apply subs_ext_listConstant (s1 := s1) (subs:= subs) (eq:= right)
+
+
 end substitutions
 section semantics
 variable {τ:signature} [DecidableEq τ.vars]

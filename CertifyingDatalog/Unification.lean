@@ -300,9 +300,8 @@ by
       simp at s'_prop
       simp [s'_prop]
 
-lemma matchTermListNoneImplNoSolution (s: substitution τ) (l1: List (term τ)) (l2: List (τ.constants)) (len: l1.length = l2.length) (h: Option.isNone (matchTermList s l1 l2)): ¬ ∃ (s': substitution τ), s ⊆ s' ∧ List.map (applySubstitutionTerm s') l1 = List.map term.constant l2 :=
+lemma matchTermListNoneImplNoSolution (s: substitution τ) (l1: List (term τ)) (l2: List (τ.constants)) (len: l1.length = l2.length) (h: Option.isNone (matchTermList s l1 l2)): ∀ (s': substitution τ), s ⊆ s' → ¬  List.map (applySubstitutionTerm s') l1 = List.map term.constant l2 :=
 by
-  push_neg
   intros s' s_s'
   induction l1 generalizing l2 s with
   | nil =>
@@ -343,10 +342,12 @@ by
 def matchAtom (s: substitution τ) (a: atom τ) (ga: groundAtom τ): Option (substitution τ) :=
   if a.symbol = ga.symbol
   then
-    if a.atom_terms.length = ga.atom_terms.length
-    then matchTermList s a.atom_terms ga.atom_terms
-    else none
+    matchTermList s a.atom_terms ga.atom_terms
   else none
+
+lemma sameSymbolImplSameLength (a: atom τ) (ga: groundAtom τ) (h: a.symbol = ga.symbol): a.atom_terms.length = ga.atom_terms.length :=
+by
+  rw [a.term_length, ga.term_length, h]
 
 lemma matchAtomFindsSolution (s: substitution τ) (a: atom τ) (ga: groundAtom τ) (h: Option.isSome (matchAtom s a ga)): applySubstitutionAtom (Option.get (matchAtom s a ga) h) a = ga ∧ s ⊆ (Option.get (matchAtom s a ga) h) :=
 by
@@ -354,19 +355,16 @@ by
   have symbol_eq: a.symbol = ga.symbol
   by_contra p
   simp [p] at h
-  have length_eq: a.atom_terms.length = ga.atom_terms.length
-  by_contra p
-  simp [symbol_eq, p] at h
-  simp [symbol_eq, length_eq] at h
+  simp [symbol_eq] at h
   unfold matchAtom
-  simp [symbol_eq, length_eq]
+  simp [symbol_eq]
   unfold applySubstitutionAtom
   unfold groundAtom.toAtom
   simp [ruleEquality]
   rw [and_assoc]
   constructor
   apply symbol_eq
-  apply matchTermListFindsSolution (len:= length_eq)
+  apply matchTermListFindsSolution (len:= sameSymbolImplSameLength a ga symbol_eq)
 
 lemma matchAtomFindsMinimalSolution (s: substitution τ) (a: atom τ) (ga: groundAtom τ) (h: Option.isSome (matchAtom s a ga)): ∀ (s': substitution τ), applySubstitutionAtom s' a = ga ∧ s ⊆ s' → (Option.get (matchAtom s a ga) h) ⊆ s' :=
 by
@@ -374,47 +372,31 @@ by
   have symbol_eq: a.symbol = ga.symbol
   by_contra p
   simp [p] at h
-  have length_eq: a.atom_terms.length = ga.atom_terms.length
-  by_contra p
-  simp [symbol_eq, p] at h
-  simp [symbol_eq, length_eq] at h
+  simp [symbol_eq] at h
   unfold matchAtom
-  simp [symbol_eq, length_eq]
+  simp [symbol_eq]
   intro s'
   unfold applySubstitutionAtom
   unfold groundAtom.toAtom
   simp [symbol_eq]
   intros apply_s' s_s'
-  apply matchTermListFindsMinimalSolution (len:= length_eq)
+  apply matchTermListFindsMinimalSolution (len:= sameSymbolImplSameLength a ga symbol_eq)
   constructor
   apply apply_s'
   apply s_s'
 
-lemma matchAtomNoneImplNoSolution (s: substitution τ) (a: atom τ) (ga: groundAtom τ) (h: Option.isNone (matchAtom s a ga)): ¬ ∃ (s': substitution τ), s ⊆ s' ∧ applySubstitutionAtom s' a = ga :=
+lemma matchAtomNoneImplNoSolution (s: substitution τ) (a: atom τ) (ga: groundAtom τ) (h: Option.isNone (matchAtom s a ga)): ∀ (s': substitution τ), s ⊆ s' →  ¬ applySubstitutionAtom s' a = ga :=
 by
   unfold matchAtom at h
   by_cases symbol_eq: a.symbol = ga.symbol
-  by_cases length_eq: a.atom_terms.length = ga.atom_terms.length
   unfold applySubstitutionAtom
   unfold groundAtom.toAtom
-  simp [symbol_eq, length_eq] at h
-  have h': ¬∃ s', s ⊆ s' ∧ List.map (applySubstitutionTerm s') a.atom_terms = List.map term.constant ga.atom_terms
-  apply matchTermListNoneImplNoSolution (len:= length_eq) (h:= h)
-  push_neg at *
+  simp [symbol_eq] at h
+  have h': ∀ s', s ⊆ s' → ¬  List.map (applySubstitutionTerm s') a.atom_terms = List.map term.constant ga.atom_terms
+  apply matchTermListNoneImplNoSolution (len:= sameSymbolImplSameLength a ga symbol_eq) (h:= h)
   intros s' s_s'
   simp [symbol_eq]
   apply h' s' s_s'
-
-  push_neg
-  intros s' _
-  unfold groundAtom.toAtom
-  unfold applySubstitutionAtom
-  simp [symbol_eq]
-  by_contra h'
-  rw [← List.length_map a.atom_terms (applySubstitutionTerm s')] at length_eq
-  rw [← List.length_map ga.atom_terms term.constant] at length_eq
-  rw [h'] at length_eq
-  simp at length_eq
 
   push_neg
   intro s' _
@@ -433,7 +415,7 @@ by
   push_neg at h
   simp at h
   rcases h with ⟨left,right⟩
-  have h': ¬ ∃ (s': substitution τ), emptySubstitution ⊆ s' ∧ applySubstitutionAtom s' a = ga
+  have h': ∀ (s': substitution τ), emptySubstitution ⊆ s' →  ¬ applySubstitutionAtom s' a = ga
   apply matchAtomNoneImplNoSolution (h:= right)
   push_neg at h'
   rcases left with ⟨s, s_prop⟩
@@ -441,3 +423,206 @@ by
   exact absurd s_prop h'
 
 end atom_matching
+
+section rule_matching
+variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
+
+def matchAtomList (s: substitution τ) (l1: List (atom τ)) (l2: List (groundAtom τ)): Option (substitution τ) :=
+  match l1 with
+    | List.nil => some s
+    | List.cons hd tl =>
+      match l2 with
+      | List.nil => none
+      | List.cons hd' tl' =>
+        let s' := matchAtom s hd hd'
+        if p: Option.isSome s'
+        then matchAtomList (Option.get s' p) tl tl'
+        else none
+
+lemma matchAtomListFindsSolution (s: substitution τ) (l1: List (atom τ)) (l2: List (groundAtom τ)) (len: l1.length = l2.length) (h: Option.isSome (matchAtomList s l1 l2)): List.map (applySubstitutionAtom (Option.get (matchAtomList s l1 l2) h )) l1 = List.map groundAtom.toAtom l2 ∧ s ⊆ (Option.get (matchAtomList s l1 l2) h ):=
+by
+  induction l1 generalizing l2 s with
+  | nil =>
+    cases l2 with
+    | nil =>
+      simp
+      unfold matchAtomList
+      simp
+      apply substitution_subs_refl
+    | cons hd tl =>
+      simp at len
+  | cons hd tl ih =>
+    cases l2 with
+    | nil =>
+      simp at len
+    | cons hd' tl' =>
+      unfold matchAtomList at h
+      simp at h
+      unfold matchAtomList
+      have p: Option.isSome (matchAtom s hd hd') = true
+      by_contra h'
+      simp [h'] at h
+      simp [p]
+      simp [p] at h
+      simp at len
+      specialize ih (Option.get (matchAtom s hd hd') p) tl' len h
+      simp [ih]
+      constructor
+      apply subs_ext_groundAtom (s1:= Option.get (matchAtom s hd hd') p)
+      simp [ih]
+      simp [matchAtomFindsSolution]
+      apply substitution_subs_trans (s2:=Option.get (matchAtom s hd hd') p)
+      simp [matchAtomFindsSolution]
+      simp [ih]
+
+lemma matchAtomListFindsMinimalSolution (s: substitution τ) (l1: List (atom τ)) (l2: List (groundAtom τ)) (len: l1.length = l2.length) (h: Option.isSome (matchAtomList s l1 l2)): ∀ (s': substitution τ), List.map (applySubstitutionAtom s') l1 = List.map groundAtom.toAtom l2 ∧ s ⊆ s' → (Option.get (matchAtomList s l1 l2) h ) ⊆ s' :=
+by
+  intros s' s_s'
+  induction l1 generalizing l2 s with
+  | nil =>
+    cases l2 with
+    | nil =>
+      unfold matchAtomList
+      simp [s_s']
+    | cons hd tl =>
+      simp at len
+  | cons hd tl ih =>
+    cases l2 with
+    | nil =>
+      simp at len
+    | cons hd' tl' =>
+      unfold matchAtomList
+      simp
+      unfold matchAtomList at h
+      simp at h
+      have p : Option.isSome (matchAtom s hd hd') = true
+      by_contra q
+      simp [q] at h
+      simp [p]
+      simp [p] at h
+      apply ih
+      simp at len
+      apply len
+      rcases s_s' with ⟨map_s', s_s'⟩
+      simp at map_s'
+      constructor
+      simp [map_s']
+      apply matchAtomFindsMinimalSolution
+      constructor
+      simp [map_s']
+      apply s_s'
+
+lemma matchAtomListNoneImplNoSolution (s: substitution τ) (l1: List (atom τ)) (l2: List (groundAtom τ)) (len: l1.length = l2.length) (h: Option.isNone (matchAtomList s l1 l2)): ∀ (s': substitution τ), s ⊆ s' → ¬  List.map (applySubstitutionAtom s') l1 = List.map groundAtom.toAtom l2 :=
+by
+  push_neg
+  intros s' s_s'
+  induction l1 generalizing l2 s with
+  | nil =>
+    cases l2 with
+    | nil =>
+      unfold matchAtomList at h
+      simp at h
+    | cons hd tl =>
+      simp at len
+  | cons hd tl ih =>
+    cases l2 with
+    | nil =>
+      simp at len
+    | cons hd' tl' =>
+      unfold matchAtomList at h
+      simp at h
+      by_cases p: Option.isSome (matchAtom s hd hd') = true
+      simp [p] at h
+      simp
+      intro h'
+      simp at len
+      specialize ih (Option.get (matchAtom s hd hd') p) tl' len
+      apply ih
+      apply h
+      apply matchAtomFindsMinimalSolution
+      simp [h', s_s']
+
+      have h': ∀ (s': substitution τ), s ⊆ s' → ¬ applySubstitutionAtom s' hd = hd'
+      apply matchAtomNoneImplNoSolution
+      simp at p
+      apply p
+      push_neg at h'
+      specialize h' s' s_s'
+      simp
+      intro q
+      exfalso
+      exact absurd q h'
+
+
+def matchRule (r: rule τ) (gr: groundRule τ): Option (substitution τ):=
+  let s := matchAtom emptySubstitution r.head gr.head
+  if p: Option.isSome s
+  then matchAtomList (Option.get s p) r.body gr.body
+  else none
+
+lemma matchRuleFindsSolution (r: rule τ) (gr: groundRule τ) (len: r.body.length = gr.body.length) (h: Option.isSome (matchRule r gr) = true): applySubstitutionRule (Option.get (matchRule r gr) h) r = gr :=
+by
+  unfold applySubstitutionRule
+  unfold groundRule.toRule
+  unfold matchRule at *
+  simp at h
+  simp
+  have p: Option.isSome (matchAtom emptySubstitution r.head gr.head) = true
+  by_contra q
+  simp [q] at h
+  simp [p]
+  simp [p] at h
+  have h': List.map (applySubstitutionAtom (Option.get (matchAtomList (Option.get (matchAtom emptySubstitution r.head gr.head) p) r.body gr.body) h )) r.body = List.map groundAtom.toAtom gr.body ∧ (Option.get (matchAtom emptySubstitution r.head gr.head) p) ⊆ (Option.get (matchAtomList (Option.get (matchAtom emptySubstitution r.head gr.head) p) r.body gr.body) h )
+  apply matchAtomListFindsSolution
+  apply len
+  rcases h' with ⟨left,right⟩
+  constructor
+  apply subs_ext_groundAtom (s1:= Option.get (matchAtom emptySubstitution r.head gr.head) p)
+  apply right
+  simp [matchAtomFindsSolution]
+  apply left
+
+lemma matchRuleNoneImplNoSolution (r: rule τ) (gr: groundRule τ) (len: r.body.length = gr.body.length) (h: Option.isNone (matchRule r gr) = true): ¬ ∃ (s: substitution τ), applySubstitutionRule s r = gr :=
+by
+  push_neg
+  intro s
+  unfold matchRule at h
+  simp at h
+  unfold applySubstitutionRule
+  unfold groundRule.toRule
+  simp
+  intro s_hd
+  by_cases p: Option.isSome (matchAtom emptySubstitution r.head gr.head)
+  simp [p] at h
+  have h': ∀ (s': substitution τ), Option.get (matchAtom emptySubstitution r.head gr.head) p ⊆ s' → ¬  List.map (applySubstitutionAtom s') r.body = List.map groundAtom.toAtom gr.body
+  apply matchAtomListNoneImplNoSolution (len:= len) (h:= h)
+  specialize h' s
+  apply h'
+  apply matchAtomFindsMinimalSolution
+  simp [s_hd]
+  apply emptySubstitutionIsMinimal
+
+  simp at p
+  have n_s_hd: ¬ applySubstitutionAtom s r.head = groundAtom.toAtom gr.head
+  apply matchAtomNoneImplNoSolution (h:= p)
+  apply emptySubstitutionIsMinimal
+  exfalso
+  exact absurd s_hd n_s_hd
+
+theorem matchRuleIsSomeIffSolution (r: rule τ) (gr: groundRule τ) (len: r.body.length = gr.body.length): Option.isSome (matchRule r gr) ↔ ∃ (s: substitution τ), applySubstitutionRule s r = gr :=
+by
+  simp
+  constructor
+  intro h
+  use Option.get (matchRule r gr) h
+  apply matchRuleFindsSolution (len:= len)
+
+  by_contra h
+  push_neg at h
+  rcases h with ⟨left,right⟩
+  simp at right
+  have h: ¬ ∃ (s: substitution τ), applySubstitutionRule s r = gr
+  apply matchRuleNoneImplNoSolution (len:= len) (h:= right)
+  exact absurd left h
+
+end rule_matching
