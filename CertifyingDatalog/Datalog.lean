@@ -10,12 +10,13 @@ structure signature :=
 
 
 section basic
-variable (τ: signature)
+variable (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
 
-inductive term : Type
-| constant : τ.constants → term
-| variableDL : τ.vars → term
 
+inductive term (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]: Type
+| constant : τ.constants → term τ
+| variableDL : τ.vars → term τ
+deriving DecidableEq
 
 instance: Coe (τ.constants) (term τ) where
  coe
@@ -26,8 +27,10 @@ structure atom :=
   (symbol: τ.relationSymbols)
   (atom_terms: List (term τ ))
   (term_length: atom_terms.length = τ.relationArity symbol)
+deriving DecidableEq
 
-lemma atomEquality {τ: signature} (a1 a2: atom τ): a1 = a2 ↔ a1.symbol = a2.symbol ∧ a1.atom_terms = a2.atom_terms :=
+
+lemma atomEquality (a1 a2: atom τ): a1 = a2 ↔ a1.symbol = a2.symbol ∧ a1.atom_terms = a2.atom_terms :=
 by
   constructor
   intro h
@@ -44,8 +47,10 @@ by
 structure rule :=
   (head: atom τ)
   (body: List (atom τ))
+deriving DecidableEq
 
-lemma ruleEquality {τ: signature} (r1 r2: rule τ): r1 = r2 ↔ r1.head = r2.head ∧ r1.body = r2.body :=
+
+lemma ruleEquality (r1 r2: rule τ): r1 = r2 ↔ r1.head = r2.head ∧ r1.body = r2.body :=
 by
   constructor
   intro h
@@ -65,13 +70,14 @@ end basic
 -- grounding
 
 section grounding
-variable {τ: signature} [DecidableEq τ.vars]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
 
 @[ext]
-structure groundAtom (τ: signature) where
+structure groundAtom (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] where
   symbol: τ.relationSymbols
   atom_terms: List (τ.constants )
   term_length: atom_terms.length = τ.relationArity symbol
+  deriving DecidableEq
 
 lemma listMapPreservesTermLength (ga: groundAtom τ): (List.map term.constant ga.atom_terms).length = τ.relationArity ga.symbol :=
 by
@@ -91,8 +97,7 @@ by
   apply left
   rw [right]
 
-
-def groundAtom.toAtom {τ:signature} (ga: groundAtom τ): atom τ:= {symbol:=ga.symbol, atom_terms:= List.map term.constant ga.atom_terms,term_length:= listMapPreservesTermLength ga}
+def groundAtom.toAtom (ga: groundAtom τ): atom τ:= {symbol:=ga.symbol, atom_terms:= List.map term.constant ga.atom_terms,term_length:= listMapPreservesTermLength ga}
 
 lemma listMapInjectiveEquality {A B: Type} (l1 l2: List A) (f: A → B)(inj: Function.Injective f): l1 = l2 ↔ List.map f l1 = List.map f l2 :=
 by
@@ -253,9 +258,10 @@ by
 
 -- ext for groundRuleEquality
 @[ext]
-structure groundRule (τ: signature) where
+structure groundRule (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] where
   head: groundAtom τ
   body: List (groundAtom τ)
+  deriving DecidableEq
 
 def groundRule.toRule (r: groundRule τ): rule τ := {head:= r.head.toAtom, body := List.map groundAtom.toAtom r.body}
 
@@ -292,12 +298,11 @@ by
   intro h
   simp at h
   rcases h with ⟨head_eq, body_eq⟩
-  have inj_toAtom: Function.Injective groundAtom.toAtom
+  have inj_toAtom: Function.Injective (groundAtom.toAtom (τ:= τ))
   unfold Function.Injective
   intros a1 a2 h
   rw [groundAtomToAtomEquality]
   apply h
-  exact τ
   constructor
   unfold Function.Injective at inj_toAtom
   apply inj_toAtom head_eq
@@ -410,7 +415,7 @@ def groundProgram (P: program τ) := {r: groundRule τ | ∃ (r': rule τ) (g: g
 
 end grounding
 section substitutions
-variable {τ: signature}
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
 
 def substitution (τ: signature):= τ.vars → Option (τ.constants)
 
@@ -822,14 +827,14 @@ by
 
 end substitutions
 section semantics
-variable {τ:signature} [DecidableEq τ.vars]
+variable {τ:signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
 
-class database (τ: signature):=
-  (contains: groundAtom τ → Prop)
+class database (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]:=
+  (contains: groundAtom τ → Bool)
 
-abbrev interpretation (τ: signature) := Set (groundAtom τ)
+abbrev interpretation (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] := Set (groundAtom τ)
 
-inductive proofTree (τ: signature)
+inductive proofTree (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
 | node: (groundAtom τ) → List (proofTree τ) →  proofTree τ
 
 def member (t1 t2: proofTree τ): Prop :=

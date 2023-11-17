@@ -1,7 +1,7 @@
 import CertifyingDatalog.Datalog
 
 section term_matching
-variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars]
+variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
 
 def extend (s: substitution τ) (v: τ.vars) (c: τ.constants) : substitution τ := fun x => if x = v then Option.some c else s x
 
@@ -208,7 +208,7 @@ by
 end term_matching
 
 section atom_matching
-variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
+variable {τ: signature} [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
 
 def matchTermList (s: substitution τ) (l1: List (term τ)) (l2: List (τ.constants)): Option (substitution τ) :=
   match l1 with
