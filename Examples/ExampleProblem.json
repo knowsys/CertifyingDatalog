@@ -1,0 +1,6 @@
+{"varList": ["v"],
+ "trees": [{"node": {"label": "label", "children": []}}],
+ "relationList": [["R", 2], ["T", 3]],
+ "model": [],
+ "constList": ["a"]
+}
