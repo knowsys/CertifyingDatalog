@@ -18,36 +18,6 @@ def tokenizeHelper (s: List Char) (currToken: String) (tokens: List String): Lis
 
 def tokenize (s: String): List String := tokenizeHelper s.data "" List.nil
 
-inductive Tree
-| node (label: String) (children: List Tree): Tree
-deriving Repr, Lean.ToJson, Lean.FromJson
-
-structure parsingResult where
-  (constList: List String)
-  (varList: List String)
-  (relationList: List (String × Nat))
-  (model: List String)
-  (trees: List Tree)
-deriving Lean.FromJson, Lean.ToJson, Repr
-
-#eval Lean.toJson ({constList := ["a"],varList:= ["v"], relationList := [⟨"R", 2⟩, ⟨"T", 3⟩], model := [], trees := [Tree.node "label" []] }: parsingResult)
-
-def extendFunctionFromList {A B: Type} [DecidableEq A] (l1 l2: List (A × B)) (f: {x: A // x ∈ Prod.fst (List.unzip l2) } → B) : {x: A // x ∈ Prod.fst (List.unzip l2) } → B :=
-  match l1 with
-  | List.nil => f
-  | (a,b)::tl => extendFunctionFromList tl l2 (fun (x: { y // y ∈ Prod.fst (List.unzip l2) })  => if (x.val = a )then b else f x)
-
-def signatureFromLists (constList varList: List String) (relationList: List (String × Nat)): signature :=
-{constants := {x: String // x ∈ constList}, vars := {x: String // x ∈ varList}, relationSymbols := {x: String // x ∈ Prod.fst (List.unzip relationList) }, relationArity := extendFunctionFromList relationList relationList (fun _ => 0)}
-
-instance (constList varList: List String) (relationList: List (String × Nat)): DecidableEq (signatureFromLists constList varList relationList).constants := Subtype.instDecidableEqSubtype
-
-instance (constList varList: List String) (relationList: List (String × Nat)): DecidableEq (signatureFromLists constList varList relationList).vars := Subtype.instDecidableEqSubtype
-
-instance (constList varList: List String) (relationList: List (String × Nat)): DecidableEq (signatureFromLists constList varList relationList).relationSymbols := Subtype.instDecidableEqSubtype
-
-#eval List.splitOn ":-" (tokenize "C(?Y) :- B(?VariableThatIsNotNeeded, ?Y) .")
-
 def List.map_except.go {A B C: Type} (f: A → Except B C) (l: List A) (curr: Except B (List C)): Except B (List C) :=
   match l with
   | nil => curr
@@ -63,34 +33,189 @@ def List.map_except.go {A B C: Type} (f: A → Except B C) (l: List A) (curr: Ex
 
 def List.map_except {A B C: Type} (f: A → Except B C) (l: List A): Except B (List C) := List.map_except.go f l (Except.ok [])
 
-def parseConstantFromString (constList varList: List String) (relationList: List (String × Nat)) (symbol: String): Except String ((signatureFromLists constList varList relationList).constants) :=
-  if p:symbol ∈ constList
-  then Except.ok (Subtype.mk symbol p)
-  else Except.error (symbol ++ " is not a constant symbol")
+def listStringToString (l: List String): String :=
+  List.foldl (fun (x y: String) => x ++ "," ++ y) "" l
 
-def parseVariableFromString (constList varList: List String) (relationList: List (String × Nat)) (symbol: String): Except String ((signatureFromLists constList varList relationList).vars) :=
-  if p:symbol ∈ varList
-  then Except.ok (Subtype.mk symbol p)
-  else Except.error (symbol ++ " is not a variable symbol")
+structure mockAtom where
+  symbol: String
+  terms: List (String)
+deriving Repr, DecidableEq
 
-def parseTermFromString (constList varList: List String) (relationList: List (String × Nat)) (symbol: String): Except String (term (signatureFromLists constList varList relationList)) :=
-  match parseConstantFromString constList varList relationList symbol with
-  | Except.ok c => Except.ok (term.constant c)
-  | Except.error _ =>
-    match parseVariableFromString constList varList relationList symbol with
-    | Except.ok v => Except.ok (term.variableDL v)
-    | Except.error _ => Except.error (symbol ++ " is neither a variable nor a constant symbol")
+def mockAtom.toString (ma: mockAtom) := ma.symbol ++ "(" ++ (listStringToString ma.terms) ++ ")"
 
-def parseGroundAtomFromStack (constList varList: List String) (relationList: List (String × Nat)) (stack: List String): Except String (groundAtom (signatureFromLists constList varList relationList)) :=
+structure mockRule where
+  head: mockAtom
+  body: List (mockAtom)
+deriving Repr, DecidableEq
+
+def mockRule.toString (mr: mockRule) := mr.head.toString ++ " :- " ++ listStringToString (List.map mockAtom.toString mr.body)
+
+def findArity (symbol: String) (relationList: List (String × Nat)): Option Nat :=
+  match relationList with
+  | [] => Option.none
+  | (a,b)::tl =>
+    if symbol == a
+    then Option.some b
+    else findArity symbol tl
+
+def parseMockAtomFromStack (relationList: List (String × Nat)) (stack: List String): Except String (mockAtom × List (String × Nat)) :=
+  match stack with
+  | [] => Except.error "Can't parse an atom from an empty stack"
+  | hd::tl =>
+    let arity:= findArity hd relationList
+    match arity with
+    | Option.some a =>
+      if tl.length == a
+      then Except.ok ({symbol:= hd, terms:= tl}, relationList)
+      else Except.error ("Relation symbol " ++ hd ++ "occurs multiple times with different arity")
+    | Option.none =>
+      Except.ok ({symbol:= hd, terms:= tl}, relationList.insert (hd, tl.length))
+
+def parseMockAtom.go (relationList: List (String × Nat)) (l: List String) (stack: List String): Except String (mockAtom × List (String × Nat)) :=
+  match l with
+  | [] => Except.error "No closing bracket"
+  | hd::tl =>
+    if hd == ")"
+    then
+      if tl.isEmpty
+      then parseMockAtomFromStack relationList stack
+      else Except.error "Symbols after closing bracket"
+    else
+      if hd == "("
+      then parseMockAtom.go relationList tl stack
+      else parseMockAtom.go relationList tl (stack.insert hd)
+
+def parseMockAtom (relationList: List (String × Nat)) (l: List String): Except String (mockAtom × List (String × Nat)) :=
+  match parseMockAtom.go relationList l [] with
+  | Except.ok x => Except.ok x
+  | Except.error msg => Except.error ("Error parsing" ++ (List.foldl (fun (x y: String) => x ++ y) "" l) ++ msg)
+
+
+def parseMockAtomList.go (relationList: List (String × Nat)) (l: List String) (stack: List String) (curr: List mockAtom): Except String (List mockAtom × List (String × Nat)) :=
+  match l with
+  | [] => Except.error "No closing bracket"
+  | hd :: tl =>
+    if hd == ")"
+    then
+      match parseMockAtomFromStack relationList stack with
+      | Except.error msg => Except.error msg
+      | Except.ok (atom, relationList') =>
+        parseMockAtomList.go relationList' tl [] (curr.insert atom)
+    else
+      if hd == "("
+      then parseMockAtomList.go relationList tl stack curr
+      else parseMockAtomList.go relationList tl stack curr
+
+def parseMockAtomList (relationList: List (String × Nat)) (l: List String): Except String (List mockAtom × List (String × Nat)) := parseMockAtomList.go relationList l [] []
+
+def parseMockRule (relationList: List (String × Nat)) (l: List String): Except String (mockRule × List (String × Nat )) :=
+  match l with
+  | [] => Except.error "Cannot parse a rule from a empty String"
+  | hd::tl =>
+  let splitResult := List.splitOn ":-" (hd::tl)
+    if h: splitResult.length = 1
+    then
+      have p: 0 < splitResult.length := by
+        simp [h]
+      match parseMockAtom relationList (splitResult.get (Fin.mk 0 p)) with
+      | Except.error msg => Except.error msg
+      | Except.ok (atom, relationList') =>
+        Except.ok ({head:= atom, body:= []}, relationList')
+    else
+      if h:splitResult.length = 2
+      then
+        have p: 0 < splitResult.length := by
+          simp [h]
+        have q: 1 < splitResult.length := by
+          simp [h]
+        match parseMockAtom relationList (splitResult.get (Fin.mk 0 p)) with
+        | Except.error msg => Except.error msg
+        | Except.ok (head, relationList') =>
+          match parseMockAtomList relationList' (splitResult.get (Fin.mk 1 q)) with
+          | Except.error msg => Except.error msg
+          | Except.ok (body, relationList'') =>
+            Except.ok ({head:= head, body:= body}, relationList'')
+      else Except.error "Too many occurences of :-"
+
+def extendFunctionFromList {A B: Type} [DecidableEq A] (l1 l2: List (A × B)) (f: {x: A // x ∈ Prod.fst (List.unzip l2) } → B) : {x: A // x ∈ Prod.fst (List.unzip l2) } → B :=
+  match l1 with
+  | List.nil => f
+  | (a,b)::tl => extendFunctionFromList tl l2 (fun (x: { y // y ∈ Prod.fst (List.unzip l2) })  => if (x.val = a )then b else f x)
+
+def parsingSignature (relationList: List (String × Nat )): signature := {constants:= {x: String // ¬ x.startsWith "?"}, vars := {x: String // x.startsWith "?"}, relationSymbols := {x: String // x ∈ Prod.fst (List.unzip relationList)}, relationArity := extendFunctionFromList relationList relationList (fun _ => 0)}
+
+instance (relationList: List (String × Nat )): DecidableEq (parsingSignature relationList).constants := Subtype.instDecidableEqSubtype
+
+instance (relationList: List (String × Nat )): DecidableEq (parsingSignature relationList).vars := Subtype.instDecidableEqSubtype
+
+instance (relationList: List (String × Nat )): DecidableEq (parsingSignature relationList).relationSymbols := Subtype.instDecidableEqSubtype
+
+def parseConstantFromString (relationList: List (String × Nat)) (s: String): Except String (parsingSignature relationList).constants :=
+  if p: s.startsWith "?"
+  then Except.error "Constants are not allowed to start with a ?"
+  else Except.ok (Subtype.mk s p)
+
+def parseTermFromString (relationList: List (String × Nat)) (s: String): term (parsingSignature relationList) :=
+  if p: s.startsWith "?"
+  then (term.variableDL (Subtype.mk s p))
+  else (term.constant (Subtype.mk s p))
+
+def mockAtom.toAtom (ma: mockAtom) (relationList: List (String × Nat)): Except String (atom (parsingSignature relationList)) :=
+  if p: ma.symbol ∈ Prod.fst (List.unzip relationList)
+  then
+    if h: (parsingSignature relationList).relationArity (Subtype.mk ma.symbol p) = ma.terms.length
+    then
+      have h': List.length (List.map (parseTermFromString relationList) ma.terms) = signature.relationArity (parsingSignature relationList) { val := ma.symbol, property := p } := by
+        rw [List.length_map, ← h]
+      Except.ok {symbol := (Subtype.mk ma.symbol p), atom_terms := List.map (parseTermFromString relationList) ma.terms, term_length := h' }
+    else
+      Except.error ("Number of atom terms does not match arity for " ++ ma.toString)
+  else
+    Except.error ("Unknown symbol" ++ ma.symbol)
+
+
+def mockRule.toRule (mr: mockRule) (relationList: List (String × Nat)): Except String (rule (parsingSignature relationList)) :=
+  match mr.head.toAtom  relationList with
+  | Except.error msg => Except.error ("Error parsing " ++ mr.toString ++ " -- " ++ msg)
+  | Except.ok head =>
+    match List.map_except (fun x => mockAtom.toAtom x relationList) mr.body with
+    | Except.error msg => Except.error ("Error parsing " ++ mr.toString ++ " -- " ++ msg)
+    | Except.ok body => Except.ok {head:= head, body:= body}
+
+
+def parseMockProgram.go (relationList: List (String × Nat)) (l: List String) (currProgram: List mockRule): Except String ((List mockRule) × List (String × Nat)) :=
+  match l with
+  | [] => Except.ok (currProgram, relationList)
+  | hd::tl =>
+    -- ignore empty lines or declarations
+    if hd.startsWith "@" ∨ hd = ""
+    then parseMockProgram.go relationList tl currProgram
+    else
+      match parseMockRule relationList (tokenize hd) with
+      | Except.error msg => Except.error ("Error parsing " ++ hd ++ " -- " ++ msg)
+      | Except.ok (r, relationList') => parseMockProgram.go relationList' tl (currProgram.insert r)
+
+def parseMockProgram (l: List String): Except String ((List mockRule) × List (String × Nat)) := parseMockProgram.go [] l []
+
+inductive Tree
+| node (label: String) (children: List Tree): Tree
+deriving Repr, Lean.ToJson, Lean.FromJson
+
+structure parsingResult where
+  (model: List String)
+  (trees: List Tree)
+deriving Lean.FromJson, Lean.ToJson, Repr
+
+def parseGroundAtomFromStack (relationList: List (String × Nat)) (stack: List String): Except String (groundAtom (parsingSignature relationList)) :=
   match stack with
   | List.nil => Except.error "Cannot parse an atom from an empty stack"
   | hd::tl =>
     if h:hd ∈ Prod.fst (List.unzip relationList)
     then
-      let terms := List.map_except (fun x => parseConstantFromString constList varList relationList x) tl
+      let terms := List.map_except (fun x => parseConstantFromString relationList x) tl
       match terms with
       | Except.ok l =>
-        if p: l.length = (signatureFromLists constList varList relationList).relationArity (Subtype.mk hd h)
+        if p: l.length = (parsingSignature relationList).relationArity (Subtype.mk hd h)
         then
           Except.ok (groundAtom.mk (Subtype.mk hd h) l p)
         else Except.error "relation arity does not match"
@@ -98,116 +223,27 @@ def parseGroundAtomFromStack (constList varList: List String) (relationList: Lis
     else Except.error (hd ++ " is not a relation symbol")
 
 
-def parseGroundAtom.go (constList varList: List String) (relationList: List (String × Nat)) (l: List String) (stack: List String): Except String (groundAtom (signatureFromLists constList varList relationList)) :=
+def parseGroundAtom.go (relationList: List (String × Nat)) (l: List String) (stack: List String): Except String (groundAtom (parsingSignature relationList)) :=
   match l with
   | List.nil => Except.error "No closing bracket"
   | hd::tl =>
     if hd == "("
-    then parseGroundAtom.go constList varList relationList tl stack
+    then parseGroundAtom.go relationList tl stack
     else
       if hd == ")"
       then  if tl.isEmpty
-            then parseGroundAtomFromStack constList varList relationList stack
+            then parseGroundAtomFromStack  relationList stack
             else Except.error "Symbols after the closing bracket when parsing atom"
       else
-        parseGroundAtom.go constList varList relationList tl (stack.append [hd])
+        parseGroundAtom.go relationList tl (stack.append [hd])
 
-def parseGroundAtom (constList varList: List String) (relationList: List (String × Nat)) (l: List String): Except String (groundAtom (signatureFromLists constList varList relationList)) := parseGroundAtom.go constList varList relationList l []
-
-def parseAtomFromStack (constList varList: List String) (relationList: List (String × Nat)) (stack: List String): Except String (atom (signatureFromLists constList varList relationList)) :=
-  match stack with
-  | List.nil => Except.error "Cannot parse an atom from an empty stack"
-  | hd::tl =>
-    if h:hd ∈ Prod.fst (List.unzip relationList)
-    then
-      let terms := List.map_except (fun x => parseTermFromString constList varList relationList x) tl
-      match terms with
-      | Except.ok l =>
-        if p: l.length = (signatureFromLists constList varList relationList).relationArity (Subtype.mk hd h)
-        then
-          Except.ok (atom.mk (Subtype.mk hd h) l p)
-        else Except.error "relation arity does not match"
-      | Except.error msg => Except.error msg
-    else Except.error (hd ++ " is not a relation symbol")
+def parseGroundAtom (relationList: List (String × Nat)) (l: List String): Except String (groundAtom (parsingSignature relationList)) := parseGroundAtom.go relationList l []
 
 
-def parseAtom.go (constList varList: List String) (relationList: List (String × Nat)) (l: List String) (stack: List String): Except String (atom (signatureFromLists constList varList relationList)) :=
-  match l with
-  | List.nil => Except.error "No closing bracket"
-  | hd::tl =>
-    if hd == "("
-    then parseGroundAtom.go constList varList relationList tl stack
-    else
-      if hd == ")"
-      then  if tl.isEmpty
-            then parseAtomFromStack constList varList relationList stack
-            else Except.error "Symbols after the closing bracket when parsing atom"
-      else
-        parseGroundAtom.go constList varList relationList tl (stack.append [hd])
-
-def parseAtom (constList varList: List String) (relationList: List (String × Nat)) (l: List String): Except String (atom (signatureFromLists constList varList relationList)) := parseAtom.go constList varList relationList l []
-
-def parseAtomList.go (constList varList: List String) (relationList: List (String × Nat)) (l: List String) (curr: List (atom (signatureFromLists constList varList relationList) )) (stack: List String): Except String (List (atom (signatureFromLists constList varList relationList))) :=
-  match l with
-  | List.nil =>
-    if stack.isEmpty
-    then Except.ok curr
-    else Except.error "no closing bracket for "
-  | List.cons hd tl =>
-     if hd == "("
-    then parseAtomList.go constList varList relationList tl curr stack
-    else
-      if hd == ")"
-      then
-        let atom := parseAtomFromStack constList varList relationList stack
-        if tl = ["."]
-        then
-          match atom with
-          | Except.ok a => Except.ok (curr ++ [a])
-          | Except.error msg => Except.error msg
-        else
-          match atom with
-          | Except.ok a => parseAtomList.go constList varList relationList tl (curr ++ [a]) []
-          | Except.error msg => Except.error msg
-      else
-        parseAtomList.go constList varList relationList tl curr (stack.append [hd])
-
-def parseAtomList (constList varList: List String) (relationList: List (String × Nat)) (l: List String): Except String (List (atom (signatureFromLists constList varList relationList))) := parseAtomList.go constList varList relationList l [] []
-
-def parseRule (constList varList: List String) (relationList: List (String × Nat)) (l: List String): Except String (rule (signatureFromLists constList varList relationList)) :=
-  let splitResult := List.splitOn ":-" l
-  if h: splitResult.length == 1
-  then
-    have p: 0 < splitResult.length := by
-      simp at h
-      rw [h]
-      simp
-    match parseAtom constList varList relationList (splitResult.get (Fin.mk 0 p)) with
-    | Except.ok a => Except.ok (rule.mk a [])
-    | Except.error msg => Except.error msg
-  else
-    if h: splitResult.length == 2
-    then
-      have p: 0 < splitResult.length := by
-        simp at h
-        rw [h]
-        simp
-      have q: 1 < splitResult.length := by
-        simp at h
-        rw [h]
-        simp
-      match parseAtom constList varList relationList (splitResult.get (Fin.mk 0 p)) with
-      | Except.ok head =>
-        match parseAtomList constList varList relationList (splitResult.get (Fin.mk 1 q)) with
-        | Except.ok body => Except.ok (rule.mk head body)
-        | Except.error msg => Except.error msg
-      | Except.error msg => Except.error msg
-    else Except.error " has too many occurences of :-"
-
-def proofTreeFromTree (constList varList: List String) (relationList: List (String × Nat)) (t: Tree) : Except String (proofTree (signatureFromLists constList varList relationList)) :=
+def proofTreeFromTree (constList varList: List String) (relationList: List (String × Nat)) (t: Tree) : Except String (proofTree (parsingSignature relationList)) :=
   match t with
   | Tree.node label children =>
-    match parseGroundAtom constList varList relationList (tokenize label) with
+    match parseGroundAtom relationList (tokenize label) with
     | Except.ok a =>
       let s:= List.map_except (fun ⟨x, _h⟩  => proofTreeFromTree constList varList relationList x) children.attach
       match s with

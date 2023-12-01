@@ -4,3 +4,4 @@ import «CertifyingDatalog».Datalog
 import «CertifyingDatalog».Parsing
 import «CertifyingDatalog».TreeValidation
 import «CertifyingDatalog».Unification
+import «CertifyingDatalog».Database
