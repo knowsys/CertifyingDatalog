@@ -203,8 +203,6 @@ def parseRule (constList varList: List String) (relationList: List (String × Na
         | Except.error msg => Except.error msg
       | Except.error msg => Except.error msg
     else Except.error " has too many occurences of :-"
-#check [("A", 2), ("B", 2)]
-#eval parseRule [] ["?Y", "?X"] [] (tokenize "B(?Y, ?X) :- A(?X, ?Y) .")
 
 def proofTreeFromTree (constList varList: List String) (relationList: List (String × Nat)) (t: Tree) : Except String (proofTree (signatureFromLists constList varList relationList)) :=
   match t with
