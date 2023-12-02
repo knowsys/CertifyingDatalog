@@ -2,21 +2,29 @@ import Std.Data.List.Basic
 import CertifyingDatalog.Datalog
 import Lean.Data.Json.FromToJson
 
-def tokenizeHelper (s: List Char) (currToken: String) (tokens: List String): List String :=
+def tokenizeHelper (s: List Char) (currToken: Option String) (tokens: List String): List String :=
   match s with
-  | List.nil => tokens.append [currToken]
+  | List.nil =>
+    match currToken with
+    | Option.none => tokens
+    | Option.some token => tokens.concat token
   | List.cons hd tl =>
     if (hd ∈ ['(', ')'])
-      then  if currToken == ""
-            then tokenizeHelper tl "" (tokens.append [hd.toString])
-            else tokenizeHelper tl "" (tokens.append [currToken, hd.toString])
+      then
+        match currToken with
+        | Option.none => tokenizeHelper tl Option.none (tokens.append [hd.toString])
+        | Option.some token => tokenizeHelper tl Option.none (tokens.append [token, hd.toString])
       else  if hd ∈ [' ', ',']
-            then  if currToken == ""
-                  then tokenizeHelper tl "" tokens
-                  else tokenizeHelper tl "" (tokens.append [currToken])
-            else tokenizeHelper tl (currToken.push hd) tokens
+            then
+               match currToken with
+                | Option.none => tokenizeHelper tl Option.none tokens
+                | Option.some token => tokenizeHelper tl Option.none (tokens.append [token])
+            else
+              match currToken with
+              | Option.none => tokenizeHelper tl hd.toString tokens
+              | Option.some token => tokenizeHelper tl (token.push hd) tokens
 
-def tokenize (s: String): List String := tokenizeHelper s.data "" List.nil
+def tokenize (s: String): List String := tokenizeHelper s.data Option.none List.nil
 
 def List.map_except.go {A B C: Type} (f: A → Except B C) (l: List A) (curr: Except B (List C)): Except B (List C) :=
   match l with
@@ -79,11 +87,11 @@ def parseMockAtom.go (relationList: List (String × Nat)) (l: List String) (stac
     then
       if tl.isEmpty
       then parseMockAtomFromStack relationList stack
-      else Except.error "Symbols after closing bracket"
+      else Except.error ("Symbols after closing bracket" ++ listStringToString tl)
     else
       if hd == "("
       then parseMockAtom.go relationList tl stack
-      else parseMockAtom.go relationList tl (stack.insert hd)
+      else parseMockAtom.go relationList tl (stack.concat hd)
 
 def parseMockAtom (relationList: List (String × Nat)) (l: List String): Except String (mockAtom × List (String × Nat)) :=
   match parseMockAtom.go relationList l [] with
@@ -91,20 +99,24 @@ def parseMockAtom (relationList: List (String × Nat)) (l: List String): Except 
   | Except.error msg => Except.error ("Error parsing" ++ (List.foldl (fun (x y: String) => x ++ y) "" l) ++ msg)
 
 
+
 def parseMockAtomList.go (relationList: List (String × Nat)) (l: List String) (stack: List String) (curr: List mockAtom): Except String (List mockAtom × List (String × Nat)) :=
   match l with
-  | [] => Except.error "No closing bracket"
+  | [] =>
+    if stack.isEmpty ∨ stack == ["."]
+    then Except.ok (curr, relationList)
+    else Except.error "No closing bracket"
   | hd :: tl =>
     if hd == ")"
     then
       match parseMockAtomFromStack relationList stack with
       | Except.error msg => Except.error msg
       | Except.ok (atom, relationList') =>
-        parseMockAtomList.go relationList' tl [] (curr.insert atom)
+        parseMockAtomList.go relationList' tl [] (curr.concat atom)
     else
       if hd == "("
       then parseMockAtomList.go relationList tl stack curr
-      else parseMockAtomList.go relationList tl stack curr
+      else parseMockAtomList.go relationList tl (stack.concat hd) curr
 
 def parseMockAtomList (relationList: List (String × Nat)) (l: List String): Except String (List mockAtom × List (String × Nat)) := parseMockAtomList.go relationList l [] []
 
@@ -193,18 +205,27 @@ def parseMockProgram.go (relationList: List (String × Nat)) (l: List String) (c
     else
       match parseMockRule relationList (tokenize hd) with
       | Except.error msg => Except.error ("Error parsing " ++ hd ++ " -- " ++ msg)
-      | Except.ok (r, relationList') => parseMockProgram.go relationList' tl (currProgram.insert r)
+      | Except.ok (r, relationList') => parseMockProgram.go relationList' tl (currProgram.concat r)
 
 def parseMockProgram (l: List String): Except String ((List mockRule) × List (String × Nat)) := parseMockProgram.go [] l []
+
+def mockProgramToProgram.go (p: List mockRule) (relationList: List (String × Nat)) (curr: List (rule (parsingSignature relationList))): Except String (List (rule (parsingSignature relationList))) :=
+  match p with
+  | [] => Except.ok curr
+  | hd::tl =>
+    match hd.toRule relationList with
+    | Except.error msg => Except.error msg
+    | Except.ok r => mockProgramToProgram.go tl relationList (curr.concat r)
+
+def mockProgramToProgram (p: List mockRule) (relationList: List (String × Nat)): Except String (List (rule (parsingSignature relationList))) :=
+  mockProgramToProgram.go p relationList []
+
 
 inductive Tree
 | node (label: String) (children: List Tree): Tree
 deriving Repr, Lean.ToJson, Lean.FromJson
 
-structure parsingResult where
-  (model: List String)
-  (trees: List Tree)
-deriving Lean.FromJson, Lean.ToJson, Repr
+
 
 def parseGroundAtomFromStack (relationList: List (String × Nat)) (stack: List String): Except String (groundAtom (parsingSignature relationList)) :=
   match stack with
@@ -218,7 +239,7 @@ def parseGroundAtomFromStack (relationList: List (String × Nat)) (stack: List S
         if p: l.length = (parsingSignature relationList).relationArity (Subtype.mk hd h)
         then
           Except.ok (groundAtom.mk (Subtype.mk hd h) l p)
-        else Except.error "relation arity does not match"
+        else Except.error ("relation arity does not match. Terms: " ++ listStringToString tl)
       | Except.error msg => Except.error msg
     else Except.error (hd ++ " is not a relation symbol")
 
@@ -240,18 +261,18 @@ def parseGroundAtom.go (relationList: List (String × Nat)) (l: List String) (st
 def parseGroundAtom (relationList: List (String × Nat)) (l: List String): Except String (groundAtom (parsingSignature relationList)) := parseGroundAtom.go relationList l []
 
 
-def proofTreeFromTree (constList varList: List String) (relationList: List (String × Nat)) (t: Tree) : Except String (proofTree (parsingSignature relationList)) :=
+def proofTreeFromTree (relationList: List (String × Nat)) (t: Tree) : Except String (proofTree (parsingSignature relationList)) :=
   match t with
   | Tree.node label children =>
     match parseGroundAtom relationList (tokenize label) with
     | Except.ok a =>
-      let s:= List.map_except (fun ⟨x, _h⟩  => proofTreeFromTree constList varList relationList x) children.attach
+      let s:= List.map_except (fun ⟨x, _h⟩  => proofTreeFromTree  relationList x) children.attach
       match s with
       | Except.ok l =>
         Except.ok (proofTree.node a l)
       | Except.error msg => Except.error msg
     | Except.error msg => Except.error msg
-termination_by proofTreeFromTree constList varList relationList t => sizeOf t
+termination_by proofTreeFromTree relationList t => sizeOf t
 decreasing_by
   simp_wf
   decreasing_trivial
