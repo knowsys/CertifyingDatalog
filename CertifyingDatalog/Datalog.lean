@@ -159,6 +159,20 @@ def collectResultsToFinset {A: Type} (f: A → Set τ.vars): List A → Set τ.v
 | [] => ∅
 | hd::tl => (f hd) ∪ (collectResultsToFinset f tl)
 
+lemma collectResultsToFinsetSemantics {A: Type} (f: A → Set τ.vars) (l: List A): collectResultsToFinset f l = {v: τ.vars| ∃ (a:A),a ∈ l ∧  v ∈ f a} :=
+by
+  induction l with
+  | nil =>
+    unfold collectResultsToFinset
+    simp
+  | cons hd tl ih =>
+    unfold collectResultsToFinset
+    rw [Set.ext_iff]
+    intro v
+    simp
+    rw [ih]
+    simp
+
 lemma collectResultsToFinsetMemberIffListMember {A: Type} (f: A → Set τ.vars) (v: τ.vars) (l: List A): v ∈ collectResultsToFinset f l ↔ ∃ (a:A), a ∈ l ∧ v ∈ f a :=
 by
   induction l with
