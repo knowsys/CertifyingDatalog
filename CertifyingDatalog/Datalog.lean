@@ -1,5 +1,6 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.List.Defs
+import CertifyingDatalog.Basic
 
 -- basic definitions
 structure signature :=
@@ -401,22 +402,17 @@ lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariable
 
 def ruleGrounding (r: rule τ) (g:grounding τ): groundRule τ := {head:=atomGrounding g r.head, body:= List.map (atomGrounding g) r.body }
 
-def listToSet {A: Type} (l:List A): Set A :=
-  match l with
-  | [] => ∅
-  | (hd::tl) => {hd} ∪ listToSet tl
-
-def groundRuleBodySet (r: groundRule τ): Set (groundAtom τ) := listToSet r.body
+def groundRuleBodySet (r: groundRule τ): Set (groundAtom τ) := List.toSet r.body
 
 lemma groundRuleBodySet_iff_groundRuleBody (a: groundAtom τ) (r: groundRule τ): a ∈ r.body ↔ a ∈ groundRuleBodySet r :=
 by
   unfold groundRuleBodySet
   induction r.body with
   | nil =>
-    unfold listToSet
+    unfold List.toSet
     simp
   | cons hd tl ih =>
-    unfold listToSet
+    unfold List.toSet
     simp
     rw [ih]
 
