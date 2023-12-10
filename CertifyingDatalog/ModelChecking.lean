@@ -142,7 +142,7 @@ by
     unfold termVariables at h
     simp at h
 
-lemma atomWithoutVariablesToGroundAtomToAtom (a: atom τ) (h: atomVariables a = ∅): (atomWithoutVariablesToGroundAtom a h).toAtom = a :=
+lemma toAtomOfatomWithoutVariablesIsSelf (a: atom τ) (h: atomVariables a = ∅): (atomWithoutVariablesToGroundAtom a h).toAtom = a :=
 by
   cases a with
   | mk symbol terms term_length =>
@@ -390,7 +390,7 @@ by
 
 
 def groundingStep (s: substitution τ) (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (hd: atom τ) (tl: List (atom τ)) (noVars: atomVariables (applySubstitutionAtom s hd) = ∅ ) (mem: atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars ∈ i): partialGroundRule τ i.toSet :=
-  have h: ∀ (ga : groundAtom τ), ga ∈ List.concat pgr.groundedBody (atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars) → ga ∈ List.toSet i := by
+  have h: ∀ (ga : groundAtom τ), ga ∈ pgr.groundedBody ++ [atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars] → ga ∈ List.toSet i := by
     intros ga
     simp
     intro h'
@@ -401,7 +401,7 @@ def groundingStep (s: substitution τ) (i: List (groundAtom τ)) (pgr: partialGr
       rw [ga_new]
       rw [← List.toSet_mem]
       apply mem
-  {head:= applySubstitutionAtom s pgr.head, groundedBody:= List.concat pgr.groundedBody (atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars) , ungroundedBody := List.map (fun x => applySubstitutionAtom s x) tl, members := h}
+  {head:= applySubstitutionAtom s pgr.head, groundedBody:= pgr.groundedBody ++ [atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars] , ungroundedBody := List.map (fun x => applySubstitutionAtom s x) tl, members := h}
 
 def groundingStepPreservesSafety (s: substitution τ) (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (hd: atom τ) (tl: List (atom τ)) (noVars: atomVariables (applySubstitutionAtom s hd) = ∅ ) (mem: atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars ∈ i) (safe: pgr.isSafe) (h: pgr.ungroundedBody = hd::tl ): (groundingStep s i pgr hd tl noVars mem).isSafe := by
   unfold partialGroundRule.isSafe
@@ -476,7 +476,19 @@ by
   unfold atomVariablesEmpty
   apply atomVariablesEmptyGoSemantics
 
-lemma groundingStepGroundAtomExtendMembers (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (hd: groundAtom τ) (mem: hd ∈ i):  ∀ (ga : groundAtom τ), ga ∈ List.concat pgr.groundedBody hd → ga ∈ List.toSet i:= by
+lemma groundingStepGroundAtomExtendMembers (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (hd: groundAtom τ) (mem: hd ∈ i):  ∀ (ga : groundAtom τ), ga ∈ pgr.groundedBody ++ [hd] → ga ∈ List.toSet i:= by
+  intro ga
+  simp
+  intro p
+  cases p with
+  | inl q =>
+    apply pgr.members
+    apply q
+  | inr q =>
+    rw [← List.toSet_mem,q]
+    apply mem
+
+lemma groundingStepGroundAtomExtendMembers_append (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (hd: groundAtom τ) (mem: hd ∈ i):  ∀ (ga : groundAtom τ), ga ∈ (pgr.groundedBody ++ [hd]) → ga ∈ List.toSet i:= by
   intro ga
   simp
   intro p
@@ -489,7 +501,7 @@ lemma groundingStepGroundAtomExtendMembers (i: List (groundAtom τ)) (pgr: parti
     apply mem
 
 def groundingStepGroundAtom (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (hd: groundAtom τ) (tl: List (atom τ)) (mem: hd ∈ i): partialGroundRule τ i.toSet :=
-  {head:= pgr.head, groundedBody := pgr.groundedBody.concat hd, ungroundedBody := tl, members := groundingStepGroundAtomExtendMembers i pgr hd mem}
+  {head:= pgr.head, groundedBody := pgr.groundedBody ++ [hd], ungroundedBody := tl, members := groundingStepGroundAtomExtendMembers i pgr hd mem}
 
 def groundingStepGroundAtomPreservesSafe (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (hd: groundAtom τ) (tl: List (atom τ)) (mem: hd ∈ i) (safe: pgr.isSafe) (h: pgr.ungroundedBody = hd.toAtom::tl ): (groundingStepGroundAtom i pgr hd tl mem).isSafe :=
 by
@@ -529,7 +541,7 @@ def exploreGrounding (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSe
         rw [atomVariablesEmptySemantics] at h'
         apply h'
       have uBody': pgr.ungroundedBody = (atomWithoutVariablesToGroundAtom hd varsHd).toAtom :: tl := by
-        rw [atomWithoutVariablesToGroundAtomToAtom]
+        rw [toAtomOfatomWithoutVariablesIsSelf]
         apply h
       if p: atomWithoutVariablesToGroundAtom hd varsHd ∈ i
       then
@@ -543,6 +555,16 @@ decreasing_by
   simp_wf
   simp [groundingStep, groundingStepGroundAtom, h]
 
+lemma applyGroundingTermEqtermWithoutVariablesToConstant (t: term τ) (noVars: termVariables t = ∅) (g: grounding τ): termWithoutVariablesToConstant t noVars = applyGroundingTerm' g t := by
+  cases t with
+  | constant c =>
+    unfold termWithoutVariablesToConstant
+    unfold applyGroundingTerm'
+    simp
+  | variableDL v =>
+    exfalso
+    unfold termVariables at noVars
+    simp at noVars
 
 lemma atomGroundingEqAtomWithoutVariablesToGroundAtom (a: atom τ) (noVars: atomVariables a = ∅) (g: grounding τ): atomWithoutVariablesToGroundAtom a noVars = atomGrounding g a := by
   unfold atomWithoutVariablesToGroundAtom
@@ -555,9 +577,8 @@ lemma atomGroundingEqAtomWithoutVariablesToGroundAtom (a: atom τ) (noVars: atom
   rw [List.length_map, List.length_attach] at h1
   rw [List.get_map, List.get_map]
   simp
-  unfold termWithoutVariablesToConstant
-  unfold applyGroundingTerm'
-  simp
+  apply applyGroundingTermEqtermWithoutVariablesToConstant
+
 
 
 lemma atomGroundingIsSelfOnGroundAtom (ga: groundAtom τ) (g: grounding τ): atomGrounding g ga = ga := by
@@ -573,21 +594,290 @@ lemma atomGroundingIsSelfOnGroundAtom (ga: groundAtom τ) (g: grounding τ): ato
   unfold applyGroundingTerm'
   simp
 
-lemma moveAtomWithoutVariablesInPartialGroundRule (i: List (groundAtom τ))(pgr: partialGroundRule τ i.toSet) (hd: atom τ) (tl: List (atom τ)) (h: pgr.ungroundedBody = hd::tl) (hdVars: atomVariables hd = ∅) (hd_i: atomWithoutVariablesToGroundAtom hd hdVars ∈ i): partialGroundRule.toRule pgr = partialGroundRule.toRule (i:= i.toSet) {head := pgr.head, groundedBody := List.concat pgr.groundedBody (atomWithoutVariablesToGroundAtom hd hdVars), ungroundedBody := tl, members := groundingStepGroundAtomExtendMembers i pgr (atomWithoutVariablesToGroundAtom hd hdVars) hd_i} :=
+lemma moveAtomWithoutVariablesInPartialGroundRule (i: List (groundAtom τ))(pgr: partialGroundRule τ i.toSet) (hd: atom τ) (tl: List (atom τ)) (h: pgr.ungroundedBody = hd::tl) (hdVars: atomVariables hd = ∅) (hd_i: atomWithoutVariablesToGroundAtom hd hdVars ∈ i): partialGroundRule.toRule pgr = partialGroundRule.toRule (i:= i.toSet) {head := pgr.head, groundedBody :=  pgr.groundedBody ++ [atomWithoutVariablesToGroundAtom hd hdVars], ungroundedBody := tl, members := groundingStepGroundAtomExtendMembers i pgr (atomWithoutVariablesToGroundAtom hd hdVars) hd_i} :=
 by
-  sorry
+  unfold partialGroundRule.toRule
+  simp
+  rw [h]
+  rw [toAtomOfatomWithoutVariablesIsSelf]
 
-lemma replaceGroundingWithSubstitutionAndGrounding (g: grounding τ) (a: atom τ) (r: rule τ) (mem: a ∈ r.body ): (∀ (g: grounding τ), atomGrounding g a ∈ i →  ruleTrue (ruleGrounding r g) i) ↔ ∀  (s: substitution τ), (∃ (ga: groundAtom τ), ga ∈ i ∧ applySubstitutionAtom s a = ga ∧ ∀ (s': substitution τ), applySubstitutionAtom s' a = ga → s ⊆ s') →  ∀ (g': grounding τ),ruleTrue (ruleGrounding (applySubstitutionRule s r) g') i := by
-  sorry
+lemma moveAtomWithoutVariablesInPartialGroundRule_singleElements (i: List (groundAtom τ))(head: atom τ) (groundedBody: List (groundAtom τ)) (hd: atom τ) (tl: List (atom τ)) (ungroundedBody: List (atom τ)) (members: ∀ (ga: groundAtom τ), ga ∈ groundedBody → ga ∈ List.toSet i) (h:ungroundedBody = hd::tl) (hdVars: atomVariables hd = ∅) (hd_i: atomWithoutVariablesToGroundAtom hd hdVars ∈ i): partialGroundRule.toRule {head:= head, groundedBody:= groundedBody, ungroundedBody:= ungroundedBody, members:= members} = partialGroundRule.toRule (i:= i.toSet) {head := head, groundedBody := groundedBody ++ [atomWithoutVariablesToGroundAtom hd hdVars], ungroundedBody := tl, members := groundingStepGroundAtomExtendMembers_append i {head:= head, groundedBody:= groundedBody, ungroundedBody:= ungroundedBody, members:= members} (atomWithoutVariablesToGroundAtom hd hdVars) hd_i} :=
+by
+  unfold partialGroundRule.toRule
+  simp
+  rw [h]
+  rw [toAtomOfatomWithoutVariablesIsSelf]
+
+def combineSubstitutionGrounding (s: substitution τ) (g: grounding τ): grounding τ := fun x => if h: Option.isSome (s x) then Option.get (s x) h else g x
+
+lemma combineSubstitutionGroundingEquivTerm (t: term τ) (s: substitution τ) (g: grounding τ): applyGroundingTerm' g (applySubstitutionTerm s t) = applyGroundingTerm' (combineSubstitutionGrounding s g) t := by
+  unfold applyGroundingTerm'
+  unfold applySubstitutionTerm
+  cases t with
+  | constant c =>
+    simp
+  | variableDL v =>
+    unfold combineSubstitutionGrounding
+    by_cases p: Option.isSome (s v)
+    simp [p]
+    simp [p]
+
+lemma combineSubstitutionGroundingEquivAtom (a: atom τ) (s: substitution τ) (g: grounding τ): atomGrounding g (applySubstitutionAtom s a) = atomGrounding (combineSubstitutionGrounding s g) a := by
+  unfold atomGrounding
+  unfold applySubstitutionAtom
+  simp
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intro n h1 h2
+  simp [← List.map_map, List.get_map, combineSubstitutionGroundingEquivTerm]
 
 
-lemma swapApplySubstitutionPgrToRule (i: List (groundAtom τ)) (s: substitution τ) (pgr: partialGroundRule τ i.toSet) (hd: atom τ) (tl: List (atom τ)) (varsHd: atomVariables (applySubstitutionAtom s hd) = ∅) (mem: (atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) varsHd) ∈ i) (h: pgr.ungroundedBody = hd::tl): applySubstitutionRule s (pgr.toRule) = partialGroundRule.toRule {head:= applySubstitutionAtom s pgr.head, groundedBody:= List.concat pgr.groundedBody (atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) varsHd), ungroundedBody:= List.map (applySubstitutionAtom s) tl, members:= groundingStepGroundAtomExtendMembers i pgr (atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) varsHd) mem} :=
+lemma combineSubstitutionGroundingEquivRule (r: rule τ) (s: substitution τ) (g: grounding τ): ruleGrounding  (applySubstitutionRule s r) g = ruleGrounding r (combineSubstitutionGrounding s g)  := by
+  unfold ruleGrounding
+  unfold applySubstitutionRule
+  simp [combineSubstitutionGroundingEquivAtom]
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intro n h1 h2
+  simp [← List.map_map, List.get_map, combineSubstitutionGroundingEquivAtom]
+
+def decidableAtomVars.go (l: List (term τ)) (curr: List τ.vars): List τ.vars :=
+  match l with
+  | [] => curr
+  | hd::tl =>
+    match hd with
+    | term.constant _ => decidableAtomVars.go tl curr
+    | term.variableDL v => decidableAtomVars.go tl (curr.insert v)
+
+lemma decidableAtomVarsGoSemantics (l: List (term τ)) (curr: List τ.vars) (v: τ.vars): v ∈ decidableAtomVars.go l curr ↔ v ∈ curr ∨ v ∈ collectResultsToFinset termVariables l := by
+  induction l generalizing curr with
+  | nil =>
+    unfold collectResultsToFinset
+    unfold decidableAtomVars.go
+    simp
+  | cons hd tl ih =>
+    unfold decidableAtomVars.go
+    unfold collectResultsToFinset
+    rw [Set.mem_union, or_comm, or_assoc, or_comm (b:= v ∈ curr)]
+    cases hd with
+    | constant c =>
+      rw [ih]
+      unfold termVariables
+      simp
+    | variableDL w =>
+      specialize ih (List.insert w curr)
+      simp
+      rw [ih]
+      simp
+      have h: v ∈ termVariables (term.variableDL w) ↔ v = w
+      unfold termVariables
+      simp
+      rw [h]
+      rw [or_assoc]
+
+
+def decidableAtomVars (a: atom τ): List (τ.vars) := decidableAtomVars.go a.atom_terms []
+
+lemma inDecidableAtomVarsIffInAtomVariables (a: atom τ) (v: τ.vars): v ∈ atomVariables a ↔ v ∈ decidableAtomVars a := by
+  unfold decidableAtomVars
+  rw [decidableAtomVarsGoSemantics]
+  unfold atomVariables
+  simp
+
+def atomSubOfGrounding (a: atom τ) (g: grounding τ): substitution τ := fun x => if x ∈ decidableAtomVars a then some (g x) else none
+
+lemma atomSubOfGroundingEqOnTerm (a: atom τ) (g: grounding τ) (t: term τ) (mem: t ∈ a.atom_terms): applySubstitutionTerm (atomSubOfGrounding a g) t = term.constant (applyGroundingTerm' g t) := by
+  unfold atomSubOfGrounding
+  unfold applySubstitutionTerm
+  unfold applyGroundingTerm'
+  simp
+  cases t with
+  | constant c =>
+    simp
+  | variableDL v =>
+    simp
+    have v_atomVars: v ∈ decidableAtomVars a
+    rw [← inDecidableAtomVarsIffInAtomVariables]
+    unfold atomVariables
+    rw [collectResultsToFinsetSemantics, Set.mem_setOf]
+    use (term.variableDL v)
+    constructor
+    apply mem
+    unfold termVariables
+    simp
+
+    have h: Option.isSome (if v ∈ decidableAtomVars a then some (g v) else none) = true
+    rw [Option.isSome_iff_exists]
+    use (g v)
+    simp [v_atomVars]
+
+    simp [h]
+    simp [v_atomVars]
+
+
+lemma atomSubOfGroundingEqOnAtom (a: atom τ) (g: grounding τ): applySubstitutionAtom (atomSubOfGrounding a g) a = atomGrounding g a := by
+  unfold applySubstitutionAtom
+  unfold atomGrounding
+  unfold groundAtom.toAtom
+  simp
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intro n h1 h2
+  rw [List.get_map, List.get_map]
+  apply atomSubOfGroundingEqOnTerm
+  simp
+  apply List.get_mem
+
+lemma atomSubOfGroundingGroundingEqGroundingOnTerm (a : atom τ)  (g: grounding τ) (t: term τ): applyGroundingTerm' g (applySubstitutionTerm (atomSubOfGrounding a g) t) = applyGroundingTerm' g t := by
+  unfold applyGroundingTerm'
+  unfold applySubstitutionTerm
+  unfold atomSubOfGrounding
+  cases t with
+  | constant c =>
+    simp
+  | variableDL v =>
+    simp
+    by_cases h: Option.isSome (if v ∈ decidableAtomVars a then some (g v) else none) = true
+    simp [h]
+    by_cases p: v ∈ decidableAtomVars a
+    simp [p]
+    simp [p] at h
+    simp [h]
+
+
+lemma atomSubOfGroundingGroundingEqGroundingOnAtom (a a': atom τ)  (g: grounding τ) : atomGrounding g (applySubstitutionAtom (atomSubOfGrounding a g) a') = atomGrounding g a' := by
+  unfold atomGrounding
+  unfold applySubstitutionAtom
+  simp
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+
+  intro n h1 h2
+  simp [← List.map_map]
+  simp [atomSubOfGroundingGroundingEqGroundingOnTerm]
+
+
+lemma atomSubOfGroundingGroundingEqGroundingOnRule (a: atom τ) (g: grounding τ) (r: rule τ): ruleGrounding (applySubstitutionRule (atomSubOfGrounding a g) r) g = ruleGrounding r g := by
+  unfold ruleGrounding
+  unfold applySubstitutionRule
+  simp
+  constructor
+  apply atomSubOfGroundingGroundingEqGroundingOnAtom
+
+  apply List.ext_get
+  rw [List.length_map, List.length_map]
+  intros n h1 h2
+  rw [List.get_map, List.get_map]
+  simp [atomSubOfGroundingGroundingEqGroundingOnAtom]
+
+lemma equalOfListMapEqual {A B: Type} (l:List A) (f g: A → B) (h: List.map f l = List.map g l) (a: A) (mem: a ∈ l): f a = g a := by
+  induction l with
+  | nil =>
+    simp at mem
+  | cons hd tl ih =>
+    simp at mem
+    simp at h
+    cases mem with
+    | inl p =>
+      rw [← p] at h
+      simp [h]
+    | inr p =>
+      apply ih
+      simp [h]
+      apply p
+
+lemma variableMemberOfcollecResultsIffMemberList (l: List (term τ)) (v: τ.vars): term.variableDL v ∈ l ↔ v ∈ collectResultsToFinset termVariables l := by
+  induction l with
+  | nil =>
+    unfold collectResultsToFinset
+    simp
+  | cons hd tl ih =>
+    unfold collectResultsToFinset
+    simp
+    rw [← ih]
+    unfold termVariables
+    simp
+    cases hd with
+    | constant c =>
+      simp
+    | variableDL w =>
+      simp
+
+
+lemma atomSubOfGroundingIsMinimalForAtom (a: atom τ) (g: grounding τ):
+(∀ (s' : substitution τ), applySubstitutionAtom s' a = groundAtom.toAtom (atomGrounding g a) → atomSubOfGrounding a g ⊆ s') := by
+  intro s' s'_a
+  unfold_projs
+  unfold substitution_subs
+  intro v
+  cases h:(atomSubOfGrounding a g v) with
+  | some c =>
+    simp
+    unfold atomSubOfGrounding at h
+    have p: v ∈ decidableAtomVars a
+    by_contra q
+    simp [q] at h
+    simp [p] at h
+    rw [← inDecidableAtomVarsIffInAtomVariables] at p
+    unfold applySubstitutionAtom at s'_a
+    unfold atomGrounding at s'_a
+    unfold groundAtom.toAtom at s'_a
+    simp at s'_a
+    have s'_v: applySubstitutionTerm s' (term.variableDL v) = (term.constant ∘ applyGroundingTerm' g) (term.variableDL v)
+    apply equalOfListMapEqual (h:= s'_a)
+    rw [variableMemberOfcollecResultsIffMemberList]
+    unfold atomVariables at p
+    apply p
+    unfold applySubstitutionTerm at s'_v
+    unfold applyGroundingTerm' at s'_v
+    simp at s'_v
+    cases h': (s' v) with
+    | some c' =>
+      simp [h'] at s'_v
+      rw [h] at s'_v
+      simp
+      apply Eq.symm
+      apply s'_v
+    | none =>
+      simp [h'] at *
+  | none =>
+    simp
+
+lemma replaceGroundingWithSubstitutionAndGrounding (a: atom τ) (r: rule τ) (mem: a ∈ r.body ): (∀ (g: grounding τ), atomGrounding g a ∈ i →  ruleTrue (ruleGrounding r g) i) ↔ ∀  (s: substitution τ), (∃ (ga: groundAtom τ), ga ∈ i ∧ applySubstitutionAtom s a = ga ∧ ∀ (s': substitution τ), applySubstitutionAtom s' a = ga → s ⊆ s') →  ∀ (g': grounding τ),ruleTrue (ruleGrounding (applySubstitutionRule s r) g') i := by
+  constructor
+  intros h s _ g
+  rw [combineSubstitutionGroundingEquivRule]
+  by_cases p: atomGrounding (combineSubstitutionGrounding s g) a ∈ i
+  apply h
+  apply p
+  unfold ruleTrue
+  unfold groundRuleBodySet
+  unfold ruleGrounding
+  rw [Set.subset_def]
+  intro q
+  specialize q (atomGrounding (combineSubstitutionGrounding s g) a)
+  simp at q
+  exfalso
+  simp [← List.toSet_mem] at q
+  specialize q a mem
+  simp at q
+  exact absurd q p
+
+  intros h g ground_g_a
+  specialize h (atomSubOfGrounding a g)
+  simp at h
+  specialize h (atomGrounding g a) ground_g_a  (atomSubOfGroundingEqOnAtom a g)
+  specialize h (atomSubOfGroundingIsMinimalForAtom a g) g
+  rw [atomSubOfGroundingGroundingEqGroundingOnRule] at h
+  apply h
+
+lemma swapApplySubstitutionPgrToRule (i: List (groundAtom τ)) (s: substitution τ) (pgr: partialGroundRule τ i.toSet) (hd: atom τ) (tl: List (atom τ)) (varsHd: atomVariables (applySubstitutionAtom s hd) = ∅) (mem: (atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) varsHd) ∈ i) (h: pgr.ungroundedBody = hd::tl): applySubstitutionRule s (pgr.toRule) = partialGroundRule.toRule {head:= applySubstitutionAtom s pgr.head, groundedBody:= pgr.groundedBody ++ [atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) varsHd], ungroundedBody:= List.map (applySubstitutionAtom s) tl, members:= groundingStepGroundAtomExtendMembers i pgr (atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) varsHd) mem} :=
 by
   unfold partialGroundRule.toRule
   unfold applySubstitutionRule
   rw [h]
   simp
-  rw [atomWithoutVariablesToGroundAtomToAtom]
+  rw [toAtomOfatomWithoutVariablesIsSelf]
   have groundedBodyEq:  List.map (applySubstitutionAtom s ∘ groundAtom.toAtom) pgr.groundedBody = List.map groundAtom.toAtom pgr.groundedBody
   apply List.ext_get
   rw [List.length_map, List.length_map]
@@ -611,6 +901,7 @@ by
   rw [q]
   rw [p]
   rw [groundedBodyEq]
+
 
 theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSet ) (safe: pgr.isSafe): exploreGrounding i pgr safe = Except.ok () ↔ pgr.isTrue := by
   unfold partialGroundRule.isTrue
@@ -705,7 +996,6 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       rw [List.map_except_unitIsUnitIffAll] at h'
       by_cases g_hd: atomGrounding g hd ∈ i
       revert g
-      -- unsure
       simp [List.toSet_mem]
       rw [replaceGroundingWithSubstitutionAndGrounding (a:=hd)]
       intros s s_prop
@@ -715,7 +1005,7 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       simp at h'
       rw [inGetSubstitutionsIffMinimalSolutionAndInInterpretation] at s_prop
       simp at s_prop
-      rcases s_prop with ⟨ga, ga_i, apply_s_ga, s_min⟩
+      rcases s_prop with ⟨ga, ga_i, apply_s_ga, _⟩
       have varsHdS: atomVariables (applySubstitutionAtom s hd) = ∅
       rw [apply_s_ga]
       apply groundAtomsHaveNoVariables
@@ -734,8 +1024,6 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
 
       simp
 
-      use (substitutionToGrounding emptySubstitution) -- we have to use some substitution
-
       unfold partialGroundRule.toRule
       simp
 
@@ -753,9 +1041,47 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       exfalso
       exact absurd body g_hd
 
+      -- back direction
+      intro h'
+      by_cases varsHd: atomVariablesEmpty hd = true
+      simp [varsHd]
+      intro hd_i
+      rw [ih]
+      unfold groundingStepGroundAtom
+      simp
+      rw [atomVariablesEmptySemantics] at varsHd
+      rw [← moveAtomWithoutVariablesInPartialGroundRule_singleElements (hd:= hd) (tl:=tl) (ungroundedBody:= hd::tl) (hdVars:= varsHd) (hd_i:= hd_i)]
+      apply h'
+      rfl
 
+      unfold groundingStepGroundAtom
+      simp
+      apply length
 
+      simp [varsHd]
+      rw [List.map_except_unitIsUnitIffAll]
+      intro s _
+      rcases s with ⟨s,s_prop⟩
+      unfold groundingStep
+      simp
+      rw [ih]
+      intro g
+      rw [← swapApplySubstitutionPgrToRule (pgr := {head:= head, groundedBody:=groundedBody, ungroundedBody:= hd::tl, members := members}) (hd:= hd) (tl:=tl) ]
+      rw [combineSubstitutionGroundingEquivRule]
+      apply h'
 
+      rw [inGetSubstitutionsIffMinimalSolutionAndInInterpretation] at s_prop
+      simp at s_prop
+      rcases s_prop with ⟨ga, ga_i, apply_s, _⟩
+      simp [apply_s]
+      rw [atomWithoutVariablesToGroundAtomOfGroundAtom]
+      rw [List.toSet_mem]
+      apply ga_i
+
+      simp
+
+      rw [List.length_map]
+      apply length
 
 lemma safePreservedBetweenRuleAndPartialGroundRule (r: rule τ) (i: interpretation τ): r.isSafe ↔ (partialGroundRuleFromRule r i).isSafe := by
   unfold partialGroundRule.isSafe
