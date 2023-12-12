@@ -1,5 +1,6 @@
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.Unification
+import CertifyingDatalog.Basic
 
 
 variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Nonempty τ.constants]
@@ -41,17 +42,17 @@ by
   rw [← List.length_map r1.body atom.symbol, ← List.length_map r2.body atom.symbol]
   rw [body]
 
-def checkRuleMatch (P: List (rule τ)) (gr: groundRule τ): Bool :=
+def checkRuleMatch (P: List (rule τ)) (gr: groundRule τ) (ruleToString: rule τ → String): Except String Unit :=
   match P with
-  | List.nil => false
+  | List.nil => Except.error ("No match for " ++ (ruleToString gr.toRule))
   | List.cons hd tl =>
     if symbolSequence hd = symbolSequence gr.toRule
       then  if Option.isSome (matchRule hd gr)
-            then true
-      else checkRuleMatch tl gr
-    else checkRuleMatch tl gr
+            then Except.ok ()
+            else checkRuleMatch tl gr ruleToString
+    else checkRuleMatch tl gr ruleToString
 
-lemma checkRuleMatchIffExistsRuleForGroundRule (P: List (rule τ)) (gr: groundRule τ): checkRuleMatch P gr = true ↔ ∃ (r: rule τ) (g:grounding τ),r ∈ P ∧ ruleGrounding r g = gr :=
+lemma checkRuleMatchOkIffExistsRuleForGroundRule (P: List (rule τ)) (gr: groundRule τ) (ruleToString: rule τ → String ): checkRuleMatch P gr ruleToString = Except.ok () ↔ ∃ (r: rule τ) (g:grounding τ),r ∈ P ∧ ruleGrounding r g = gr :=
 by
   simp [groundingSubstitutionEquivalence]
   induction P with
@@ -135,32 +136,33 @@ by
 
 
 
-def treeValidatorHelper (P: List (rule τ)) (d: database τ) (t: proofTree τ): Bool :=
+def treeValidator (P: List (rule τ)) (d: database τ) (t: proofTree τ) (ruleToString: rule τ → String): Except String Unit :=
   match t with
   | proofTree.node a l =>
     if l.isEmpty
     then  if d.contains a
-          then true
-          else if checkRuleMatch P {head:= a, body := List.map root l}
-                then List.all l.attach (fun ⟨x, _h⟩ => treeValidatorHelper P d x)
-                else false
+          then Except.ok ()
+          else
+            match checkRuleMatch P {head:= a, body := List.map root l} ruleToString with
+            | Except.ok _ => Except.ok ()
+            | Except.error msg => Except.error msg
     else
-      if checkRuleMatch P {head:= a, body := List.map root l}
-      then List.all l.attach (fun ⟨x, _h⟩ => treeValidatorHelper P d x)
-      else false
-termination_by treeValidatorHelper P d t => sizeOf t
+      match checkRuleMatch P {head:= a, body := List.map root l} ruleToString with
+      | Except.ok _ => List.map_except_unit l.attach (fun ⟨x, _h⟩ => treeValidator P d x ruleToString)
+      | Except.error msg => Except.error msg
+termination_by treeValidator P d t ruleToString => sizeOf t
 decreasing_by
   simp_wf
   apply Nat.lt_trans (m:= sizeOf l)
   apply List.sizeOf_lt_of_mem _h
   simp
 
-lemma treeValidatorHelperIffIsValid (P: List (rule τ)) (d: database τ) (t: proofTree τ): treeValidatorHelper P d t ↔ isValid (List.toFinset P) d t :=
+lemma treeValidatorOkIffIsValid (P: List (rule τ)) (d: database τ) (t: proofTree τ) (ruleToString: rule τ → String): treeValidator P d t ruleToString = Except.ok () ↔ isValid (List.toFinset P) d t :=
 by
   induction' h_t:(height t) using Nat.strongInductionOn with n ih generalizing t
   cases t with
   | node a l =>
-    unfold treeValidatorHelper
+    unfold treeValidator
     unfold isValid
     by_cases emptyL: l.isEmpty
     rw [if_pos emptyL]
@@ -173,13 +175,19 @@ by
     simp [*]
     simp
     rw [if_neg contains_a]
+
+
+
     constructor
     intro h
-    have h': checkRuleMatch P { head := a, body := List.map root l } = true
-    by_contra p
-    simp [p] at h
+    have h': checkRuleMatch P { head := a, body := List.map root l } ruleToString = Except.ok ()
+    cases p: checkRuleMatch P { head := a, body := List.map root l } ruleToString with
+    | ok u =>
+      simp
+    | error e =>
+      simp [p] at h
     simp [h'] at h
-    rw [checkRuleMatchIffExistsRuleForGroundRule] at h'
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at h'
     left
     simp [← and_assoc, exists_and_right]
     constructor
@@ -188,80 +196,71 @@ by
     rw [List.all₂_iff_forall]
     simp
     intros a' a_l
-    specialize ih (height a')
-    simp [← h_t] at ih
-    have height_case: height a' < height (proofTree.node a l)
-    apply heightOfMemberIsSmaller
-    unfold member
-    simp
-    apply a_l
-    specialize ih height_case a'
-    simp at ih
-    rw [← ih]
-    apply h a' a_l
-    intro h
-    cases h with
-    | inl h =>
-      simp only [← and_assoc, exists_and_right, List.mem_toFinset] at h
-      cases' h with left right
-      rw [← checkRuleMatchIffExistsRuleForGroundRule] at left
-      simp only [groundRuleFromAtoms] at left
-      rw [if_pos left]
-      rw [List.all_eq_true]
-      simp
-      intros t t_l
-      have height_t: (height t) < height (proofTree.node a l)
-      apply heightOfMemberIsSmaller
-      unfold member
-      simp
-      apply t_l
-      specialize ih (height t)
-      simp [← h_t] at ih
-      specialize ih height_t t
-      simp at ih
-      rw [ih]
-      rw [List.all₂_iff_forall] at right
-      simp at right
-      apply right t t_l
-    | inr h =>
-      simp [contains_a] at h
+    rw [List.isEmpty_iff_eq_nil] at emptyL
+    rw [emptyL] at a_l
+    simp at a_l
+
+    intro h'
+    by_cases p: checkRuleMatch P { head := a, body := List.map root l } ruleToString = Except.ok ()
+    simp [p]
+    exfalso
+    cases h' with
+    | inl h' =>
+      rw [checkRuleMatchOkIffExistsRuleForGroundRule] at p
+      rcases h' with ⟨r,g,r_P,r_ground,_⟩
+      push_neg at p
+      specialize p r g
+      rw [List.mem_toFinset] at r_P
+      specialize p r_P
+      unfold groundRuleFromAtoms at r_ground
+      simp at p
+      exact absurd r_ground p
+    | inr h' =>
+      rcases h' with ⟨_,right⟩
+      exact absurd right contains_a
+
+
 
     rw [if_neg emptyL]
     constructor
     intro h
-    have h': checkRuleMatch P { head := a, body := List.map root l } = true
-    by_contra p
-    simp [p] at h
-    simp [h'] at h
-    rw [checkRuleMatchIffExistsRuleForGroundRule] at h'
-    left
-    simp [← and_assoc, exists_and_right]
-    constructor
-    simp at h'
-    apply h'
-    rw [List.all₂_iff_forall]
-    simp
-    intros a' a_l
-    specialize ih (height a')
-    simp [← h_t] at ih
-    have height_case: height a' < height (proofTree.node a l)
-    apply heightOfMemberIsSmaller
-    unfold member
-    simp
-    apply a_l
-    specialize ih height_case a'
-    simp at ih
-    rw [← ih]
-    apply h a' a_l
+    cases h': checkRuleMatch P { head := a, body := List.map root l } ruleToString with
+    | error e =>
+      simp [h'] at h
+    | ok _ =>
+      simp [h'] at h
+      rw [List.map_except_unitIsUnitIffAll] at h
+      simp at h
+      rw [checkRuleMatchOkIffExistsRuleForGroundRule] at h'
+      left
+      simp [← and_assoc, exists_and_right]
+      constructor
+      simp at h'
+      apply h'
+      rw [List.all₂_iff_forall]
+      simp
+      intros a' a_l
+      specialize ih (height a')
+      simp [← h_t] at ih
+      have height_case: height a' < height (proofTree.node a l)
+      apply heightOfMemberIsSmaller
+      unfold member
+      simp
+      apply a_l
+      specialize ih height_case a'
+      simp at ih
+      rw [← ih]
+      apply h a' a_l
+
     intro h
     cases h with
     | inl h =>
       simp only [← and_assoc, exists_and_right, List.mem_toFinset] at h
       cases' h with left right
-      rw [← checkRuleMatchIffExistsRuleForGroundRule] at left
+      rw [← checkRuleMatchOkIffExistsRuleForGroundRule (ruleToString:= ruleToString)] at left
       simp only [groundRuleFromAtoms] at left
-      rw [if_pos left]
-      rw [List.all_eq_true]
+      simp [left]
+      rw [List.map_except_unitIsUnitIffAll]
       simp
       intros t t_l
       have height_t: (height t) < height (proofTree.node a l)
@@ -277,22 +276,7 @@ by
       rw [List.all₂_iff_forall] at right
       simp at right
       apply right t t_l
+
     | inr h =>
       rw [List.isEmpty_iff_eq_nil] at emptyL
       simp [emptyL] at h
-
-
-
-
-def treeValidator (P: List (rule τ)) (d: database τ) (a: groundAtom τ)(t: proofTree τ): Bool :=
-  if root t = a
-  then treeValidatorHelper P d t
-  else false
-
-theorem treeValidatorIffIsValidAndRoot (P: List (rule τ)) (d: database τ) (a: groundAtom τ)(t: proofTree τ): treeValidator P d a t = true ↔ isValid (List.toFinset P) d t ∧ root t = a :=
-by
-  unfold treeValidator
-  by_cases root_a: root t = a
-  simp [root_a]
-  apply treeValidatorHelperIffIsValid
-  simp [root_a]

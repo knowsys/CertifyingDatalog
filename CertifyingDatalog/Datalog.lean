@@ -851,6 +851,15 @@ def member (t1 t2: proofTree τ): Prop :=
   match t1 with
     | proofTree.node _ l => t2 ∈ l
 
+def elementMember [DecidableEq (groundAtom τ)] (a: groundAtom τ) (t: proofTree τ): Bool  :=
+  match t with
+  | proofTree.node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elementMember a x)
+termination_by elementMember a t => sizeOf t
+decreasing_by
+  simp_wf
+  decreasing_trivial
+  apply Nat.zero_le
+
 def root: proofTree τ → groundAtom τ
 | proofTree.node a _ => a
 
@@ -956,6 +965,57 @@ by
   apply mem
 
 def proofTheoreticSemantics (P: program τ) (d: database τ): interpretation τ:= {a: groundAtom τ | ∃ (t: proofTree τ), root t = a ∧ isValid P d t}
+
+lemma allTreeElementsOfValidTreeInSemantics (t: proofTree τ)  (P: program τ) (d: database τ) (valid: isValid P d t) (ga: groundAtom τ) (mem: elementMember ga t): ga ∈ proofTheoreticSemantics P d :=
+by
+  unfold proofTheoreticSemantics
+  simp
+  induction' h': (height t) using Nat.strongInductionOn with n ih generalizing t
+  cases t with
+  | node a' l =>
+    unfold elementMember at mem
+    simp at mem
+    by_cases ga_a': ga = a'
+
+    use proofTree.node a' l
+    constructor
+    unfold root
+    simp
+    apply Eq.symm
+    apply ga_a'
+    apply valid
+
+    simp [ga_a'] at mem
+    rcases mem with ⟨t', t'_t, a_t'⟩
+    specialize ih (height t')
+    have height_t': height t' < n
+    rw [← h']
+    apply heightOfMemberIsSmaller
+    unfold member
+    apply t'_t
+    specialize ih height_t' t'
+    have valid_t': isValid P d t'
+    unfold isValid at valid
+    cases valid with
+    | inl valid =>
+      rcases valid with ⟨_,_,_,_,all⟩
+      simp at all
+      rw [List.all₂_iff_forall] at all
+      simp at all
+      apply all
+      apply t'_t
+    | inr valid =>
+      exfalso
+      rcases valid with ⟨left,_⟩
+      rw [left] at t'_t
+      simp at t'_t
+    specialize ih valid_t'
+    apply ih
+    apply a_t'
+    rfl
+
+
+
 
 def ruleTrue (r: groundRule τ) (i: interpretation τ): Prop := groundRuleBodySet r ⊆ i → r.head ∈ i
 
