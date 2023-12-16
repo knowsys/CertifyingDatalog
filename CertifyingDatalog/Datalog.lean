@@ -860,6 +860,25 @@ decreasing_by
   decreasing_trivial
   apply Nat.zero_le
 
+def proofTreeElements (t: proofTree τ): List (groundAtom τ) :=
+  match t with
+  | proofTree.node a l => List.foldl (fun x ⟨y,_h⟩ => x ++ proofTreeElements y) [a] l.attach
+termination_by proofTreeElements t => sizeOf t
+decreasing_by
+  simp_wf
+  decreasing_trivial
+  apply Nat.zero_le
+
+lemma foldl_append_mem {A B: Type} (l1: List A) (l2: List B) (f: B → List A) (a: A): a ∈ List.foldl (fun x y => x ++ f y) l1 l2 ↔ a ∈ l1 ∨ ∃ (b: B), b ∈ l2 ∧  a ∈ f b := by
+  induction l2 generalizing l1 with
+  | nil =>
+    simp
+  | cons hd tl ih =>
+    unfold List.foldl
+    rw [ih]
+    simp
+    tauto
+
 def root: proofTree τ → groundAtom τ
 | proofTree.node a _ => a
 
@@ -939,6 +958,63 @@ by
     simp at mem
     rw [height_case, Nat.add_comm, ← Nat.succ_eq_add_one, Nat.lt_succ_iff]
     apply listMax_le_f_member _ _ _ mem
+
+
+lemma inProofTreeElementsIffelementMember [DecidableEq (groundAtom τ)] (a: groundAtom τ) (t: proofTree τ): elementMember a t = true ↔ a ∈ proofTreeElements t :=
+by
+  induction' h':(height t) using Nat.strongInductionOn with n ih generalizing t
+  cases t with
+  | node a' l =>
+    unfold proofTreeElements
+    rw [foldl_append_mem]
+    unfold elementMember
+    simp
+    constructor
+    intro h
+    cases h with
+    | inl h =>
+      left
+      apply h
+    | inr h =>
+      rcases h with ⟨t', t_l, a_t⟩
+      specialize ih (height t')
+      have height_t': height t' < n
+      rw [← h']
+      apply heightOfMemberIsSmaller
+      unfold member
+      simp
+      apply t_l
+      specialize ih height_t' t'
+      right
+      use t'
+      constructor
+      apply t_l
+      rw [← ih]
+      apply a_t
+      rfl
+
+    intro h
+    cases h with
+    | inl h =>
+      left
+      apply h
+    | inr h =>
+      rcases h with ⟨t', t_l, a_t⟩
+      specialize ih (height t')
+      have height_t': height t' < n
+      rw [← h']
+      apply heightOfMemberIsSmaller
+      unfold member
+      simp
+      apply t_l
+      specialize ih height_t' t'
+      right
+      use t'
+      constructor
+      apply t_l
+      rw [ih]
+      apply a_t
+      rfl
 
 
 def isValid(P: program τ) (d: database τ) (t: proofTree τ): Prop :=

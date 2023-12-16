@@ -6,7 +6,7 @@ structure parsingResult where
 deriving Lean.FromJson, Lean.ToJson, Repr
 
 structure verificationProblem (relationList: List (String × Nat)) where
-  model: List (atom (parsingSignature relationList))
+  model: List (groundAtom (parsingSignature relationList))
   trees: List (proofTree (parsingSignature relationList))
 
 def parsingResultToVerificationProblem (input: parsingResult )(relationList: List (String × Nat)): Except String (verificationProblem relationList) :=
@@ -16,6 +16,15 @@ def parsingResultToVerificationProblem (input: parsingResult )(relationList: Lis
     match List.map_except (fun x => proofTreeFromTree relationList x) input.trees with
     | Except.error msg => Except.error ("Error parsing trees " ++ msg )
     | Except.ok trees => Except.ok {model:=model, trees:=trees}
+
+def atomParsingSignatureToString {relationList: List (String × Nat)} (a: atom (parsingSignature relationList)): String :=
+  sorry
+
+def ruleParsingSignatureToString {relationList: List (String × Nat)} (a: rule (parsingSignature relationList)): String :=
+  sorry
+
+
+
 
 def main (args: List String): IO Unit := do
   if p:args.length < 2
