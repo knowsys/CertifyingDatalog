@@ -158,6 +158,11 @@ def parsingSignature (relationList: List (String × Nat )): signature := {consta
 
 instance (relationList: List (String × Nat )): DecidableEq (parsingSignature relationList).constants := Subtype.instDecidableEqSubtype
 
+instance (relationList: List (String × Nat )): Nonempty (parsingSignature relationList).constants := by
+  use ""
+  simp
+
+
 instance (relationList: List (String × Nat )): DecidableEq (parsingSignature relationList).vars := Subtype.instDecidableEqSubtype
 
 instance (relationList: List (String × Nat )): DecidableEq (parsingSignature relationList).relationSymbols := Subtype.instDecidableEqSubtype
