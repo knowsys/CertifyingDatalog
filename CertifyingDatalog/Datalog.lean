@@ -156,6 +156,23 @@ def termVariables: term τ → Set τ.vars
 | (term.constant _) => ∅
 | (term.variableDL v) => {v}
 
+def termVariables_computable: term τ → List τ.vars
+| term.constant _ => []
+| term.variableDL v => [v]
+
+lemma termVariablesEqTermVariables_computableToList: termVariables = (fun (t: term τ) => List.toSet (termVariables_computable t)):= by
+  funext t
+  unfold termVariables
+  unfold termVariables_computable
+  unfold List.toSet
+  cases t with
+  | constant c =>
+    simp
+  | variableDL w =>
+    simp
+    unfold List.toSet
+    simp
+
 def collectResultsToFinset {A: Type} (f: A → Set τ.vars): List A → Set τ.vars
 | [] => ∅
 | hd::tl => (f hd) ∪ (collectResultsToFinset f tl)
@@ -173,6 +190,37 @@ by
     simp
     rw [ih]
     simp
+
+def collectResultsToList {A: Type} (f: A → List τ.vars): List A → List τ.vars
+| [] => []
+| hd::tl => f hd ++ collectResultsToList f tl
+
+lemma collectResultsToListSemantics {A: Type} (f: A → List τ.vars) (l: List A) (v: τ.vars): v ∈ collectResultsToList f l ↔ ∃ (a:A), a ∈ l ∧ v ∈ f a := by
+  induction l with
+  | nil =>
+    unfold collectResultsToList
+    simp
+  | cons hd tl ih =>
+    unfold collectResultsToList
+    simp
+    rw [ih]
+
+lemma collectResultsToListEqCollectResultsToFinset {A: Type} (f: A → List τ.vars) (l: List A): List.toSet (collectResultsToList f l ) = collectResultsToFinset (fun x => List.toSet (f x)) l := by
+  cases l with
+  | nil =>
+    unfold collectResultsToFinset
+    unfold collectResultsToList
+    unfold List.toSet
+    rfl
+  | cons hd tl =>
+    apply Set.ext
+    intro v
+    rw [← List.toSet_mem, collectResultsToFinsetSemantics]
+    unfold collectResultsToList
+    simp
+    rw [← List.toSet_mem, collectResultsToListSemantics]
+    simp [List.toSet_mem]
+
 
 lemma collectResultsToFinsetMemberIffListMember {A: Type} (f: A → Set τ.vars) (v: τ.vars) (l: List A): v ∈ collectResultsToFinset f l ↔ ∃ (a:A), a ∈ l ∧ v ∈ f a :=
 by
@@ -243,6 +291,22 @@ by
 
 def atomVariables (a: atom τ) : Set τ.vars := collectResultsToFinset termVariables  a.atom_terms
 
+def atomVariables_computable (a: atom τ): List τ.vars := collectResultsToList termVariables_computable a.atom_terms
+
+lemma atomVariables_mem_iff_atomVariables_computable_mem (v: τ.vars) (a: atom τ): v ∈ atomVariables a ↔ v ∈ atomVariables_computable a := by
+  unfold atomVariables
+  unfold atomVariables_computable
+  rw [List.toSet_mem, collectResultsToListEqCollectResultsToFinset]
+  rw [termVariablesEqTermVariables_computableToList]
+
+lemma atomVariablesEqAtomVariables_computableToList: atomVariables = (fun (a: atom τ) => List.toSet (atomVariables_computable a)) := by
+  funext a
+  unfold atomVariables
+  unfold atomVariables_computable
+  rw [collectResultsToListEqCollectResultsToFinset, termVariablesEqTermVariables_computableToList]
+
+
+
 lemma atomVariablesSubsetImpltermVariablesSubset {a: atom τ} {t: term τ}{S: Set τ.vars}(mem: t ∈ a.atom_terms) (subs: atomVariables a ⊆ S): termVariables t ⊆ S :=
 by
   apply Set.Subset.trans (b:= atomVariables a)
@@ -270,6 +334,50 @@ by
     simp
     apply memberResultIsSubsetCollectResultsToFinset (mem:=h)
 
+def rule.isSafe (r: rule τ): Prop := atomVariables r.head ⊆ collectResultsToFinset atomVariables r.body
+
+def safetyCheckRule (r: rule τ) (varToString: τ.vars → String) (ruleToString: rule τ → String): Except String Unit :=
+  match List.diff' (atomVariables_computable r.head) (collectResultsToList (atomVariables_computable) r.body) with
+  | [] => Except.ok ()
+  | hd::_ => Except.error ("Rule" ++ ruleToString r ++ "is not safe " ++ (varToString hd ++ "only occurs in body"))
+
+lemma safetyCheckRuleUnitIffRuleSafe (r: rule τ) (varToString: τ.vars → String) (ruleToString: rule τ → String): safetyCheckRule r varToString ruleToString = Except.ok () ↔ r.isSafe := by
+  unfold safetyCheckRule
+  constructor
+  intro h
+  cases diff: List.diff' (atomVariables_computable r.head) (collectResultsToList atomVariables_computable r.body) with
+  | cons hd tl =>
+    simp [diff] at h
+  | nil =>
+    rw [List.diff'_empty] at diff
+    unfold rule.isSafe
+    rw [Set.subset_def]
+    intro v v_head
+    rw [atomVariables_mem_iff_atomVariables_computable_mem] at v_head
+    specialize diff v v_head
+    rw [List.toSet_mem, collectResultsToListEqCollectResultsToFinset] at diff
+    rw [← atomVariablesEqAtomVariables_computableToList] at diff
+    apply diff
+
+  unfold rule.isSafe
+  rw [Set.subset_def]
+  intro safe
+  have h: List.diff' (atomVariables_computable r.head) (collectResultsToList atomVariables_computable r.body) = []
+  rw [List.diff'_empty]
+  intro v v_head
+  rw [← atomVariables_mem_iff_atomVariables_computable_mem] at v_head
+  specialize safe v v_head
+  rw [List.toSet_mem,collectResultsToListEqCollectResultsToFinset, ← atomVariablesEqAtomVariables_computableToList]
+  apply safe
+  simp [h]
+
+def safetyCheckProgram (P: List (rule τ)) (ruleToString: rule τ → String) (varToString: τ.vars → String): Except String Unit :=
+  List.map_except_unit P (fun r => safetyCheckRule r varToString ruleToString)
+
+lemma safetyCheckProgramUnitIffProgramSafe (P: List (rule τ)) (ruleToString: rule τ → String) (varToString: τ.vars → String): safetyCheckProgram P ruleToString varToString = Except.ok () ↔ ∀ (r: rule τ), r ∈ P → r.isSafe := by
+  unfold safetyCheckProgram
+  rw [List.map_except_unitIsUnitIffAll]
+  simp [safetyCheckRuleUnitIffRuleSafe]
 
 -- ext for groundRuleEquality
 @[ext]

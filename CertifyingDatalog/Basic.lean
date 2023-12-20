@@ -124,3 +124,48 @@ by
     rw [ih]
     rw [List.mem_eraseAll]
     tauto
+
+lemma List.diff'_empty {A: Type} [DecidableEq A] (l1 l2: List A): List.diff' l1 l2 = [] ↔ ∀ (a:A), a ∈ l1 → a ∈ l2 := by
+  induction l2 generalizing l1 with
+  | nil =>
+    unfold diff'
+    constructor
+    intro h a
+    rw [h]
+    simp
+
+    cases l1 with
+    | nil =>
+      simp
+    | cons hd tl =>
+      simp
+
+  | cons hd tl ih =>
+    constructor
+    intros h
+    unfold diff' at h
+    intro a a_l1
+    by_cases a_hd: a = hd
+    rw [a_hd]
+    simp
+
+    simp
+    right
+    specialize ih (eraseAll l1 hd)
+    apply Iff.mp ih
+    apply h
+    rw [List.mem_eraseAll]
+    constructor
+    apply a_l1
+    apply a_hd
+
+    intro h
+    unfold diff'
+    rw [ih]
+    intro a a_erase
+    rw [List.mem_eraseAll] at a_erase
+    rcases a_erase with ⟨a_l1, a_hd⟩
+    specialize h a a_l1
+    simp at h
+    simp [a_hd] at h
+    apply h

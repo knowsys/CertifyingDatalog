@@ -16,7 +16,6 @@ variable  {τ: signature}[DecidableEq τ.vars] [DecidableEq τ.constants] [Decid
 def partialGroundRule.isSafe (pgr: partialGroundRule τ i): Prop :=
   atomVariables pgr.head ⊆ collectResultsToFinset atomVariables pgr.ungroundedBody
 
-def rule.isSafe (r: rule τ): Prop := atomVariables r.head ⊆ collectResultsToFinset atomVariables r.body
 
 def partialGroundRuleFromRule (r: rule τ) (i: interpretation τ): partialGroundRule τ i :=
   have members: ∀ (ga: groundAtom τ), ga ∈ [] → ga ∈ i:= by

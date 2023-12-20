@@ -34,7 +34,8 @@ def ruleParsingSignatureToString {relationList: List (String × Nat)} (r: rule (
   | [] => atomParsingSignatureToString r.head ++ "."
   | hd::tl => atomParsingSignatureToString r.head ++ ":-" ++ (List.foldl (fun x y => x ++ "," ++ (atomParsingSignatureToString y) ) (atomParsingSignatureToString hd) tl)
 
-def mainCheckMockDatabase (P: List (rule (parsingSignature relationList))) (d: database (parsingSignature relationList)) (problem: verificationProblem relationList) (safe: ∀ (r: rule (parsingSignature relationList) ), r ∈ P → r.isSafe): Except String Unit :=
+def mainCheckMockDatabase (P: List (rule (parsingSignature relationList))) (problem: verificationProblem relationList) (safe: ∀ (r: rule (parsingSignature relationList) ), r ∈ P → r.isSafe): Except String Unit :=
+  let d:= mockDatabase (parsingSignature (relationList))
   match validateTreeList P d problem.trees atomParsingSignatureToString ruleParsingSignatureToString problem.model with
   | Except.error e => Except.error e
   | Except.ok _ =>
@@ -45,13 +46,14 @@ def mainCheckMockDatabase (P: List (rule (parsingSignature relationList))) (d: d
       then Except.ok ()
       else Except.error "Model does not contain database"
 
-theorem mainCheckMockDatabseUnitIffSolution (P: List (rule (parsingSignature relationList))) (d: database (parsingSignature relationList)) (problem: verificationProblem relationList) (safe: ∀ (r: rule (parsingSignature relationList) ), r ∈ P → r.isSafe) (mem: ∀ (ga: groundAtom (parsingSignature relationList)), ga ∈ problem.model → ∃ (t: proofTree (parsingSignature relationList)), t ∈ problem.trees ∧ elementMember ga t): mainCheckMockDatabase P d problem safe = Except.ok () ↔ (List.toSet problem.model) = proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree (parsingSignature relationList)), t ∈ problem.trees → isValid P.toFinset d t:= by
+theorem mainCheckMockDatabseUnitIffSolution (P: List (rule (parsingSignature relationList))) (problem: verificationProblem relationList) (safe: ∀ (r: rule (parsingSignature relationList) ), r ∈ P → r.isSafe) (mem: ∀ (ga: groundAtom (parsingSignature relationList)), ga ∈ problem.model → ∃ (t: proofTree (parsingSignature relationList)), t ∈ problem.trees ∧ elementMember ga t): mainCheckMockDatabase P problem safe = Except.ok () ↔ (List.toSet problem.model) = proofTheoreticSemantics P.toFinset (mockDatabase (parsingSignature relationList)) ∧ ∀ (t: proofTree (parsingSignature relationList)), t ∈ problem.trees → isValid P.toFinset (mockDatabase (parsingSignature relationList)) t:= by
   constructor
   unfold mainCheckMockDatabase
   intro h
+  simp at h
   rw [subset_antisymm_iff]
-  have treesValid: validateTreeList P d problem.trees atomParsingSignatureToString ruleParsingSignatureToString problem.model = Except.ok ()
-  cases p: validateTreeList P d problem.trees atomParsingSignatureToString ruleParsingSignatureToString problem.model with
+  have treesValid: validateTreeList P (mockDatabase (parsingSignature relationList)) problem.trees atomParsingSignatureToString ruleParsingSignatureToString problem.model = Except.ok ()
+  cases p: validateTreeList P (mockDatabase (parsingSignature relationList)) problem.trees atomParsingSignatureToString ruleParsingSignatureToString problem.model with
   | ok _ =>
     simp
   | error e =>
@@ -88,7 +90,7 @@ theorem mainCheckMockDatabseUnitIffSolution (P: List (rule (parsingSignature rel
   rw [subset_antisymm_iff] at h
   rcases h with ⟨left, treesValid⟩
   unfold mainCheckMockDatabase
-  have h': validateTreeList P d problem.trees atomParsingSignatureToString ruleParsingSignatureToString problem.model = Except.ok ()
+  have h': validateTreeList P (mockDatabase (parsingSignature relationList)) problem.trees atomParsingSignatureToString ruleParsingSignatureToString problem.model = Except.ok ()
   rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees (mem:=mem)]
   constructor
   rcases left with ⟨lt_sem, _⟩
@@ -98,7 +100,7 @@ theorem mainCheckMockDatabseUnitIffSolution (P: List (rule (parsingSignature rel
   simp [h']
   rw [← subset_antisymm_iff] at left
   rw [SemanticsEquivalence] at left
-  have model_problem: model P.toFinset d (List.toSet problem.model)
+  have model_problem: model P.toFinset (mockDatabase (parsingSignature relationList)) (List.toSet problem.model)
   rw [left]
   apply modelTheoreticSemanticsIsModel
   unfold model at model_problem
@@ -141,8 +143,6 @@ def main (args: List String): IO Unit := do
         match mockProgramToProgram mockProgram relationList with
         | Except.error msg => IO.println ("Error parsing programm -- " ++ msg )
         | Except.ok program =>
-          let database := mockDatabase (parsingSignature relationList)
-
           let problemFileName := System.FilePath.mk (args.get (Fin.mk 1 one_args))
           if ← problemFileName.pathExists
           then
@@ -154,7 +154,19 @@ def main (args: List String): IO Unit := do
               | Except.ok parsedProblem =>
                 match parsingResultToVerificationProblem parsedProblem relationList with
                 | Except.error msg => IO.println ("Error converting problem the program's signature. -- " ++ msg )
-                | Except.ok problem => IO.println ("Success")
+                | Except.ok problem =>
+                  match safe: safetyCheckProgram program ruleParsingSignatureToString (fun x => x.val) with
+                  | Except.error msg => IO.println msg
+                  | Except.ok _ =>
+                    have safe': ∀ (r: rule (parsingSignature relationList)), r ∈ program → r.isSafe := by
+                      rw [safetyCheckProgramUnitIffProgramSafe] at safe
+                      apply safe
+
+                    match mainCheckMockDatabase program problem safe' with
+                    | Except.ok _ => IO.println "Valid result"
+                    | Except.error msg => IO.println ("Invalid result due to " ++ msg )
+
+
           else
             IO.println "Problem file does not exist."
 
