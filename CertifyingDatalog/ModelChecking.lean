@@ -786,9 +786,12 @@ lemma atomSubOfGroundingIsMinimalForAtom (a: atom τ) (g: grounding τ):
   unfold_projs
   unfold substitution_subs
   intro v
+  intro h'
+  unfold substitution_domain at h'
+  simp at h'
+  unfold atomSubOfGrounding
   cases h:(atomSubOfGrounding a g v) with
   | some c =>
-    simp
     unfold atomSubOfGrounding at h
     have p: v ∈ decidableAtomVars a
     by_contra q
@@ -813,11 +816,15 @@ lemma atomSubOfGroundingIsMinimalForAtom (a: atom τ) (g: grounding τ):
       rw [h] at s'_v
       simp
       apply Eq.symm
+      rw [inDecidableAtomVarsIffInAtomVariables] at p
+      simp [p]
+      rw [h]
       apply s'_v
     | none =>
       simp [h'] at *
   | none =>
-    simp
+    rw [h] at h'
+    simp at h'
 
 lemma replaceGroundingWithSubstitutionAndGrounding (a: atom τ) (r: rule τ) (mem: a ∈ r.body ): (∀ (g: grounding τ), atomGrounding g a ∈ i →  ruleTrue (ruleGrounding r g) i) ↔ ∀  (s: substitution τ), (∃ (ga: groundAtom τ), ga ∈ i ∧ applySubstitutionAtom s a = ga ∧ ∀ (s': substitution τ), applySubstitutionAtom s' a = ga → s ⊆ s') →  ∀ (g': grounding τ),ruleTrue (ruleGrounding (applySubstitutionRule s r) g') i := by
   constructor

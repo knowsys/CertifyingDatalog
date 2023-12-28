@@ -792,13 +792,7 @@ by
 def emptySubstitution: substitution τ := (fun _ => none)
 
 def substitution_subs (s1 s2: substitution τ): Prop :=
-  ∀ (v: τ.vars),
-    match (s1 v) with
-    | Option.some c =>
-      match (s2 v) with
-      | Option.some c' => c = c'
-      | Option.none => False
-    | Option.none => True
+  ∀ (v: τ.vars), v ∈ substitution_domain s1 → s1 v = s2 v
 
 instance: HasSubset (substitution τ) where
   Subset := substitution_subs
@@ -809,31 +803,42 @@ by
   unfold substitution_subs
   intro v
   unfold emptySubstitution
+  unfold substitution_domain
   simp
 
 lemma substitution_subs_get (s1 s2: substitution τ) (subs: s1 ⊆ s2)(c: τ.constants) (v: τ.vars) (h: s1 v = Option.some c): s2 v = Option.some c :=
 by
   unfold_projs at subs
   unfold substitution_subs at subs
-  specialize subs v
-  simp [h] at subs
-  cases p: s2 v with
-  | some c' =>
-    simp [p] at subs
-    rw [subs]
-  | none =>
-    simp [p] at *
+  rw [← h]
+  apply Eq.symm
+  apply subs
+  unfold substitution_domain
+  simp
+  rw [h]
+  simp
+
 
 lemma substitution_subs_none (s1 s2: substitution τ) (subs: s1 ⊆ s2) (v: τ.vars) (h: s2 v = Option.none): s1 v = Option.none :=
 by
   unfold_projs at subs
   unfold substitution_subs at subs
   specialize subs v
-  cases p: s1 v with
-  | some c =>
-    simp [p, h] at subs
+  by_contra p
+  cases q:(s1 v) with
   | none =>
-    rfl
+    exact absurd q p
+  | some c =>
+    have s1_s2: s1 v = s2 v
+    apply subs
+    unfold substitution_domain
+    simp
+    rw [q]
+    simp
+    rw [s1_s2] at p
+    exact absurd h p
+
+
 
 lemma substitution_subs_refl (s: substitution τ): s ⊆ s :=
 by
@@ -860,18 +865,19 @@ by
 
 lemma substitution_subs_trans (s1 s2 s3: substitution τ) (s1s2: s1 ⊆ s2) (s2s3: s2 ⊆ s3): s1 ⊆ s3 :=
 by
-  unfold_projs
-  unfold substitution_subs
+  unfold_projs at *
+  unfold substitution_subs at *
   intro v
-  cases p:s1 v with
-  | some c =>
-    simp
-    have q: s3 v = some c
-    apply substitution_subs_get s2 s3 s2s3
-    apply substitution_subs_get s1 s2 s1s2 c v p
-    simp [q]
-  | none =>
-    simp
+  intro h
+  specialize s1s2 v h
+  rw [s1s2]
+  apply s2s3
+  unfold substitution_domain
+  simp
+  rw [← s1s2]
+  unfold substitution_domain at h
+  simp at h
+  apply h
 
 lemma option_get_iff_eq_some {A: Type} (o: Option A) (a:A) (h: Option.isSome o): Option.get o h = a ↔ o = some a :=
 by

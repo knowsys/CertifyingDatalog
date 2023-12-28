@@ -11,17 +11,24 @@ by
   unfold_projs
   unfold substitution_subs
   intro v'
-  cases h: s v' with
-  | some c' =>
-    simp
-    have v'_v: ¬ v' = v
-    by_contra h'
-    rw [← h']  at p
-    rw [h] at p
-    simp at p
-    simp [v'_v, h]
+  simp
+  intro h
+  by_cases v'_v: v' = v
+  simp [v'_v]
+  unfold substitution_domain at h
+  simp at h
+  rw [v'_v] at h
+  exfalso
+  cases h':(s v) with
   | none =>
-    simp
+    rw [h'] at h
+    simp at h
+  | some c' =>
+    rw [h'] at p
+    simp at p
+
+  simp [v'_v]
+
 
 def matchTerm (t: term τ)(c: τ.constants) (s: substitution τ): Option (substitution τ) :=
   match t with
@@ -127,7 +134,8 @@ by
       simp [p'] at apply_s'
       rw [option_get_iff_eq_some] at apply_s'
       simp [apply_s'] at sv
-      exact absurd sv x_prop
+      rcases x_prop with ⟨_,right⟩
+      exact absurd sv right
     | none =>
       unfold applySubstitutionTerm at apply_s'
       simp [sv] at apply_s'
@@ -139,7 +147,10 @@ by
       apply substitution_subs_get s s' s_s' _ _ q
       simp [s'x] at x_prop
     | none =>
-      simp [q] at x_prop
+      rcases x_prop with ⟨left,_⟩
+      unfold substitution_domain at left
+      simp [x_v, q] at left
+
 
 lemma matchTermNoneImpNoSolution (t: term τ) (c: τ.constants) (s: substitution τ) (h: Option.isNone (matchTerm t c s)): ¬ (∃(s': substitution τ), s ⊆ s' ∧ applySubstitutionTerm s' t = c) :=
 by
@@ -181,6 +192,11 @@ by
     simp [sv_c'] at h
     by_contra q
     simp [q] at h
+    unfold substitution_domain
+    simp
+    rw [sv_c']
+    simp
+
     simp [q]
 
 lemma matchTermIsSomeIffSolution (t: term τ) (c: τ.constants): Option.isSome (matchTerm t c emptySubstitution) ↔ ∃ (s: substitution τ), applySubstitutionTerm s t = c :=
