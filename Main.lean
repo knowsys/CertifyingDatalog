@@ -138,7 +138,7 @@ def main (args: List String): IO Unit := do
     if ← programFileName.pathExists
     then
       match parseMockProgram (← IO.FS.lines programFileName).toList with
-      | Except.error msg => IO.println ("Error parsing program to mockProgram-- " ++ msg )
+      | Except.error msg => IO.println ("Error parsing program to mockProgram -- " ++ msg )
       | Except.ok (mockProgram, relationList) =>
         match mockProgramToProgram mockProgram relationList with
         | Except.error msg => IO.println ("Error parsing programm -- " ++ msg )
@@ -173,4 +173,4 @@ def main (args: List String): IO Unit := do
     else
       IO.println (programFileName.toString ++ "is not an existing file")
 
-#eval main ["Examples/join.rls", "Examples/ExampleProblem.json"]
+#eval main ["Examples/program.rls", "Examples/program"]

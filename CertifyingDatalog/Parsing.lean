@@ -87,7 +87,10 @@ def parseMockAtom.go (relationList: List (String × Nat)) (l: List String) (stac
     then
       if tl.isEmpty
       then parseMockAtomFromStack relationList stack
-      else Except.error ("Symbols after closing bracket" ++ listStringToString tl)
+      else
+        if tl = ["."]
+        then parseMockAtomFromStack relationList stack
+        else Except.error ("Symbols after closing bracket" ++ listStringToString tl)
     else
       if hd == "("
       then parseMockAtom.go relationList tl stack
