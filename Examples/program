@@ -1,25 +1,12 @@
 {
-    "model": [
-        "c(1,2)",
-        "a(1,2)",
-        "b(3,4)",
-        "d(3,4)",
-        "e(1,4)"
-    ],
     "trees": [
         {
             "node": {
-                "label": "b(3, 4)",
-                "children": []
-            }
-        },
-        {
-            "node": {
-                "label": "d(3, 4)",
+                "label": "d(3,4)",
                 "children": [
                     {
                         "node": {
-                            "label": "b(3, 4)",
+                            "label": "b(3,4)",
                             "children": []
                         }
                     }
@@ -28,15 +15,15 @@
         },
         {
             "node": {
-                "label": "e(1, 4)",
+                "label": "e(1,4)",
                 "children": [
                     {
                         "node": {
-                            "label": "c(1, 2)",
+                            "label": "c(1,2)",
                             "children": [
                                 {
                                     "node": {
-                                        "label": "a(1, 2)",
+                                        "label": "a(1,2)",
                                         "children": []
                                     }
                                 }
@@ -45,11 +32,11 @@
                     },
                     {
                         "node": {
-                            "label": "d(3, 4)",
+                            "label": "d(3,4)",
                             "children": [
                                 {
                                     "node": {
-                                        "label": "b(3, 4)",
+                                        "label": "b(3,4)",
                                         "children": []
                                     }
                                 }
@@ -58,25 +45,126 @@
                     }
                 ]
             }
-        },
+        }
+    ],
+    "program": [
         {
-            "node": {
-                "label": "a(1, 2)",
-                "children": []
-            }
-        },
-        {
-            "node": {
-                "label": "c(1, 2)",
-                "children": [
+            "head": {
+                "symbol": "a",
+                "terms": [
                     {
-                        "node": {
-                            "label": "a(1, 2)",
-                            "children": []
-                        }
+                        "constant": "1"
+                    },
+                    {
+                        "constant": "2"
                     }
                 ]
-            }
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "b",
+                "terms": [
+                    {
+                        "constant": "3"
+                    },
+                    {
+                        "constant": "4"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "c",
+                "terms": [
+                    {
+                        "variable": "?x"
+                    },
+                    {
+                        "variable": "?y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "a",
+                    "terms": [
+                        {
+                            "variable": "?x"
+                        },
+                        {
+                            "variable": "?y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "d",
+                "terms": [
+                    {
+                        "variable": "?x"
+                    },
+                    {
+                        "variable": "?y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "b",
+                    "terms": [
+                        {
+                            "variable": "?x"
+                        },
+                        {
+                            "variable": "?y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "e",
+                "terms": [
+                    {
+                        "variable": "?x"
+                    },
+                    {
+                        "variable": "?y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "c",
+                    "terms": [
+                        {
+                            "variable": "?x"
+                        },
+                        {
+                            "variable": "?z"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "d",
+                    "terms": [
+                        {
+                            "variable": "?a"
+                        },
+                        {
+                            "variable": "?y"
+                        }
+                    ]
+                }
+            ]
         }
-    ]
+    ],
+    "complete": true
 }

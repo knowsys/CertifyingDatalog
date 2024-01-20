@@ -1,20 +1,19 @@
 import json
 import os
 import re
-import sys
 
-def parseAtom(s):
-    return s.replace("\"", "")
+def normalizeQuotationmarks(s):
+    return ''.join(s.replace("\"", "").split())
 
 def getTree(object):
     children = []
     members = []
     if "premises" in object:
         for atom in object["premises"]:
-            label = parseAtom(atom)
+            label = normalizeQuotationmarks(atom)
             children.append({"node": {"label": label, "children": []}})
             members.append(label)
-    label = parseAtom(object["conclusion"])
+    label = normalizeQuotationmarks(object["conclusion"])
 
     tree = {"node": {"label": label, "children": children}}
     members.append(label)
@@ -67,16 +66,105 @@ def elementForCommandLine(s):
 
     return "\"" + result[1] + "(" + ",".join(newElements) +  ")" + "\""
 
+def tokenize(line):
+    currToken = ""
+    tokens = []
+
+    for symbol in line:
+        if symbol == "(" or symbol == ")":
+            if currToken == "":
+                tokens.append(symbol)
+            else:
+                tokens.append(currToken)
+                currToken = ""
+                tokens.append(symbol)
+        elif symbol == "," or symbol == " ":
+            if currToken == "":
+                continue
+            tokens.append(currToken)
+            currToken = ""
+        else:
+            currToken = currToken + symbol
+
+    return tokens
+
+def convertNemoAtomToJson(tokens):
+    symbol = tokens.pop(0)
+    terms = []
+    for token in tokens:
+        if token == "(" or token == ")":
+            continue
+        if token.startswith("?"):
+            terms.append({"variable": token})
+        else:
+            terms.append({"constant": token})
+    
+    return {"symbol": symbol, "terms": terms}
+
+def convertListNemoAtomsToJson(tokens):
+    stack = []
+    atoms = []
+    for token in tokens:
+        if token == ")":
+            stack.append(")")
+            atoms.append(convertNemoAtomToJson(stack))
+            stack = []
+        else:
+            stack.append(token)
+    return atoms
+
+def convertNemoProgramToJson(lines):
+    transformedLines = []
+    for line in lines:
+        line = normalizeQuotationmarks(line)
+        if line.startswith("@") or len(line.split()) == 0: # no lines with just white spaces or starting with @
+            continue
+        ruleSplit = line.split(":-")
+
+        if len(ruleSplit) == 1:
+            tokens = tokenize(line)
+            transformedLines.append({"head": convertNemoAtomToJson(tokens), "body": []})
+        else:
+            head = convertNemoAtomToJson(tokenize(ruleSplit[0]))
+
+            body = convertListNemoAtomsToJson(tokenize(ruleSplit[1]))
+            transformedLines.append({"head": head, "body": body})
+    return transformedLines
+
+
     
 
-def main(folder, ruleFile):
-    print("Start")
+def main(*args):
+    complete = False
+    if len(args) == 0:
+        print("Empty input")
+        return
+    else:
+        if args[0] == "--help" or args[0] == "-h":
+            print("First input: path to folder where the data and results are stored")
+            print("Second input: program file name, stored at the path above")
+            print("Additional inputs may be ground atoms which should be tested")
+            print("If no additional arguments are added, then the program will grab everything from the results folder and do a completeness check.")
+            return
+        if len(args) == 2:
+            complete = True
+            ruleFile = args[1]
+            folder = args[0]
+        else:
+            folder = args.pop(0)
+            ruleFile = args.pop(0)
+
+            model = set(args)
+
+
     problemName = ruleFile.split(".")[0]
     originalDir = os.getcwd()
     os.chdir(folder)
 
-    model = getModel()
+    if complete:
+        model = getModel()
     model2=set(model)
+    
     trees = []
 
     while len(model2) > 0:
@@ -88,15 +176,19 @@ def main(folder, ruleFile):
             trees.append(parseTreeResult[0])
 
             model2.difference_update(parseTreeResult[1])
-    
+    program = []
+    with open(ruleFile, "r") as file:
+        program = convertNemoProgramToJson(file.readlines())
+
     os.chdir(originalDir)
     with open(problemName, "w") as f:
-        json.dump({"model": model, "trees": trees}, f, ensure_ascii=False, indent=4)
+        json.dump({"trees": trees, "program": program, "complete": complete}, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1], sys.argv[2])
-    main("/home/johannes/nemo/resources/testcases/johannes/test1", "program.rls")
+    import sys
+    main(*sys.argv[1:])
+#main("/home/johannes/nemo/resources/testcases/johannes/test1", "program.rls")
 
 
 

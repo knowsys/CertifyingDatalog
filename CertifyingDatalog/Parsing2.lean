@@ -100,7 +100,7 @@ instance (helper: parsingArityHelper): Nonempty (parsingSignature helper).consta
 by
   unfold parsingSignature
   simp
-  sorry
+  use ['a']
 
 instance (helper: parsingArityHelper): DecidableEq (parsingSignature helper).vars :=
 by
