@@ -1,9 +1,10 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.List.Defs
+import Mathlib.Data.Fintype.Basic
 import CertifyingDatalog.Basic
 
 -- basic definitions
-structure signature :=
+structure signature where
   (constants: Type)
   (vars: Type)
   (relationSymbols: Type)
@@ -24,7 +25,7 @@ instance: Coe (τ.constants) (term τ) where
     | c => term.constant c
 
 @[ext]
-structure atom :=
+structure atom where
   (symbol: τ.relationSymbols)
   (atom_terms: List (term τ ))
   (term_length: atom_terms.length = τ.relationArity symbol)
@@ -45,7 +46,7 @@ by
   rw [right]
 
 @[ext]
-structure rule :=
+structure rule where
   (head: atom τ)
   (body: List (atom τ))
 deriving DecidableEq
@@ -958,6 +959,11 @@ class database (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSym
 
 abbrev interpretation (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] := Set (groundAtom τ)
 
+inductive tree (A: Type)
+| node: A → List (tree A) → tree A
+
+abbrev proofTree' (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]:= tree (groundAtom τ)
+
 inductive proofTree (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
 | node: (groundAtom τ) → List (proofTree τ) →  proofTree τ
 
@@ -996,8 +1002,8 @@ lemma foldl_append_mem {A B: Type} (l1: List A) (l2: List B) (f: B → List A) (
 def root: proofTree τ → groundAtom τ
 | proofTree.node a _ => a
 
-def children: proofTree τ → List (proofTree τ)
-| proofTree.node _ l => l
+def children: proofTree τ → List (groundAtom τ)
+| proofTree.node _ l => List.map root l
 
 def listMax {A: Type} (f: A → ℕ): List A → ℕ
 | [] => 0
@@ -1298,6 +1304,7 @@ by
   apply databaseElementsHaveValidProofTree
   apply mem
 
+
 def modelTheoreticSemantics (P: program τ) (d: database τ): interpretation τ := {a: groundAtom τ | ∀ (i: interpretation τ), model P d i → a ∈ i}
 
 lemma leastModel (P: program τ) (d: database τ) (i: interpretation τ) (m: model P d i): modelTheoreticSemantics P d ⊆ i :=
@@ -1361,6 +1368,7 @@ lemma proofTreeAtomsInEveryModel (P: program τ) (d: database τ) (a: groundAtom
   cases valid_t with
   | inl ruleCase =>
     rcases ruleCase with ⟨r,g,rP, r_ground, all⟩
+
     have r_true: ruleTrue (ruleGrounding r g) i
     apply ruleModel
     unfold groundProgram

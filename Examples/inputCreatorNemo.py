@@ -46,7 +46,7 @@ def parseTree(json_object):
         for member in getTreeResult[1]:
             members.add(member)
 
-    return (tree, member)
+    return (tree, members)
 
 def getModel():
     model = []

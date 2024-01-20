@@ -1,6 +1,7 @@
 import Std.Data.List.Basic
 import CertifyingDatalog.Datalog
 import Lean.Data.Json.FromToJson
+import CertifyingDatalog.Basic
 
 def tokenizeHelper (s: List Char) (currToken: Option String) (tokens: List String): List String :=
   match s with
@@ -25,21 +26,6 @@ def tokenizeHelper (s: List Char) (currToken: Option String) (tokens: List Strin
               | Option.some token => tokenizeHelper tl (token.push hd) tokens
 
 def tokenize (s: String): List String := tokenizeHelper s.data Option.none List.nil
-
-def List.map_except.go {A B C: Type} (f: A → Except B C) (l: List A) (curr: Except B (List C)): Except B (List C) :=
-  match l with
-  | nil => curr
-  | cons hd tl =>
-    match curr with
-    | Except.ok l' =>
-      match f hd with
-      | Except.ok c =>
-        List.map_except.go f tl (Except.ok (l'.append [c]))
-      | Except.error msg =>
-        Except.error msg
-    | Except.error msg => Except.error msg
-
-def List.map_except {A B C: Type} (f: A → Except B C) (l: List A): Except B (List C) := List.map_except.go f l (Except.ok [])
 
 def listStringToString (l: List String): String :=
   List.foldl (fun (x y: String) => x ++ "," ++ y) "" l

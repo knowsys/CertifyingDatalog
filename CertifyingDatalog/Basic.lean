@@ -169,3 +169,18 @@ lemma List.diff'_empty {A: Type} [DecidableEq A] (l1 l2: List A): List.diff' l1 
     simp at h
     simp [a_hd] at h
     apply h
+
+def List.map_except.go {A B C: Type} (f: A → Except B C) (l: List A) (curr: Except B (List C)): Except B (List C) :=
+  match l with
+  | nil => curr
+  | cons hd tl =>
+    match curr with
+    | Except.ok l' =>
+      match f hd with
+      | Except.ok c =>
+        List.map_except.go f tl (Except.ok (l'.append [c]))
+      | Except.error msg =>
+        Except.error msg
+    | Except.error msg => Except.error msg
+
+def List.map_except {A B C: Type} (f: A → Except B C) (l: List A): Except B (List C) := List.map_except.go f l (Except.ok [])

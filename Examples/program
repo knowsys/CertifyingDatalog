@@ -1,12 +1,31 @@
 {
     "model": [
         "c(1,2)",
-        "d(3,4)",
-        "e(1,4)",
         "a(1,2)",
-        "b(3,4)"
+        "b(3,4)",
+        "d(3,4)",
+        "e(1,4)"
     ],
     "trees": [
+        {
+            "node": {
+                "label": "b(3, 4)",
+                "children": []
+            }
+        },
+        {
+            "node": {
+                "label": "d(3, 4)",
+                "children": [
+                    {
+                        "node": {
+                            "label": "b(3, 4)",
+                            "children": []
+                        }
+                    }
+                ]
+            }
+        },
         {
             "node": {
                 "label": "e(1, 4)",
@@ -42,24 +61,17 @@
         },
         {
             "node": {
+                "label": "a(1, 2)",
+                "children": []
+            }
+        },
+        {
+            "node": {
                 "label": "c(1, 2)",
                 "children": [
                     {
                         "node": {
                             "label": "a(1, 2)",
-                            "children": []
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "node": {
-                "label": "d(3, 4)",
-                "children": [
-                    {
-                        "node": {
-                            "label": "b(3, 4)",
                             "children": []
                         }
                     }
