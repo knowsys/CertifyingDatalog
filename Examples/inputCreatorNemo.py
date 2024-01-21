@@ -182,7 +182,7 @@ def main(*args):
 
     os.chdir(originalDir)
     with open(problemName, "w") as f:
-        json.dump({"trees": trees, "program": program, "complete": complete}, f, ensure_ascii=False, indent=4)
+        json.dump({"trees": trees, "program": program, "completion": complete}, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":

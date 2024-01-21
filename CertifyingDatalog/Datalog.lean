@@ -971,7 +971,7 @@ def member (t1 t2: proofTree τ): Prop :=
   match t1 with
     | proofTree.node _ l => t2 ∈ l
 
-def elementMember [DecidableEq (groundAtom τ)] (a: groundAtom τ) (t: proofTree τ): Bool  :=
+def elementMember (a: groundAtom τ) (t: proofTree τ): Bool  :=
   match t with
   | proofTree.node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elementMember a x)
 termination_by elementMember a t => sizeOf t
