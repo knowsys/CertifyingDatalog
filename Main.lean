@@ -211,41 +211,74 @@ lemma mainCheckMockDatabseUnitIffSolution  (problem: verificationProblem relatio
   unfold mockDatabaseContainedInModel
   simp
 
+structure argsParsed where
+  (programFileName: String)
+  (complete: Bool)
+  (help: Bool)
 
-def main(args: List String): IO Unit := do
+def parseArgsHelper (args: List String) (curr: argsParsed) : Except String argsParsed  :=
   match args with
-  | [] => IO.println "No input file provided"
-  | hd::_ =>
+  | [] =>
+    if curr.programFileName == ""
+    then Except.error "No program file name provided"
+    else Except.ok curr
+  | hd::tl =>
     if hd ∈ ["-h", "--help"]
-    then IO.println "Datalog validity checker"
-    else
-      let problemFileName := System.FilePath.mk hd
-      if ← problemFileName.pathExists
+    then Except.ok {programFileName := "", complete := false, help := true}
+    else  if hd == "-c"
+          then parseArgsHelper tl {programFileName := "", complete := true, help := false}
+          else
+          if tl == []
+          then Except.ok {programFileName := hd, complete := curr.complete, help := false}
+          else Except.error "Too many arguments"
+
+def parseArgs (args: List String): Except String argsParsed := parseArgsHelper args {programFileName := "", complete := false, help:= false}
+
+def printHelp: IO Unit := do
+  IO.println "Datalog results validity checker"
+  IO.println "Input [Options] <problemFile>"
+  IO.println "Arguments"
+  IO.println "  <problemFile>: contains a json description of the program and the proof trees"
+  IO.println "Options"
+  IO.println "  -h --help Help (displayed right now)"
+  IO.println "  -c        Completeness check: in addition to validating the trees check if result is also a model"
+
+def getProblemFromJson (fileName: String): IO (Except String (verificationProblemSignatureWrapper)) := do
+  let filePath := System.FilePath.mk fileName
+  if ← filePath.pathExists
       then
-        match Lean.Json.parse (← IO.FS.readFile problemFileName) with
-          | Except.error msg => IO.println ("Error parsing JSON " ++ msg)
+        match Lean.Json.parse (← IO.FS.readFile filePath) with
+          | Except.error msg => pure (Except.error ("Error parsing JSON " ++ msg))
           | Except.ok json =>
             match Lean.fromJson? (α:=problemInput) json with
-              | Except.error msg => IO.println ("Json does not match problem description" ++ msg)
+              | Except.error msg => pure (Except.error ("Json does not match problem description" ++ msg))
               | Except.ok parsedProblem =>
-                match getArityHelperFromProgram parsedProblem.program with
-                | Except.error msg => IO.println ("Error parsing program " ++ msg)
-                | Except.ok arityHelper =>
-                  match converProblemInputToVerificationProblem arityHelper parsedProblem with
-                  | Except.error msg => IO.println ("Error parsing problem " ++ msg)
-                  | Except.ok problem =>
-                    if problem.completion
-                    then
-                      match safe: safetyCheckProgram problem.program ruleParsingSignatureToString (fun x => x) with
-                      | Except.error msg => IO.println msg
-                      | Except.ok _ =>
-                        have safe': ∀ (r: rule (parsingSignature arityHelper)), r ∈ problem.program → r.isSafe := by
-                          rw [safetyCheckProgramUnitIffProgramSafe] at safe
-                          apply safe
-                        match mainCheckMockDatabase problem safe' with
-                        | Except.ok _ => IO.println "Valid result"
-                        | Except.error msg => IO.println ("Invalid result due to " ++ msg )
-                    else
-                      match checkValidnessMockDatabase problem with
-                      | Except.error msg => IO.println ("Invalid result due to " ++ msg )
-                      | Except.ok _ => IO.println "Valid result"
+                pure (converProblemInputToVerificationProblem parsedProblem)
+  else pure (Except.error "File does not exist")
+
+def main(args: List String): IO Unit := do
+  match parseArgs args with
+  | Except.error e => IO.println e
+  | Except.ok argsParsed =>
+    if argsParsed.help = true
+    then printHelp
+    else
+      match ← getProblemFromJson argsParsed.programFileName with
+      | Except.error e => IO.println e
+      | Except.ok transformedInput =>
+        let problem := transformedInput.problem
+        if argsParsed.complete = true
+        then
+          match safe: safetyCheckProgram problem.program ruleParsingSignatureToString (fun x => x) with
+          | Except.error msg => IO.println msg
+          | Except.ok _ =>
+            have safe': ∀ (r: rule (parsingSignature transformedInput.helper)), r ∈ problem.program → r.isSafe := by
+              rw [safetyCheckProgramUnitIffProgramSafe] at safe
+              apply safe
+            match mainCheckMockDatabase problem safe' with
+            | Except.ok _ => IO.println "Valid result"
+            | Except.error msg => IO.println ("Invalid result due to " ++ msg )
+        else
+          match checkValidnessMockDatabase problem with
+          | Except.error msg => IO.println ("Invalid result due to " ++ msg )
+          | Except.ok _ => IO.println "Valid result"

@@ -170,17 +170,36 @@ lemma List.diff'_empty {A: Type} [DecidableEq A] (l1 l2: List A): List.diff' l1 
     simp [a_hd] at h
     apply h
 
-def List.map_except.go {A B C: Type} (f: A → Except B C) (l: List A) (curr: Except B (List C)): Except B (List C) :=
+def List.map_except.go {A B C: Type} (f: A → Except B C) (l: List A) (curr: List C): Except B (List C) :=
   match l with
-  | nil => curr
+  | nil => Except.ok curr
   | cons hd tl =>
-    match curr with
-    | Except.ok l' =>
-      match f hd with
-      | Except.ok c =>
-        List.map_except.go f tl (Except.ok (l'.append [c]))
-      | Except.error msg =>
-        Except.error msg
-    | Except.error msg => Except.error msg
+    match f hd with
+    | Except.ok c =>
+      List.map_except.go f tl  (curr.append [c])
+    | Except.error msg =>
+      Except.error msg
 
-def List.map_except {A B C: Type} (f: A → Except B C) (l: List A): Except B (List C) := List.map_except.go f l (Except.ok [])
+def List.map_except {A B C: Type} (f: A → Except B C) (l: List A): Except B (List C) := List.map_except.go f l []
+
+lemma List.map_except_go_ok_length {A B C: Type} (f: A → Except B C) (l1: List A) (curr l2: List C) (h: List.map_except.go f l1 curr = Except.ok l2):
+  List.length l1 + List.length curr = List.length l2 :=
+  by
+    induction l1 generalizing curr with
+    | nil =>
+      unfold map_except.go at h
+      simp at h
+      rw [h]
+      simp
+    | cons hd tl ih =>
+      unfold map_except.go at h
+      simp at h
+      cases p:f hd with
+      | error e =>
+        simp [p] at h
+      | ok c =>
+        simp [p] at h
+        specialize ih (curr ++ [c]) h
+        rw [← ih]
+        simp
+        rw [Nat.succ_eq_add_one, Nat.add_assoc, Nat.add_comm (m:= 1)]

@@ -51,15 +51,14 @@ structure mockRule where
   body: List (mockAtom)
 deriving Repr, DecidableEq, Lean.FromJson, Lean.ToJson
 
-inductive jsonTree
-| node (label: String) (children: List jsonTree)
-deriving Repr, Lean.ToJson, Lean.FromJson
+inductive jsonTree (A: Type)
+| node (label: A) (children: List (jsonTree A))
+deriving Lean.FromJson, Lean.ToJson
 
 structure problemInput where
-  (trees: List jsonTree)
+  (trees: List (jsonTree mockAtom))
   (program: List (mockRule))
-  (completion: Bool)
-deriving Repr, Lean.FromJson, Lean.ToJson
+deriving Lean.FromJson, Lean.ToJson
 
 structure parsingArityHelper where
   (relationList: List String)
@@ -143,6 +142,11 @@ def transformMockTermToTerm (helper: parsingArityHelper) (mt: mockTerm): term (p
   | mockTerm.constant c => term.constant c
   | mockTerm.variable v => term.variableDL v
 
+def transformMockTermToConstant (helper: parsingArityHelper) (mt: mockTerm): Except String (parsingSignature helper).constants :=
+  match mt with
+  | mockTerm.constant c => Except.ok c
+  | mockTerm.variable v => Except.error ("Encountered variable" ++ v ++ "in ground atom ")
+
 def transformMockAtomToAtom (helper: parsingArityHelper) (ma: mockAtom): Except String (atom (parsingSignature helper)) :=
   if h: ma.symbol ∈ helper.relationList
   then
@@ -159,6 +163,29 @@ def transformMockAtomToAtom (helper: parsingArityHelper) (ma: mockAtom): Except 
     else Except.error ("Wrong arity for " ++ ma.symbol)
   else Except.error ("Unknown symbol" ++ ma.symbol)
 
+def transformMockAtomToGroundAtom (helper: parsingArityHelper) (ma: mockAtom): Except String (groundAtom (parsingSignature helper)) :=
+  if h: ma.symbol ∈ helper.relationList
+  then
+    if p: helper.arity (Subtype.mk ma.symbol h) = ma.terms.length
+    then
+      match q: List.map_except (transformMockTermToConstant helper) ma.terms with
+      | Except.error msg => Except.error ("Error parsing ground atom" ++ msg)
+      | Except.ok l =>
+
+      have length: List.length l = signature.relationArity (parsingSignature helper) { val := ma.symbol, property := h } :=
+      by
+        unfold parsingSignature
+        simp
+        rw [p]
+        apply Eq.symm
+        apply List.map_except_ok_length'
+        apply q
+
+
+    Except.ok {symbol := (Subtype.mk ma.symbol h), atom_terms := l, term_length := length}
+    else Except.error ("Wrong arity for " ++ ma.symbol)
+  else Except.error ("Unknown symbol" ++ ma.symbol)
+
 def transformMockRuleToRule (helper: parsingArityHelper) (mr: mockRule): Except String (rule (parsingSignature helper)) :=
   match transformMockAtomToAtom helper mr.head with
   | Except.error e => Except.error e
@@ -168,41 +195,10 @@ def transformMockRuleToRule (helper: parsingArityHelper) (mr: mockRule): Except 
     | Except.ok body => Except.ok {head:= head, body:= body}
 
 
-def parseGroundAtomFromStack (helper: parsingArityHelper) (stack: List String): Except String (groundAtom (parsingSignature helper)) :=
-  match stack with
-  | [] => Except.error "Can't parse ground atom from empty string"
-  | hd::tl =>
-    if h: hd ∈  helper.relationList
-    then
-      if p:tl.length = (parsingSignature helper).relationArity (Subtype.mk hd h)
-      then
-        Except.ok {symbol:= Subtype.mk hd h, atom_terms := tl, term_length := p}
-      else
-        Except.error ("Wrong arity for symbol " ++ hd)
-    else Except.error ("Unknown symbol " ++ hd)
-
-
-def parseGroundAtom.go (helper: parsingArityHelper) (l: List String) (stack: List String): Except String (groundAtom (parsingSignature helper)) :=
-  match l with
-  | List.nil => Except.error "No closing bracket"
-  | hd::tl =>
-    if hd == "("
-    then parseGroundAtom.go helper tl stack
-    else
-      if hd == ")"
-      then  if tl.isEmpty
-            then parseGroundAtomFromStack helper stack
-            else Except.error "Symbols after the closing bracket when parsing atom"
-      else
-        parseGroundAtom.go helper tl (stack.append [hd])
-
-def parseGroundAtom (helper: parsingArityHelper) (l: List String):  Except String (groundAtom (parsingSignature helper)) := parseGroundAtom.go helper l []
-
-
-def proofTreeFromTree (helper: parsingArityHelper) (t: jsonTree) : Except String (proofTree (parsingSignature helper)) :=
+def proofTreeFromTree (helper: parsingArityHelper) (t: jsonTree mockAtom) : Except String (proofTree (parsingSignature helper)) :=
   match t with
   | jsonTree.node label children =>
-    match parseGroundAtom helper (tokenize label) with
+    match transformMockAtomToGroundAtom helper label with
     | Except.ok a =>
       let s:= List.map_except (fun ⟨x, _h⟩  => proofTreeFromTree  helper x) children.attach
       match s with
@@ -219,12 +215,18 @@ decreasing_by
 structure verificationProblem (helper: parsingArityHelper) where
   (trees: List (proofTree (parsingSignature helper)))
   (program: List (rule (parsingSignature helper)))
-  (completion: Bool)
 
-def converProblemInputToVerificationProblem (helper: parsingArityHelper) (input: problemInput) : Except String (verificationProblem helper) :=
-  match List.map_except (proofTreeFromTree helper) input.trees with
+structure verificationProblemSignatureWrapper where
+  (helper: parsingArityHelper)
+  (problem: verificationProblem helper)
+
+def converProblemInputToVerificationProblem (input: problemInput): Except String verificationProblemSignatureWrapper :=
+  match getArityHelperFromProgram input.program with
+  | Except.error e => Except.error ("Error parsing program --" ++ e)
+  | Except.ok helper =>
+    match List.map_except (proofTreeFromTree helper) input.trees with
   | Except.error e => Except.error ("Error parsing trees -- " ++ e)
   | Except.ok trees =>
     match List.map_except (transformMockRuleToRule helper) input.program with
     | Except.error e => Except.error ("Error parsing program -- " ++ e)
-    | Except.ok program => Except.ok {trees := trees, program := program, completion := input.completion}
+    | Except.ok program => Except.ok {helper := helper, problem := {trees := trees, program := program}}

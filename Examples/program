@@ -2,11 +2,31 @@
     "trees": [
         {
             "node": {
-                "label": "d(3,4)",
+                "label": {
+                    "symbol": "c",
+                    "terms": [
+                        {
+                            "constant": "1"
+                        },
+                        {
+                            "constant": "2"
+                        }
+                    ]
+                },
                 "children": [
                     {
                         "node": {
-                            "label": "b(3,4)",
+                            "label": {
+                                "symbol": "a",
+                                "terms": [
+                                    {
+                                        "constant": "1"
+                                    },
+                                    {
+                                        "constant": "2"
+                                    }
+                                ]
+                            },
                             "children": []
                         }
                     }
@@ -15,28 +35,110 @@
         },
         {
             "node": {
-                "label": "e(1,4)",
+                "label": {
+                    "symbol": "b",
+                    "terms": [
+                        {
+                            "constant": "3"
+                        },
+                        {
+                            "constant": "4"
+                        }
+                    ]
+                },
+                "children": []
+            }
+        },
+        {
+            "node": {
+                "label": {
+                    "symbol": "d",
+                    "terms": [
+                        {
+                            "constant": "3"
+                        },
+                        {
+                            "constant": "4"
+                        }
+                    ]
+                },
                 "children": [
                     {
                         "node": {
-                            "label": "c(1,2)",
-                            "children": [
-                                {
-                                    "node": {
-                                        "label": "a(1,2)",
-                                        "children": []
+                            "label": {
+                                "symbol": "b",
+                                "terms": [
+                                    {
+                                        "constant": "3"
+                                    },
+                                    {
+                                        "constant": "4"
                                     }
-                                }
-                            ]
+                                ]
+                            },
+                            "children": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "node": {
+                "label": {
+                    "symbol": "e",
+                    "terms": [
+                        {
+                            "constant": "1"
+                        },
+                        {
+                            "constant": "4"
+                        }
+                    ]
+                },
+                "children": [
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "c",
+                                "terms": [
+                                    {
+                                        "constant": "1"
+                                    },
+                                    {
+                                        "constant": "2"
+                                    }
+                                ]
+                            },
+                            "children": []
                         }
                     },
                     {
                         "node": {
-                            "label": "d(3,4)",
+                            "label": {
+                                "symbol": "d",
+                                "terms": [
+                                    {
+                                        "constant": "3"
+                                    },
+                                    {
+                                        "constant": "4"
+                                    }
+                                ]
+                            },
                             "children": [
                                 {
                                     "node": {
-                                        "label": "b(3,4)",
+                                        "label": {
+                                            "symbol": "b",
+                                            "terms": [
+                                                {
+                                                    "constant": "3"
+                                                },
+                                                {
+                                                    "constant": "4"
+                                                }
+                                            ]
+                                        },
                                         "children": []
                                     }
                                 }
@@ -165,6 +267,5 @@
                 }
             ]
         }
-    ],
-    "completion": true
+    ]
 }

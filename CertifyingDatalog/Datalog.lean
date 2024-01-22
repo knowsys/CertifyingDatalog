@@ -1419,3 +1419,12 @@ by
   apply proofTheoreticSemanticsIsModel
 
 end semantics
+
+lemma List.map_except_ok_length' {A B C: Type} (f: A → Except B C) (l1: List A) (l2: List C) (h: List.map_except f l1 = Except.ok l2): List.length l1 = List.length l2 :=
+by
+  have h': length l1 + length nil = length l2
+  apply List.map_except_go_ok_length f l1
+  unfold map_except at h
+  apply h
+  simp at h'
+  apply h'
