@@ -97,7 +97,7 @@ by
   simp
   apply instDecidableEqString
 
-instance (helper: parsingArityHelper): Nonempty (parsingSignature helper).constants :=
+instance (helper: parsingArityHelper): Inhabited (parsingSignature helper).constants :=
 by
   unfold parsingSignature
   simp

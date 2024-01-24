@@ -3,7 +3,7 @@ import CertifyingDatalog.Unification
 import CertifyingDatalog.Basic
 
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Nonempty τ.constants]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants]
 
 def symbolSequence (r: rule τ): List τ.relationSymbols := r.head.symbol::(List.map atom.symbol r.body)
 

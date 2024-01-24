@@ -4,14 +4,14 @@ import CertifyingDatalog.Unification
 import Mathlib.Data.Set.Basic
 import CertifyingDatalog.Basic
 
-structure partialGroundRule (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Nonempty τ.constants] (i: interpretation τ) where
+structure partialGroundRule (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] (i: interpretation τ) where
   head: atom τ
   groundedBody: List (groundAtom τ)
   ungroundedBody: List (atom τ)
 
   members: ∀ (ga: groundAtom τ), ga ∈ groundedBody → ga ∈ i
 
-variable  {τ: signature}[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Nonempty τ.constants] {i: interpretation τ}
+variable  {τ: signature}[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] {i: interpretation τ}
 
 def partialGroundRule.isSafe (pgr: partialGroundRule τ i): Prop :=
   atomVariables pgr.head ⊆ collectResultsToFinset atomVariables pgr.ungroundedBody
@@ -841,7 +841,6 @@ lemma replaceGroundingWithSubstitutionAndGrounding (a: atom τ) (r: rule τ) (me
   specialize q (atomGrounding (combineSubstitutionGrounding s g) a)
   simp at q
   exfalso
-  simp [← List.toSet_mem] at q
   specialize q a mem
   simp at q
   exact absurd q p
@@ -926,8 +925,7 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       rw [List.get_map]
       simp
       rw [atomGroundingIsSelfOnGroundAtom]
-      simp [groundingBody] at body
-      rw [List.toSet_mem]
+      simp [groundingBody, atomGroundingIsSelfOnGroundAtom] at body
       apply body
       use (substitutionToGrounding emptySubstitution) -- we have to use some substitution
 
@@ -959,17 +957,17 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       unfold ruleGrounding
       unfold ruleTrue
       unfold partialGroundRule.toRule
+      simp
       unfold groundRuleBodySet
       simp
+
       rw [Set.subset_def]
       intro body
       specialize body (atomWithoutVariablesToGroundAtom hd varsHd)
-      rw [← List.toSet_mem] at body
-      simp at body
+      simp [Finset.mem_insert] at body
       have n_hd_i: atomWithoutVariablesToGroundAtom hd varsHd ∈ i
       rw [List.toSet_mem]
       apply body
-      right
       left
       rw [atomGroundingEqAtomWithoutVariablesToGroundAtom]
       exfalso
@@ -1017,9 +1015,6 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       rw [Set.subset_def]
       simp
       intro body
-      specialize body (atomGrounding g hd)
-      rw [← List.toSet_mem] at body
-      simp at body
       rw [← List.toSet_mem] at body
       exfalso
       exact absurd body g_hd

@@ -1,4 +1,5 @@
 import Mathlib.Data.Set.Basic
+import Mathlib.Data.Finset.Basic
 
 
 def List.toSet {A: Type} (l: List A): Set A :=

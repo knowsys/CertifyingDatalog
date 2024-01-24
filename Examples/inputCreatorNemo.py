@@ -205,14 +205,18 @@ def main(*args):
     
     trees = []
     goal = ""
+    i = 0
     for atom in model:
+        i = i + 1
         if len(goal) > 20000:
             goal = goal.removesuffix(";")
-            trees.extend(callExplain(goal, ruleFile))
+            print(i)
+            #trees.extend(callExplain(goal, ruleFile))
             goal = elementForCommandLine(atom) + ";"
 
         else:
             goal = goal + elementForCommandLine(atom) + ";"
+    return
     goal = goal.removesuffix(";")
     trees.extend(callExplain(goal, ruleFile))
     trees = filterTrees(trees)
@@ -229,7 +233,7 @@ def main(*args):
 if __name__ == "__main__":
     import sys
     #main(*sys.argv[1:])
-    main("/home/johannes/nemo/resources/testcases/johannes/test1", "program.rls")
+    main("/home/johannes/nemo/resources/testcases/johannes/TC", "tc.rls")
 
 
 
