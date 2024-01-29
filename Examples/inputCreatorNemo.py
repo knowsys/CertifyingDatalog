@@ -118,12 +118,14 @@ def convertNemoProgramToJson(lines):
     transformedLines = []
     for line in lines:
         line = normalizeQuotationmarks(line)
-        if line.startswith("@") or len(line.split()) == 0: # no lines with just white spaces or starting with @
+        if line.startswith("@") or len(line.split()) == 0 or line.startswith("%"): # no lines with just white spaces or starting with @
             continue
         ruleSplit = line.split(":-")
 
         if len(ruleSplit) == 1:
             tokens = tokenize(line)
+            if len(tokens) == 0:
+                print(line)
             transformedLines.append({"head": convertNemoAtomToJson(tokens), "body": []})
         else:
             head = convertNemoAtomToJson(tokenize(ruleSplit[0]))
@@ -165,7 +167,7 @@ def filterTrees(treeList):
     return filteredTrees
 
 def callExplain(goal, ruleFile):
-    # print("Called "+ "nmo  --trace \"" + goal + "\" --trace-output temp " + ruleFile)
+    print("Called "+ "nmo  --trace \"" + goal + "\" --trace-output temp " + ruleFile)
     os.system("nmo  --trace \"" + goal + "\" --trace-output temp " + ruleFile)
     trees = []
     with open("temp") as f:
@@ -175,6 +177,7 @@ def callExplain(goal, ruleFile):
 
 def main(*args):
     complete = False
+    args = list(args)
     if len(args) == 0:
         print("Empty input")
         return
@@ -210,13 +213,12 @@ def main(*args):
         i = i + 1
         if len(goal) > 20000:
             goal = goal.removesuffix(";")
-            print(i)
-            #trees.extend(callExplain(goal, ruleFile))
+            trees.extend(callExplain(goal, ruleFile))
             goal = elementForCommandLine(atom) + ";"
 
         else:
             goal = goal + elementForCommandLine(atom) + ";"
-    return
+    
     goal = goal.removesuffix(";")
     trees.extend(callExplain(goal, ruleFile))
     trees = filterTrees(trees)

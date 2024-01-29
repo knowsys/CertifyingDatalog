@@ -1,0 +1,1631 @@
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.14443492889404297
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.023934125900268555
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.03657817840576172
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.0468289852142334
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.03877663612365723
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.018968582153320312
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.022441625595092773
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.020943164825439453
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.02793407440185547
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+Valid result
+0.02043604850769043
+---
+[
+    {
+        "node": {
+            "label": {
+                "symbol": "t",
+                "terms": [
+                    {
+                        "constant": "80"
+                    },
+                    {
+                        "constant": "42"
+                    }
+                ]
+            },
+            "children": [
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "80"
+                                },
+                                {
+                                    "constant": "378"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "80"
+                                            },
+                                            {
+                                                "constant": "259"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "80"
+                                                        },
+                                                        {
+                                                            "constant": "259"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "t",
+                                        "terms": [
+                                            {
+                                                "constant": "259"
+                                            },
+                                            {
+                                                "constant": "378"
+                                            }
+                                        ]
+                                    },
+                                    "children": [
+                                        {
+                                            "node": {
+                                                "label": {
+                                                    "symbol": "A",
+                                                    "terms": [
+                                                        {
+                                                            "constant": "259"
+                                                        },
+                                                        {
+                                                            "constant": "378"
+                                                        }
+                                                    ]
+                                                },
+                                                "children": []
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "node": {
+                        "label": {
+                            "symbol": "t",
+                            "terms": [
+                                {
+                                    "constant": "378"
+                                },
+                                {
+                                    "constant": "42"
+                                }
+                            ]
+                        },
+                        "children": [
+                            {
+                                "node": {
+                                    "label": {
+                                        "symbol": "A",
+                                        "terms": [
+                                            {
+                                                "constant": "378"
+                                            },
+                                            {
+                                                "constant": "42"
+                                            }
+                                        ]
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+]
+---
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.01967906951904297
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.01883411407470703
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.019858121871948242
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.02049112319946289
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.020007610321044922
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.019823551177978516
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.02496933937072754
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.01987767219543457
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.02356576919555664
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.019559383392333984
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.019754886627197266
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.021175384521484375
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.019895553588867188
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.019649028778076172
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.022412538528442383
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.02855968475341797
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.02483844757080078
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.02445530891418457
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.024049997329711914
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.02286219596862793
+---
+[]
+Error parsing program --Mismatched arity for nf:isMainClass Given 
+0.025492191314697266
+---
+[]
+
+
+johannes@LAPTOP-FRC5H92K:~/nemo-examples/examples/owl-el/from-preprocessed-csv$ nmo  --trace "mainSubClassOf(\"http://www.co-ode.org/ontologies/galen#TransOrbitApproach\",\"http://www.co-ode.org/ontologies/galen#DomainCategory\")" el-calc.rls
+Reasoning completed in 4263ms. Derived 1858810 facts.
+   Loading input:   585ms
+   Reasoning:      3678ms
+
+mainSubClassOf("http://www.co-ode.org/ontologies/galen#TransOrbitApproach", "http://www.co-ode.org/ontologies/galen#DomainCategory") was not derived
+johannes@LAPTOP-FRC5H92K:~/nemo-examples/examples/owl-el/from-preprocessed-csv$ nmo  --trace "mainSubClassOf(http://www.co-ode.org/ontologies/galen#TransOrbitApproach,http://www.co-ode.org/ontologies/galen#DomainCategory)" el-calc.rls
+[2024-01-29T07:46:02Z ERROR nmo] error: Parse error on line 1, column 1: Expected a fact
+    at "mainSubClassOf(http://www.co-ode.org/ontologies/galen#TransOrbitApproach,http://www.co-ode.org/ontologies/galen#DomainCategory)."
+    ----^
+    Context:
+      Parse error on line 1, column 15: Expected an parenthesised expression
+      at "mainSubClassOf(http://www.co-ode.org/ontologies/galen#TransOrbitApproach,http://www.co-ode.org/ontologies/galen#DomainCategory)."
+      ------------------^
+      Context:
+        Parse error on line 1, column 16: Expected a ground term
+        at "mainSubClassOf(http://www.co-ode.org/ontologies/galen#TransOrbitApproach,http://www.co-ode.org/ontologies/galen#DomainCategory)."
+        -------------------^
+        Context:
+          Parse error on line 1, column 16: Expected an IRI as a constant name
+          at "mainSubClassOf(http://www.co-ode.org/ontologies/galen#TransOrbitApproach,http://www.co-ode.org/ontologies/galen#DomainCategory)."
+          -------------------^
+          Context:
+            Parse error on line 1, column 16: Undeclared prefix "http"
+            at "mainSubClassOf(http://www.co-ode.org/ontologies/galen#TransOrbitApproach,http://www.co-ode.org/ontologies/galen#DomainCategory)."
+            -------------------^
