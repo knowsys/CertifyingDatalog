@@ -269,6 +269,7 @@ def main(args: List String): IO Unit := do
         let problem := transformedInput.problem
         if argsParsed.complete = true
         then
+          IO.println "Completeness check"
           match safe: safetyCheckProgram problem.program ruleParsingSignatureToString (fun x => x) with
           | Except.error msg => IO.println msg
           | Except.ok _ =>
@@ -279,6 +280,7 @@ def main(args: List String): IO Unit := do
             | Except.ok _ => IO.println "Valid result"
             | Except.error msg => IO.println ("Invalid result due to " ++ msg )
         else
+          IO.println "Start validating"
           match checkValidnessMockDatabase problem with
           | Except.error msg => IO.println ("Invalid result due to " ++ msg )
           | Except.ok _ => IO.println "Valid result"

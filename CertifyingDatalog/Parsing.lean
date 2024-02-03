@@ -3,6 +3,11 @@ import CertifyingDatalog.Datalog
 import CertifyingDatalog.Basic
 import Lean.Data.Json.FromToJson
 
+def NatToString (n: ℕ): String :=
+  match n with
+  | 0 => " "
+  | Nat.succ n => "I" ++ NatToString n
+
 def tokenizeHelper (s: List Char) (currToken: Option String) (tokens: List String): List String :=
   match s with
   | List.nil =>
@@ -37,12 +42,19 @@ def mockTerm.toString (mt: mockTerm): String :=
   | mockTerm.constant c => "constant " ++ c
   | mockTerm.variable v => "variable " ++ v
 
+def mockTermList.toString (l: List mockTerm): String :=
+  match l with
+  | [] => ""
+  | hd::tl => mockTerm.toString hd ++ "," ++ mockTermList.toString tl
+
 --#eval Lean.toJson (mockTerm.constant "b")
 
 structure mockAtom where
   (symbol: String)
   (terms: List mockTerm)
 deriving DecidableEq, Lean.FromJson, Lean.ToJson, Repr
+
+def mockAtom.toString (ma: mockAtom): String := ma.symbol ++ "(" ++ mockTermList.toString ma.terms ++ ")"
 
 --#eval Lean.toJson (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"])
 
@@ -160,7 +172,7 @@ def transformMockAtomToAtom (helper: parsingArityHelper) (ma: mockAtom): Except 
         simp
 
     Except.ok {symbol := (Subtype.mk ma.symbol h), atom_terms := List.map (transformMockTermToTerm helper) ma.terms, term_length := q}
-    else Except.error ("Wrong arity for " ++ ma.symbol)
+    else Except.error ("Wrong arity for " ++ ma.toString ++ "Expected " ++ NatToString (helper.arity (Subtype.mk ma.symbol h)) ++ "Actually " ++  NatToString ma.terms.length)
   else Except.error ("Unknown symbol" ++ ma.symbol)
 
 def transformMockAtomToGroundAtom (helper: parsingArityHelper) (ma: mockAtom): Except String (groundAtom (parsingSignature helper)) :=
@@ -183,7 +195,7 @@ def transformMockAtomToGroundAtom (helper: parsingArityHelper) (ma: mockAtom): E
 
 
     Except.ok {symbol := (Subtype.mk ma.symbol h), atom_terms := l, term_length := length}
-    else Except.error ("Wrong arity for " ++ ma.symbol)
+    else Except.error ("Transform to groundAtom -- Wrong arity for " ++ ma.toString ++ " Expected " ++ NatToString (helper.arity (Subtype.mk ma.symbol h)) ++ "Actually " ++  NatToString ma.terms.length)
   else Except.error ("Unknown symbol" ++ ma.symbol)
 
 def transformMockRuleToRule (helper: parsingArityHelper) (mr: mockRule): Except String (rule (parsingSignature helper)) :=

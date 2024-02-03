@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from rfc3987 import parse
 
 def normalizeQuotationmarks(s):
     return ''.join(s.replace("\"", "").split())
@@ -35,17 +36,23 @@ def expandTree(tree1, tree2):
 def parseTrees(json_object):
     trees = []
     for atom in json_object["finalConclusion"]:
-        trees.append({"node": {"label": normalizeQuotationmarks(atom), "children": []}})
+        trees.append({"node": {"label": atom, "children": []}})
 
-    for i in range (0, len(json_object["inferences"])):
-        getTreeResult = getTree(json_object["inferences"][i])
+    currInference = 0
 
-        newTrees = []
-        for tree in trees:
-            newTree = expandTree(tree, getTreeResult)
-            newTrees.append(newTree)
-        trees = newTrees        
+    for i in range(0, len(trees)):
+        leafs = set([trees[i]["node"]["label"]])
 
+        for j in range(currInference, len(json_object["inferences"])):
+            inference = json_object["inferences"][j]
+
+            if inference["conclusion"] in leafs:
+                trees[i] = expandTree(trees[i], getTree(inference))
+                leafs.remove(inference["conclusion"])
+                leafs.update(inference["premises"])
+            else:
+                currInference = j
+                break
     return trees
 
 def getModel():
@@ -63,7 +70,12 @@ def elementForCommandLine(s):
     result = re.match(r"(.+)\((.+)\)",s)
     newElements = []
     for element in result[2].split(","):
-        newElements.append('\\\"' + element + "\\\"")
+        try: 
+            parse(element, rule='IRI')
+            newElements.append('<' + newElements + '>')
+        except ValueError:
+            newElements.append('"' + element + '"')
+
 
     return result[1] + "(" + ",".join(newElements) +  ")"
 
@@ -115,23 +127,31 @@ def convertListNemoAtomsToJson(tokens):
     return atoms
 
 def convertNemoProgramToJson(lines):
+    lines = filter(lambda x: not x.startswith("%"), lines)
+
+
+    program = "".join(lines)
+
+    lines = program.split(".\n")
+
     transformedLines = []
     for line in lines:
+        line = "".join(line.split())
         line = normalizeQuotationmarks(line)
-        if line.startswith("@") or len(line.split()) == 0 or line.startswith("%"): # no lines with just white spaces or starting with @
+        if line.startswith("@"): 
             continue
         ruleSplit = line.split(":-")
 
         if len(ruleSplit) == 1:
-            tokens = tokenize(line)
-            if len(tokens) == 0:
-                print(line)
-            transformedLines.append({"head": convertNemoAtomToJson(tokens), "body": []})
+            heads = convertListNemoAtomsToJson(tokenize(line))
+            for head in heads:
+                transformedLines.append({"head": head, "body": []})
         else:
-            head = convertNemoAtomToJson(tokenize(ruleSplit[0]))
+            heads = convertListNemoAtomsToJson(tokenize(ruleSplit[0]))
 
             body = convertListNemoAtomsToJson(tokenize(ruleSplit[1]))
-            transformedLines.append({"head": head, "body": body})
+            for head in heads:
+                transformedLines.append({"head": head, "body": body})
     return transformedLines
 
 def convertNemoTreeAtomsToJson(tree):
@@ -166,14 +186,12 @@ def filterTrees(treeList):
 
     return filteredTrees
 
-def callExplain(goal, ruleFile):
-    print("Called "+ "nmo  --trace \"" + goal + "\" --trace-output temp " + ruleFile)
-    os.system("nmo  --trace \"" + goal + "\" --trace-output temp " + ruleFile)
-    trees = []
-    with open("temp") as f:
-        trees = (parseTrees(json.load(f)))
+def convertProofTreeToJson(tree):
+    label = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(tree["node"]["label"])))
 
-    return trees
+    children = map(convertProofTreeToJson, tree["node"]["children"])
+
+    return {"node": {"label": label, "children": list(children)}}
 
 def main(*args):
     complete = False
@@ -206,29 +224,33 @@ def main(*args):
     if complete:
         model = getModel()
     
-    trees = []
-    goal = ""
-    i = 0
-    for atom in model:
-        i = i + 1
-        if len(goal) > 20000:
-            goal = goal.removesuffix(";")
-            trees.extend(callExplain(goal, ruleFile))
-            goal = elementForCommandLine(atom) + ";"
+    with open("traceGoal.txt", "w") as file:
+        file.write(";".join(map(elementForCommandLine, model)))
 
-        else:
-            goal = goal + elementForCommandLine(atom) + ";"
+    # os.system("nmo  --trace-input-file traceGoal.txt --trace-output temp " + ruleFile)
+
+    print("Finished nemo process")
+    trees = []
+    with open("temp") as f:
+        trees = (parseTrees(json.load(f)))
+
+    newTrees = []
+    for tree in trees:
+        newTrees.append(convertProofTreeToJson(tree))
+
+    trees = newTrees
+
+    print("Parsed trees")
     
-    goal = goal.removesuffix(";")
-    trees.extend(callExplain(goal, ruleFile))
-    trees = filterTrees(trees)
-    
+    #trees = filterTrees(trees)
+
+    print("Filtering done")
     program = []
     with open(ruleFile, "r") as file:
         program = convertNemoProgramToJson(file.readlines())
 
     os.chdir(originalDir)
-    with open(problemName, "w") as f:
+    with open(problemName + ".json", "w") as f:
         json.dump({"trees": trees, "program": program}, f, ensure_ascii=False, indent=4)
 
 
