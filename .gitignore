@@ -1,3 +1,5 @@
 /build
 /lakefile.olean
 /lake-packages/*
+/Examples/__pycache__/*
+/Results/*

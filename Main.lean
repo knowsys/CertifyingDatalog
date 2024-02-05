@@ -255,7 +255,6 @@ def main(args: List String): IO Unit := do
             | Except.ok _ => IO.println "Valid result"
             | Except.error msg => IO.println ("Invalid result due to " ++ msg )
         else
-          IO.println "Start validating"
           match checkValidnessMockDatabase problem with
           | Except.error msg => IO.println ("Invalid result due to " ++ msg )
           | Except.ok _ => IO.println "Valid result"

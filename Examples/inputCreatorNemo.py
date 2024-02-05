@@ -38,22 +38,18 @@ def parseTrees(json_object):
     for atom in json_object["finalConclusion"]:
         trees.append({"node": {"label": normalizeQuotationmarks(atom), "children": []}})
 
-    currInference = 0
+    leafs = list(map(lambda t: set([t["node"]["label"]]), trees))
+    
 
-    for i in range(0, len(trees)):
-        leafs = set([trees[i]["node"]["label"]])
+    for j in range(0, len(json_object["inferences"])):
+        inference = json_object["inferences"][j]
 
-        for j in range(currInference, len(json_object["inferences"])):
-            inference = json_object["inferences"][j]
-
-            if normalizeQuotationmarks(inference["conclusion"]) in leafs:
+        for i in range(0, len(trees)):
+            if normalizeQuotationmarks(inference["conclusion"]) in leafs[i]:
                 trees[i] = expandTree(trees[i], getTree(inference))
-                leafs.remove(normalizeQuotationmarks(inference["conclusion"]))
+                leafs[i].remove(normalizeQuotationmarks(inference["conclusion"]))
                 for inf in inference["premises"]:
-                    leafs.add(normalizeQuotationmarks(inf))
-            else:
-                currInference = j
-                break
+                    leafs[i].add(normalizeQuotationmarks(inf))
     return trees
 
 def getModel():
@@ -258,7 +254,7 @@ def main(*args):
 if __name__ == "__main__":
     import sys
     #main(*sys.argv[1:])
-    main("/home/johannes/nemo-examples/examples/owl-el/from-preprocessed-csv", "el-calc.rls", 'mainSubClassOf(http://www.co-ode.org/ontologies/galen#AcquisitionMode,http://www.co-ode.org/ontologies/galen#Feature)')
+    main("/home/johannes/nemo/resources/testcases/johannes/TC", "tc.rls")
 
 
 
