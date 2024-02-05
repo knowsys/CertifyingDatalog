@@ -36,7 +36,7 @@ def expandTree(tree1, tree2):
 def parseTrees(json_object):
     trees = []
     for atom in json_object["finalConclusion"]:
-        trees.append({"node": {"label": atom, "children": []}})
+        trees.append({"node": {"label": normalizeQuotationmarks(atom), "children": []}})
 
     currInference = 0
 
@@ -46,10 +46,11 @@ def parseTrees(json_object):
         for j in range(currInference, len(json_object["inferences"])):
             inference = json_object["inferences"][j]
 
-            if inference["conclusion"] in leafs:
+            if normalizeQuotationmarks(inference["conclusion"]) in leafs:
                 trees[i] = expandTree(trees[i], getTree(inference))
-                leafs.remove(inference["conclusion"])
-                leafs.update(inference["premises"])
+                leafs.remove(normalizeQuotationmarks(inference["conclusion"]))
+                for inf in inference["premises"]:
+                    leafs.add(normalizeQuotationmarks(inf))
             else:
                 currInference = j
                 break
@@ -72,7 +73,7 @@ def elementForCommandLine(s):
     for element in result[2].split(","):
         try: 
             parse(element, rule='IRI')
-            newElements.append('<' + newElements + '>')
+            newElements.append('<' + element + '>')
         except ValueError:
             newElements.append('"' + element + '"')
 
@@ -227,7 +228,7 @@ def main(*args):
     with open("traceGoal.txt", "w") as file:
         file.write(";".join(map(elementForCommandLine, model)))
 
-    # os.system("nmo  --trace-input-file traceGoal.txt --trace-output temp " + ruleFile)
+    os.system("nmo  --trace-input-file traceGoal.txt --trace-output temp " + ruleFile)
 
     print("Finished nemo process")
     trees = []
@@ -257,7 +258,7 @@ def main(*args):
 if __name__ == "__main__":
     import sys
     #main(*sys.argv[1:])
-    main("/home/johannes/nemo/resources/testcases/johannes/TC", "tc.rls")
+    main("/home/johannes/nemo-examples/examples/owl-el/from-preprocessed-csv", "el-calc.rls", 'mainSubClassOf(http://www.co-ode.org/ontologies/galen#AcquisitionMode,http://www.co-ode.org/ontologies/galen#Feature)')
 
 
 

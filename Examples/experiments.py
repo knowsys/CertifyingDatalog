@@ -7,7 +7,8 @@ import subprocess
 
 ruleFile = "el-calc.rls"
 folder = "/home/johannes/nemo-examples/examples/owl-el/from-preprocessed-csv"
-tries = 100
+tries = 10
+atomsPerTry = 1
 
 originalDir = os.getcwd()
 os.chdir(folder)
@@ -19,23 +20,27 @@ os.chdir(originalDir)
 with open("log.txt", "a+") as log:
     for i in range(0,tries):
         log.write("---\n")
-        atom = random.choice(model)
+        atoms = []
+        while len(atoms) < atomsPerTry:
+            atom = random.choice(model)
+            if atom not in atoms:
+                atoms.append(atom)
+            print(atoms)
         inputCreatorNemo.main(folder, ruleFile, atom)
 
         start = time.time()
-        problemFile = ruleFile.split(".")[0]
+        problemFile = ruleFile.split(".")[0] + ".json"
 
         with open(problemFile) as file:
             problem = json.load(file)
-            log.write(json.dumps(problem["trees"], ensure_ascii=False, indent=4))
-            log.write("\n")
 
         result = subprocess.run(["./build/bin/certifyingDatalog", problemFile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
 
         log.write(result.stdout)
         duration = time.time() - start
 
-        log.write(str(duration) + "\n")
+        log.write(json.dumps({"trees": problem["trees"], "Result": result.stdout, "Time": str(duration)}))
+            
 
 
         

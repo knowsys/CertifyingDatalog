@@ -1,0 +1,1145 @@
+{
+    "trees": [
+        {
+            "node": {
+                "label": {
+                    "symbol": "mainSubClassOf",
+                    "terms": [
+                        {
+                            "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                        },
+                        {
+                            "constant": "http://www.co-ode.org/ontologies/galen#NeurohypophysealHormone"
+                        }
+                    ]
+                },
+                "children": [
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                "terms": [
+                                    {
+                                        "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                    },
+                                    {
+                                        "constant": "http://www.co-ode.org/ontologies/galen#NeurohypophysealHormone"
+                                    }
+                                ]
+                            },
+                            "children": [
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                            "terms": [
+                                                {
+                                                    "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                },
+                                                {
+                                                    "constant": "9_1_10831"
+                                                }
+                                            ]
+                                        },
+                                        "children": [
+                                            {
+                                                "node": {
+                                                    "label": {
+                                                        "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                        "terms": [
+                                                            {
+                                                                "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                            },
+                                                            {
+                                                                "constant": "http://www.co-ode.org/ontologies/galen#Hormone"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "children": [
+                                                        {
+                                                            "node": {
+                                                                "label": {
+                                                                    "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                    "terms": [
+                                                                        {
+                                                                            "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                        },
+                                                                        {
+                                                                            "constant": "9_1_4317"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "children": [
+                                                                    {
+                                                                        "node": {
+                                                                            "label": {
+                                                                                "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                "terms": [
+                                                                                    {
+                                                                                        "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                    },
+                                                                                    {
+                                                                                        "constant": "http://www.co-ode.org/ontologies/galen#ChemicalSubstance"
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            "children": [
+                                                                                {
+                                                                                    "node": {
+                                                                                        "label": {
+                                                                                            "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                            "terms": [
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                },
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#OrganicComplexChemical"
+                                                                                                }
+                                                                                            ]
+                                                                                        },
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "node": {
+                                                                                                    "label": {
+                                                                                                        "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                                        "terms": [
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#Peptide"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    "children": [
+                                                                                                        {
+                                                                                                            "node": {
+                                                                                                                "label": {
+                                                                                                                    "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                                                    "terms": [
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#Angiotensin"
+                                                                                                                        }
+                                                                                                                    ]
+                                                                                                                },
+                                                                                                                "children": []
+                                                                                                            }
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "node": {
+                                                                                                                "label": {
+                                                                                                                    "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                                                                    "terms": [
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#Angiotensin"
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#Peptide"
+                                                                                                                        }
+                                                                                                                    ]
+                                                                                                                },
+                                                                                                                "children": []
+                                                                                                            }
+                                                                                                        }
+                                                                                                    ]
+                                                                                                }
+                                                                                            },
+                                                                                            {
+                                                                                                "node": {
+                                                                                                    "label": {
+                                                                                                        "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                                                        "terms": [
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#Peptide"
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#OrganicComplexChemical"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    "children": []
+                                                                                                }
+                                                                                            }
+                                                                                        ]
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "node": {
+                                                                                        "label": {
+                                                                                            "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                                            "terms": [
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#OrganicComplexChemical"
+                                                                                                },
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#ChemicalSubstance"
+                                                                                                }
+                                                                                            ]
+                                                                                        },
+                                                                                        "children": []
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "node": {
+                                                                            "label": {
+                                                                                "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                "terms": [
+                                                                                    {
+                                                                                        "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                    },
+                                                                                    {
+                                                                                        "constant": "23_1_507"
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            "children": [
+                                                                                {
+                                                                                    "node": {
+                                                                                        "label": {
+                                                                                            "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                            "terms": [
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                },
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#Angiotensin"
+                                                                                                }
+                                                                                            ]
+                                                                                        },
+                                                                                        "children": []
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "node": {
+                                                                                        "label": {
+                                                                                            "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                                            "terms": [
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#Angiotensin"
+                                                                                                },
+                                                                                                {
+                                                                                                    "constant": "23_1_507"
+                                                                                                }
+                                                                                            ]
+                                                                                        },
+                                                                                        "children": []
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "node": {
+                                                                            "label": {
+                                                                                "symbol": "http://rulewerk.semantic-web.org/normalForm/conj",
+                                                                                "terms": [
+                                                                                    {
+                                                                                        "constant": "9_1_4317"
+                                                                                    },
+                                                                                    {
+                                                                                        "constant": "http://www.co-ode.org/ontologies/galen#ChemicalSubstance"
+                                                                                    },
+                                                                                    {
+                                                                                        "constant": "23_1_507"
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            "children": []
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "node": {
+                                                                            "label": {
+                                                                                "symbol": "http://rulewerk.semantic-web.org/normalForm/isSubClass",
+                                                                                "terms": [
+                                                                                    {
+                                                                                        "constant": "9_1_4317"
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            "children": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "node": {
+                                                                "label": {
+                                                                    "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                    "terms": [
+                                                                        {
+                                                                            "constant": "9_1_4317"
+                                                                        },
+                                                                        {
+                                                                            "constant": "http://www.co-ode.org/ontologies/galen#Hormone"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "children": []
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "node": {
+                                                    "label": {
+                                                        "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                        "terms": [
+                                                            {
+                                                                "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                            },
+                                                            {
+                                                                "constant": "23_1_11378"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "children": [
+                                                        {
+                                                            "node": {
+                                                                "label": {
+                                                                    "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                    "terms": [
+                                                                        {
+                                                                            "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                        },
+                                                                        {
+                                                                            "constant": "http://www.co-ode.org/ontologies/galen#Angiotensin"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "children": [
+                                                                    {
+                                                                        "node": {
+                                                                            "label": {
+                                                                                "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                "terms": [
+                                                                                    {
+                                                                                        "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                    },
+                                                                                    {
+                                                                                        "constant": "9_1_1684"
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            "children": [
+                                                                                {
+                                                                                    "node": {
+                                                                                        "label": {
+                                                                                            "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                            "terms": [
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                },
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#AntiDiureticHormoneDrug"
+                                                                                                }
+                                                                                            ]
+                                                                                        },
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "node": {
+                                                                                                    "label": {
+                                                                                                        "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                                        "terms": [
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#Desmopressin"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    "children": [
+                                                                                                        {
+                                                                                                            "node": {
+                                                                                                                "label": {
+                                                                                                                    "symbol": "http://rulewerk.semantic-web.org/inferred/subClassOf",
+                                                                                                                    "terms": [
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                                        }
+                                                                                                                    ]
+                                                                                                                },
+                                                                                                                "children": [
+                                                                                                                    {
+                                                                                                                        "node": {
+                                                                                                                            "label": {
+                                                                                                                                "symbol": "http://rulewerk.semantic-web.org/inferred/init",
+                                                                                                                                "terms": [
+                                                                                                                                    {
+                                                                                                                                        "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                                                    }
+                                                                                                                                ]
+                                                                                                                            },
+                                                                                                                            "children": [
+                                                                                                                                {
+                                                                                                                                    "node": {
+                                                                                                                                        "label": {
+                                                                                                                                            "symbol": "http://rulewerk.semantic-web.org/normalForm/isMainClass",
+                                                                                                                                            "terms": [
+                                                                                                                                                {
+                                                                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                                                                }
+                                                                                                                                            ]
+                                                                                                                                        },
+                                                                                                                                        "children": []
+                                                                                                                                    }
+                                                                                                                                }
+                                                                                                                            ]
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                ]
+                                                                                                            }
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "node": {
+                                                                                                                "label": {
+                                                                                                                    "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                                                                    "terms": [
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "constant": "http://www.co-ode.org/ontologies/galen#Desmopressin"
+                                                                                                                        }
+                                                                                                                    ]
+                                                                                                                },
+                                                                                                                "children": []
+                                                                                                            }
+                                                                                                        }
+                                                                                                    ]
+                                                                                                }
+                                                                                            },
+                                                                                            {
+                                                                                                "node": {
+                                                                                                    "label": {
+                                                                                                        "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                                                        "terms": [
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#Desmopressin"
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "constant": "http://www.co-ode.org/ontologies/galen#AntiDiureticHormoneDrug"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    "children": []
+                                                                                                }
+                                                                                            }
+                                                                                        ]
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "node": {
+                                                                                        "label": {
+                                                                                            "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                                            "terms": [
+                                                                                                {
+                                                                                                    "constant": "http://www.co-ode.org/ontologies/galen#AntiDiureticHormoneDrug"
+                                                                                                },
+                                                                                                {
+                                                                                                    "constant": "9_1_1684"
+                                                                                                }
+                                                                                            ]
+                                                                                        },
+                                                                                        "children": []
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "node": {
+                                                                            "label": {
+                                                                                "symbol": "http://rulewerk.semantic-web.org/normalForm/conj",
+                                                                                "terms": [
+                                                                                    {
+                                                                                        "constant": "9_1_1684"
+                                                                                    },
+                                                                                    {
+                                                                                        "constant": "http://www.co-ode.org/ontologies/galen#Angiotensin"
+                                                                                    },
+                                                                                    {
+                                                                                        "constant": "23_1_273"
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            "children": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "node": {
+                                                                "label": {
+                                                                    "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                                                    "terms": [
+                                                                        {
+                                                                            "constant": "http://www.co-ode.org/ontologies/galen#Angiotensin"
+                                                                        },
+                                                                        {
+                                                                            "constant": "23_1_11378"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "children": []
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "node": {
+                                                    "label": {
+                                                        "symbol": "http://rulewerk.semantic-web.org/normalForm/conj",
+                                                        "terms": [
+                                                            {
+                                                                "constant": "9_1_10831"
+                                                            },
+                                                            {
+                                                                "constant": "http://www.co-ode.org/ontologies/galen#Hormone"
+                                                            },
+                                                            {
+                                                                "constant": "23_1_11378"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "children": []
+                                                }
+                                            },
+                                            {
+                                                "node": {
+                                                    "label": {
+                                                        "symbol": "http://rulewerk.semantic-web.org/normalForm/isSubClass",
+                                                        "terms": [
+                                                            {
+                                                                "constant": "9_1_10831"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "children": []
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "http://rulewerk.semantic-web.org/normalForm/subClassOf",
+                                            "terms": [
+                                                {
+                                                    "constant": "9_1_10831"
+                                                },
+                                                {
+                                                    "constant": "http://www.co-ode.org/ontologies/galen#NeurohypophysealHormone"
+                                                }
+                                            ]
+                                        },
+                                        "children": []
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "http://rulewerk.semantic-web.org/normalForm/isMainClass",
+                                "terms": [
+                                    {
+                                        "constant": "http://www.co-ode.org/ontologies/galen#DesmopressinAcetate"
+                                    }
+                                ]
+                            },
+                            "children": []
+                        }
+                    },
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "http://rulewerk.semantic-web.org/normalForm/isMainClass",
+                                "terms": [
+                                    {
+                                        "constant": "http://www.co-ode.org/ontologies/galen#NeurohypophysealHormone"
+                                    }
+                                ]
+                            },
+                            "children": []
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "program": [
+        {
+            "head": {
+                "symbol": "inf:init",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "nf:isMainClass",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    },
+                    {
+                        "variable": "?C"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:init",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    },
+                    {
+                        "constant": "owl:Thing"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "nf:isMainClass",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:isSubClass",
+                    "terms": [
+                        {
+                            "constant": "owl:Thing"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    },
+                    {
+                        "variable": "?D1"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:conj",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        },
+                        {
+                            "variable": "?D1"
+                        },
+                        {
+                            "variable": "?D2"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    },
+                    {
+                        "variable": "?D2"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:conj",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        },
+                        {
+                            "variable": "?D1"
+                        },
+                        {
+                            "variable": "?D2"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    },
+                    {
+                        "variable": "?Y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "variable": "?D1"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "variable": "?D2"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:conj",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        },
+                        {
+                            "variable": "?D1"
+                        },
+                        {
+                            "variable": "?D2"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:isSubClass",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:ex",
+                "terms": [
+                    {
+                        "variable": "?E"
+                    },
+                    {
+                        "variable": "?R"
+                    },
+                    {
+                        "variable": "?C"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?E"
+                        },
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:exists",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        },
+                        {
+                            "variable": "?R"
+                        },
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?E"
+                    },
+                    {
+                        "variable": "?Y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:ex",
+                    "terms": [
+                        {
+                            "variable": "?E"
+                        },
+                        {
+                            "variable": "?R"
+                        },
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "variable": "?D"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:subProp",
+                    "terms": [
+                        {
+                            "variable": "?R"
+                        },
+                        {
+                            "variable": "?S"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:exists",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        },
+                        {
+                            "variable": "?S"
+                        },
+                        {
+                            "variable": "?D"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:isSubClass",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    },
+                    {
+                        "variable": "?E"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "variable": "?D"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?D"
+                        },
+                        {
+                            "variable": "?E"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:ex",
+                "terms": [
+                    {
+                        "variable": "?E"
+                    },
+                    {
+                        "variable": "?S"
+                    },
+                    {
+                        "variable": "?D"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:ex",
+                    "terms": [
+                        {
+                            "variable": "?E"
+                        },
+                        {
+                            "variable": "?R1"
+                        },
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "inf:ex",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "variable": "?R2"
+                        },
+                        {
+                            "variable": "?D"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:subProp",
+                    "terms": [
+                        {
+                            "variable": "?R1"
+                        },
+                        {
+                            "variable": "?S1"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:subProp",
+                    "terms": [
+                        {
+                            "variable": "?R2"
+                        },
+                        {
+                            "variable": "?S2"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:subPropChain",
+                    "terms": [
+                        {
+                            "variable": "?S1"
+                        },
+                        {
+                            "variable": "?S2"
+                        },
+                        {
+                            "variable": "?S"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:subClassOf",
+                "terms": [
+                    {
+                        "variable": "?E"
+                    },
+                    {
+                        "constant": "owl:Nothing"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:ex",
+                    "terms": [
+                        {
+                            "variable": "?E"
+                        },
+                        {
+                            "variable": "?R"
+                        },
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?C"
+                        },
+                        {
+                            "constant": "owl:Nothing"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "inf:init",
+                "terms": [
+                    {
+                        "variable": "?C"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:ex",
+                    "terms": [
+                        {
+                            "variable": "?E"
+                        },
+                        {
+                            "variable": "?R"
+                        },
+                        {
+                            "variable": "?C"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "mainSubClassOf",
+                "terms": [
+                    {
+                        "variable": "?A"
+                    },
+                    {
+                        "variable": "?B"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "inf:subClassOf",
+                    "terms": [
+                        {
+                            "variable": "?A"
+                        },
+                        {
+                            "variable": "?B"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:isMainClass",
+                    "terms": [
+                        {
+                            "variable": "?A"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "nf:isMainClass",
+                    "terms": [
+                        {
+                            "variable": "?B"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
