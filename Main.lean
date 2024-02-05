@@ -84,58 +84,37 @@ lemma collectModelHasTreeElements {helper: parsingArityHelper} (l: List (proofTr
     simp
     rw [inProofTreeElementsIffelementMember]
 
+lemma collectModelToSetIsSetOfValidTreesElements {helper: parsingArityHelper} (l: List (proofTree (parsingSignature helper))): List.toSet (collectModel l) = {ga: groundAtom (parsingSignature helper) | ∃ (t: proofTree (parsingSignature helper)), t ∈ l ∧ elementMember ga t = true} :=
+by
+  apply Set.ext
+  intro ga
+  rw [← List.toSet_mem, collectModelHasTreeElements]
+  simp
+
+
+
 def checkValidnessMockDatabase {helper: parsingArityHelper}  (problem: verificationProblem helper): Except String Unit :=
   let d:= mockDatabase (parsingSignature helper)
-  let model:= collectModel problem.trees
-  match validateTreeList problem.program d problem.trees atomParsingSignatureToString ruleParsingSignatureToString model with
+  match validateTreeList problem.program d problem.trees  ruleParsingSignatureToString with
   | Except.error e => Except.error e
   | Except.ok _ => Except.ok ()
 
 lemma checkValidnessMockDatabaseUnitIffAllTreesAreValid {helper: parsingArityHelper}  (problem: verificationProblem helper): checkValidnessMockDatabase problem = Except.ok () ↔ ∀ (t: proofTree (parsingSignature helper)), t ∈ problem.trees → isValid (List.toFinset problem.program) (mockDatabase (parsingSignature helper)) t :=
 by
-  constructor
-  intro h
-  unfold checkValidnessMockDatabase at h
-  simp at h
-  cases p: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees atomParsingSignatureToString ruleParsingSignatureToString (collectModel problem.trees) with
-  | error e => simp[p] at h
-  | ok _ =>
-    rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees] at p
-    rcases p with ⟨_,right⟩
-    apply right
-    intro ga
-    rw [collectModelHasTreeElements]
-    tauto
-
-  simp
-  intro h
   unfold checkValidnessMockDatabase
   simp
-  have h': validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees atomParsingSignatureToString
-      ruleParsingSignatureToString (collectModel problem.trees) = Except.ok ()
-  rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees]
-  constructor
-  rw [Set.subset_def]
-  intro ga
-  rw [← List.toSet_mem, collectModelHasTreeElements]
-  intro ga_t
-  rcases ga_t with ⟨t, t_mem, ga_t⟩
-  apply allTreeElementsOfValidTreeInSemantics
-  apply h
-  apply t_mem
-  apply ga_t
-  apply h
-  intro ga ga_t
-  rw [collectModelHasTreeElements] at ga_t
-  apply ga_t
-
-  simp[h']
+  rw [← validateTreeListUnitIffAllTreesValid (ruleToString:=ruleParsingSignatureToString)]
+  cases validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees ruleParsingSignatureToString with
+  | error e =>
+    simp
+  | ok u =>
+    simp
 
 
 def mainCheckMockDatabase {helper: parsingArityHelper} (problem: verificationProblem helper) (safe: ∀ (r: rule (parsingSignature helper) ), r ∈ problem.program → r.isSafe): Except String Unit :=
   let d:= mockDatabase (parsingSignature helper)
   let model:= collectModel problem.trees
-  match validateTreeList problem.program d problem.trees atomParsingSignatureToString ruleParsingSignatureToString model with
+  match validateTreeList problem.program d problem.trees  ruleParsingSignatureToString  with
   | Except.error e => Except.error e
   | Except.ok _ =>
     match modelChecker model problem.program safe with
@@ -152,7 +131,7 @@ lemma mainCheckMockDatabseUnitIffSolution  (problem: verificationProblem relatio
   intro h
 
   cases valid_trees: validateTreeList problem.program (mockDatabase (parsingSignature relationList)) problem.trees
-      atomParsingSignatureToString ruleParsingSignatureToString (collectModel problem.trees) with
+   ruleParsingSignatureToString with
   | error e => simp [valid_trees] at h
   | ok _ =>
     simp [valid_trees] at h
@@ -165,6 +144,7 @@ lemma mainCheckMockDatabseUnitIffSolution  (problem: verificationProblem relatio
       rw [modelCheckerUnitIffAllRulesTrue] at model
       constructor
       apply Set.Subset.antisymm
+      rw [collectModelToSetIsSetOfValidTreesElements]
       apply left
       rw [SemanticsEquivalence]
       apply leastModel
@@ -179,22 +159,17 @@ lemma mainCheckMockDatabseUnitIffSolution  (problem: verificationProblem relatio
       apply h
       apply db
       apply right
-      intro ga
-      rw [collectModelHasTreeElements]
-      tauto
 
   intro h
   rcases h with ⟨sol_eq, valid_tree⟩
   unfold mainCheckMockDatabase
   simp
-  have p: validateTreeList problem.program (mockDatabase (parsingSignature relationList)) problem.trees atomParsingSignatureToString ruleParsingSignatureToString (collectModel problem.trees) = Except.ok ()
+  have p: validateTreeList problem.program (mockDatabase (parsingSignature relationList)) problem.trees ruleParsingSignatureToString = Except.ok ()
   rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees]
   constructor
+  rw [← collectModelToSetIsSetOfValidTreesElements]
   rw [sol_eq]
   apply valid_tree
-  intro ga
-  rw [collectModelHasTreeElements]
-  tauto
 
   simp [p]
   have model: model (List.toFinset problem.program) (mockDatabase (parsingSignature relationList)) (List.toSet (collectModel problem.trees))

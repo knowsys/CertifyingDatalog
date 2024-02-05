@@ -282,189 +282,41 @@ by
       simp [emptyL] at h
 
 
-def validateTreeList (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (atomToString: atom τ → String) (ruleToString: rule τ → String) (i: List (groundAtom τ)): Except String Unit :=
-  match l with
-  | [] =>
-    match i with
-    | [] => Except.ok ()
-    | hd::_ => Except.error ("Unsupported atoms " ++ atomToString hd)
-  | hd::tl =>
-    match treeValidator P d hd ruleToString with
-    | Except.error e => Except.error e
-    | Except.ok _ =>
-      validateTreeList P d tl atomToString ruleToString (List.diff' i (proofTreeElements hd))
+def validateTreeList (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (ruleToString: rule τ → String): Except String Unit :=
+  List.map_except_unit l (fun t => treeValidator P d t  ruleToString)
 
-lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (atomToString: atom τ → String) (ruleToString: rule τ → String) (i: List (groundAtom τ)) (mem: ∀ (ga: groundAtom τ), ga ∈ i → ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t): validateTreeList P d l atomToString ruleToString i = Except.ok () →  i.toSet ⊆ proofTheoreticSemantics P.toFinset d := by
-  induction l generalizing i with
-  | nil =>
-    unfold validateTreeList
-    simp
-    cases i with
-    | nil =>
-      unfold List.toSet
-      simp
-    | cons hd tl =>
-      exfalso
-      specialize mem hd
-      simp at mem
-  | cons hd tl ih =>
-    intro h
-    rw [Set.subset_def]
-    intro ga
-    rw [← List.toSet_mem]
-    intro ga_mem
-    unfold validateTreeList at h
-    have h': treeValidator P d hd ruleToString = Except.ok ()
-    cases p: treeValidator P d hd ruleToString with
-    | ok _ =>
-      simp
-    | error e =>
-      simp[p] at h
-    simp [h'] at h
-    specialize ih (List.diff' i (proofTreeElements hd))
+lemma validateTreeListUnitIffAllTreesValid (P: List (rule τ)) (d: database τ) (l: List (proofTree τ))  (ruleToString: rule τ → String): validateTreeList P d l ruleToString = Except.ok () ↔  ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t := by
 
-    have p: ∀ (ga : groundAtom τ), ga ∈ List.diff' i (proofTreeElements hd) → ∃ t, t ∈ tl ∧ elementMember ga t = true
-    intro ga ga_mem
-    rw [List.mem_diff'] at ga_mem
-    specialize mem ga
-    rcases ga_mem with ⟨ga_i, ga_hd⟩
-    specialize mem ga_i
-    rcases mem with ⟨t, t_l, t_ga⟩
-    use t
-    constructor
-    rw [inProofTreeElementsIffelementMember] at t_ga
-    simp at t_l
-    cases t_l with
-    | inl p =>
-      exfalso
-      rw [p] at t_ga
-      exact absurd t_ga ga_hd
-    | inr q =>
-      apply q
-    apply t_ga
+  unfold validateTreeList
+  rw [List.map_except_unitIsUnitIffAll]
+  simp [treeValidatorOkIffIsValid]
 
-    by_cases ga_hd: ga ∈ proofTreeElements hd
-    rw [← inProofTreeElementsIffelementMember] at ga_hd
-    apply allTreeElementsOfValidTreeInSemantics hd
-    rw [treeValidatorOkIffIsValid] at h'
-    apply h'
-    apply ga_hd
 
-    specialize ih p h
-    rw [Set.subset_def] at ih
-    specialize ih ga
-    apply ih
-    rw [← List.toSet_mem]
-    rw [List.mem_diff']
-    specialize mem ga
-    specialize mem ga_mem
-    constructor
-    apply ga_mem
-    apply ga_hd
+lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database τ) (l: List (proofTree τ))  (ruleToString: rule τ → String) : validateTreeList P d l  ruleToString  = Except.ok () →  {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d := by
+  intro h
+  rw [Set.subset_def]
+  intro ga
+  simp
+  intros t t_l ga_t
+  apply allTreeElementsOfValidTreeInSemantics
+  rw [validateTreeListUnitIffAllTreesValid] at h
+  apply h
+  apply t_l
+  apply ga_t
 
-lemma validateTreeListUnitImplAllTreesValid (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (atomToString: atom τ → String) (ruleToString: rule τ → String) (i: List (groundAtom τ)) (mem: ∀ (ga: groundAtom τ), ga ∈ i → ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t): validateTreeList P d l atomToString ruleToString i = Except.ok () →  ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t := by
-  induction l generalizing i with
-  | nil =>
-    simp
-  | cons hd tl ih =>
-    intro h t t_mem
-    unfold validateTreeList at h
-    have h': treeValidator P d hd ruleToString = Except.ok ()
-    cases p: treeValidator P d hd ruleToString with
-    | ok _ =>
-      simp
-    | error e =>
-      simp[p] at h
-    simp [h'] at h
-    specialize ih (List.diff' i (proofTreeElements hd))
-    simp at t_mem
-    cases t_mem with
-    | inl t_hd =>
-      rw [t_hd]
-      rw [treeValidatorOkIffIsValid] at h'
-      apply h'
-    | inr t_tl =>
-      apply ih
-      intro ga ga_mem
-      rw [List.mem_diff'] at ga_mem
-      rcases ga_mem with ⟨left,right⟩
-      specialize mem ga left
-      rcases mem with ⟨t',t'_mem, ga_t'⟩
-      simp at t'_mem
-      cases t'_mem with
-      | inl t'_hd =>
-        rw [t'_hd] at ga_t'
-        rw [← inProofTreeElementsIffelementMember] at right
-        exact absurd ga_t' right
-      | inr t'_tl =>
-        use t'
-      apply h
-      apply t_tl
 
-lemma validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (atomToString: atom τ → String) (ruleToString: rule τ → String) (i: List (groundAtom τ)) (mem: ∀ (ga: groundAtom τ), ga ∈ i → ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t): validateTreeList P d l atomToString ruleToString i = Except.ok () ↔ i.toSet ⊆ proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t :=
+lemma validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (ruleToString: rule τ → String) : validateTreeList P d l  ruleToString = Except.ok () ↔ {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t :=
 by
-  induction l generalizing i with
-  | nil =>
-    unfold validateTreeList
-    simp
-    cases i with
-    | nil =>
-      unfold List.toSet
-      simp
-    | cons hd tl =>
-      exfalso
-      specialize mem hd
-      simp at mem
-  | cons hd tl ih =>
-    constructor
-    intro h
-    constructor
-    apply validateTreeListUnitImplSubsetSemantics P d (hd::tl) atomToString ruleToString i mem h
-    apply validateTreeListUnitImplAllTreesValid P d (hd::tl) atomToString ruleToString i mem h
+  constructor
+  intro h
+  constructor
+  apply validateTreeListUnitImplSubsetSemantics
+  apply h
 
-    intro h
-    rw [Set.subset_def] at h
-    rcases h with ⟨subs,valid⟩
-    unfold validateTreeList
-    have h: treeValidator P d hd ruleToString = Except.ok ()
-    rw [treeValidatorOkIffIsValid]
-    apply valid
-    simp
-    simp [h]
-    rw [ih]
-    constructor
-    rw [Set.subset_def]
-    intro a
-    rw [← List.toSet_mem, List.mem_diff']
-    intro p
-    apply subs
-    rw [← List.toSet_mem]
-    simp [p]
+  rw [validateTreeListUnitIffAllTreesValid] at h
+  apply h
 
-    intro t t_tl
-    specialize valid t
-    have p: t ∈ hd::tl
-    simp
-    right
-    apply t_tl
-    specialize valid p
-    apply valid
-
-    intro ga ga_mem
-    rw [List.mem_diff'] at ga_mem
-    rcases ga_mem with ⟨left,right⟩
-    specialize mem ga left
-    rcases mem with ⟨t,t_l, t_ga⟩
-    simp at t_l
-    use t
-    constructor
-    cases t_l with
-    | inl p =>
-      rw [p] at t_ga
-      rw [← inProofTreeElementsIffelementMember] at right
-      exfalso
-      exact absurd t_ga right
-    | inr p =>
-      apply p
-
-    apply t_ga
+  intro h
+  rcases h with ⟨_, right⟩
+  rw [validateTreeListUnitIffAllTreesValid]
+  apply right
