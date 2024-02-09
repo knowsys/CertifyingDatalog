@@ -955,27 +955,27 @@ abbrev interpretation (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.relat
 inductive tree (A: Type)
 | node: A → List (tree A) → tree A
 
-abbrev proofTree' (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]:= tree (groundAtom τ)
+abbrev proofTree (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]:= tree (groundAtom τ)
 
-inductive proofTree (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
-| node: (groundAtom τ) → List (proofTree τ) →  proofTree τ
+variable {A: Type} [DecidableEq A]
 
-def member (t1 t2: proofTree τ): Prop :=
+def member (t1 t2: tree A): Prop :=
   match t1 with
-    | proofTree.node _ l => t2 ∈ l
+    | tree.node _ l => t2 ∈ l
 
-def elementMember (a: groundAtom τ) (t: proofTree τ): Bool  :=
+
+
+def elementMember (a: A) (t: tree A): Bool  :=
   match t with
-  | proofTree.node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elementMember a x)
+  | tree.node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elementMember a x)
 termination_by elementMember a t => sizeOf t
 decreasing_by
   simp_wf
   decreasing_trivial
-  apply Nat.zero_le
 
 def proofTreeElements (t: proofTree τ): List (groundAtom τ) :=
   match t with
-  | proofTree.node a l => List.foldl (fun x ⟨y,_h⟩ => x ++ proofTreeElements y) [a] l.attach
+  | tree.node a l => List.foldl (fun x ⟨y,_h⟩ => x ++ proofTreeElements y) [a] l.attach
 termination_by proofTreeElements t => sizeOf t
 decreasing_by
   simp_wf
@@ -992,11 +992,11 @@ lemma foldl_append_mem {A B: Type} (l1: List A) (l2: List B) (f: B → List A) (
     simp
     tauto
 
-def root: proofTree τ → groundAtom τ
-| proofTree.node a _ => a
+def root: tree A → A
+| tree.node a _ => a
 
-def children: proofTree τ → List (groundAtom τ)
-| proofTree.node _ l => List.map root l
+def children: tree A → List A
+| tree.node _ l => List.map root l
 
 def listMax {A: Type} (f: A → ℕ): List A → ℕ
 | [] => 0
@@ -1048,8 +1048,8 @@ by
     rw [ih]
 
 
-def height: proofTree τ → ℕ
-| proofTree.node a l => 1 + listMax (fun ⟨x, _h⟩ => height x) l.attach
+def height: tree A → ℕ
+| tree.node a l => 1 + listMax (fun ⟨x, _h⟩ => height x) l.attach
 termination_by height t => sizeOf t
 decreasing_by
   simp_wf
@@ -1057,13 +1057,13 @@ decreasing_by
   apply List.sizeOf_lt_of_mem _h
   simp
 
-lemma height_case (a: groundAtom τ) (l: List (proofTree τ)): height (proofTree.node a l) = 1 + listMax height l :=
+lemma height_case (a: A) (l: List (tree A)): height (tree.node a l) = 1 + listMax height l :=
 by
   unfold height
   simp
   rw [listMax_iff_natList_max_map, List.attach_map_coe', ← listMax_iff_natList_max_map]
 
-lemma heightOfMemberIsSmaller (t1 t2: proofTree τ) (mem: member t1 t2): height t2 < height t1 :=
+lemma heightOfMemberIsSmaller (t1 t2: tree A) (mem: member t1 t2): height t2 < height t1 :=
 by
   cases t1 with
   | node a l =>
@@ -1132,7 +1132,7 @@ by
 
 def isValid(P: program τ) (d: database τ) (t: proofTree τ): Prop :=
   match t with
-  | proofTree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms a (List.map root l) ∧ l.attach.All₂ (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
+  | tree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms a (List.map root l) ∧ l.attach.All₂ (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
 termination_by isValid t => sizeOf t
 decreasing_by
   simp_wf
@@ -1143,7 +1143,7 @@ decreasing_by
 
 lemma databaseElementsHaveValidProofTree (P: program τ) (d: database τ) (a: groundAtom τ) (mem: d.contains a): ∃ (t: proofTree τ), root t = a ∧ isValid P d t:=
 by
-  use (proofTree.node a [])
+  use (tree.node a [])
   constructor
   unfold root
   simp
@@ -1166,7 +1166,7 @@ by
     simp at mem
     by_cases ga_a': ga = a'
 
-    use proofTree.node a' l
+    use tree.node a' l
     constructor
     unfold root
     simp
@@ -1263,7 +1263,7 @@ by
   apply subs
 
   rcases h with ⟨l, l_body, valid⟩
-  use proofTree.node r.head l
+  use tree.node r.head l
   constructor
   unfold root
   simp

@@ -138,7 +138,7 @@ by
 
 def treeValidator (P: List (rule τ)) (d: database τ) (t: proofTree τ) (ruleToString: rule τ → String): Except String Unit :=
   match t with
-  | proofTree.node a l =>
+  | tree.node a l =>
     if l.isEmpty
     then  if d.contains a
           then Except.ok ()
@@ -242,7 +242,7 @@ by
       intros a' a_l
       specialize ih (height a')
       simp [← h_t] at ih
-      have height_case: height a' < height (proofTree.node a l)
+      have height_case: height a' < height (tree.node a l)
       apply heightOfMemberIsSmaller
       unfold member
       simp
@@ -263,7 +263,7 @@ by
       rw [List.map_except_unitIsUnitIffAll]
       simp
       intros t t_l
-      have height_t: (height t) < height (proofTree.node a l)
+      have height_t: (height t) < height (tree.node a l)
       apply heightOfMemberIsSmaller
       unfold member
       simp

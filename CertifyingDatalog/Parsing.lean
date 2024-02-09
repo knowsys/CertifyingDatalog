@@ -215,7 +215,7 @@ def proofTreeFromTree (helper: parsingArityHelper) (t: jsonTree mockAtom) : Exce
       let s:= List.map_except (fun ⟨x, _h⟩  => proofTreeFromTree  helper x) children.attach
       match s with
       | Except.ok l =>
-        Except.ok (proofTree.node a l)
+        Except.ok (tree.node a l)
       | Except.error msg => Except.error msg
     | Except.error msg => Except.error msg
 termination_by proofTreeFromTree relationList t => sizeOf t
