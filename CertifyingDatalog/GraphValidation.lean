@@ -475,3 +475,47 @@ by
   apply extractTreeStepValidProofTreeIffAllLocallyValidAndAcyclic
   apply acyclic
   apply valid
+
+def List.map_except_collect.go (f: A → Finset B → Except String (Finset B)) (l: List A) (S: Finset B): Except String (Finset B) :=
+  match l with
+  | [] => Except.ok S
+  | hd::tl =>
+    match f hd S with
+    | Except.error e => Except.error e
+    | Except.ok S' => List.map_except_collect.go f tl S'
+
+
+def List.map_except_collect (f: A → Finset B → Except String (Finset B)) (l: List A): Except String (Finset B) := List.map_except_collect.go f l ∅
+
+def dfsStepAndValidate (f: A → List A → Except String Unit) (a:A) (G:Graph A) (currPath: List A) (path: isPath (a::currPath) G): Except String (Finset A):=
+  match f a (G.predecessors a) with
+  | Except.error e => Except.error e
+  | Except.ok _ =>
+    if h: a ∈ currPath
+    then Except.error "Circle detected"
+    else
+    match List.map_except_collect (fun ⟨x, _h⟩ b => dfsStepAndValidate f x G (a::currPath) (isPath_extends_predecessors path x _h)) (G.predecessors a).attach with
+    | Except.error e => Except.error e
+    | Except.ok S => Except.ok (S ∪ {a})
+termination_by dfsStepAndValidate f a G currPath path => ((List.toFinset G.vertices).card - (List.toFinset currPath).card)
+decreasing_by
+  simp_wf
+  rw [← List.mem_toFinset] at h
+  rw [removeFrontOfLtMin]
+  simp
+  apply Finset.card_lt_card
+  rw [Finset.ssubset_iff]
+  use a
+  apply Finset.card_le_of_subset
+  rw [Finset.subset_iff]
+  intro x
+  simp
+  intro p
+  rw [← List.mem_toFinset]
+  apply isPathImplSubset path
+  simp
+  apply p
+
+  apply Finset.card_le_of_subset
+  apply isPathImplSubset
+  apply isPath_of_cons path
