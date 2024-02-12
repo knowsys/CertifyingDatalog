@@ -341,6 +341,72 @@ by
   simp [result]
   }
 
+lemma getSubListToMemberNonEmpty (a: A) (l: List A) (mem: a ∈ l): getSubListToMember l a mem ≠ [] :=
+by
+  unfold getSubListToMember
+  cases l with
+  | nil =>
+    simp at mem
+  | cons hd tl =>
+    simp
+    by_cases a_hd: a = hd
+    simp [a_hd]
+    simp [a_hd]
+
+lemma getSubListToMemberHasNotLengthZero (a: A) (l: List A) (mem: a ∈ l): List.length (getSubListToMember l a mem) ≠ 0 :=
+by
+  cases h:(getSubListToMember l a mem) with
+    | nil =>
+      have not_h: ¬  (getSubListToMember l a mem) = []
+      push_neg
+      apply getSubListToMemberNonEmpty
+      exact absurd h not_h
+    | cons hd tl =>
+      simp
+
+lemma getSubListToMember_length (a: A) (l: List A) (mem: a ∈ l): List.length (getSubListToMember l a mem) = Nat.succ (Nat.pred (List.length (getSubListToMember l a mem))) :=
+by
+  apply Eq.symm
+  apply Nat.succ_pred
+  apply getSubListToMemberHasNotLengthZero
+
+
+lemma getSubListToMember_len_le_original (a: A) (l: List A) (mem: a ∈ l): (getSubListToMember l a mem).length ≤ l.length :=
+by
+  induction l with
+  | nil =>
+    simp at mem
+  | cons hd tl ih =>
+    unfold getSubListToMember
+    by_cases a_hd: a = hd
+    simp [a_hd]
+    rw [Nat.one_eq_succ_zero, Nat.succ_le_succ_iff]
+    apply Nat.zero_le
+
+    simp [a_hd]
+    simp[a_hd] at mem
+    rw [Nat.succ_le_succ_iff]
+    apply ih
+
+lemma getSubListToMemberEndsWithElement (a: A) (l: List A) (mem: a ∈ l): List.get? (getSubListToMember l a mem) (getSubListToMember l a mem).length.pred  = a  :=
+by
+  induction l with
+  | nil =>
+    simp at mem
+  | cons hd tl ih =>
+    simp [getSubListToMember]
+    by_cases a_hd: a = hd
+    subst a_hd
+    simp
+
+    simp [a_hd]
+    simp[a_hd] at mem
+    specialize ih mem
+
+    rw [getSubListToMember_length, List.get?_cons_succ]
+    apply ih
+
+
 
 
 lemma getSubListToMemberPreservesPath (l: List A) (a:A) (mem: a ∈ l) (G: Graph A) (path: isPath l G): isPath (getSubListToMember l a mem) G :=
@@ -357,13 +423,131 @@ by
     simp [path]
 
     simp [a_hd]
-    unfold isPath
-    admit
+    simp [a_hd] at mem
+    specialize ih mem (isPath_of_cons path)
+    unfold isPath at *
+    rcases path with ⟨subs_ht, conn_ht⟩
+    rcases ih with ⟨subs_ih, conn_ih⟩
+    constructor
+    intro b b_mem
+    simp at b_mem
+    cases b_mem with
+    | inl b_hd =>
+      apply subs_ht
+      rw [b_hd]
+      simp
+    | inr b_tl =>
+      apply subs_ih
+      apply b_tl
+
+    intro i i_zero i_len
+    cases i with
+    | zero =>
+      simp at i_zero
+    | succ j =>
+      simp
+      cases j with
+      | zero =>
+        simp
+        specialize conn_ht (Nat.succ 0)
+        simp at conn_ht
+        simp at i_len
+        have g: Nat.succ 0 < List.length (hd :: tl)
+        simp
+        apply Nat.lt_of_lt_of_le
+        apply i_len
+        apply Nat.succ_le_succ
+        apply getSubListToMember_len_le_original
+
+        specialize conn_ht g
+        cases tl with
+        | nil =>
+          simp at mem
+        | cons hd' tl' =>
+          simp at conn_ht
+          have isLt: Nat.zero < List.length (getSubListToMember (hd' :: tl') a mem)
+          rw [getSubListToMember_length]
+          apply Nat.zero_lt_succ
+          have get_result: List.get (getSubListToMember (hd' :: tl') a mem) { val := 0, isLt := isLt } = hd'
+          rw [List.get_eq_iff]
+          simp
+          unfold getSubListToMember
+          by_cases a_hd: a = hd'
+          simp [a_hd]
+          simp [a_hd]
+          simp [get_result]
+          apply conn_ht
+      | succ k =>
+        specialize conn_ih (Nat.succ k)
+        simp at conn_ih
+        simp at i_len
+        rw [Nat.succ_lt_succ_iff, ← Nat.succ_eq_add_one] at i_len
+        specialize conn_ih i_len
+        apply conn_ih
+
+
 
 
 lemma frontRepetitionInPathImpliesCircle (a:A) (G:Graph A) (visited: List A) (path: isPath (a::visited) G) (mem: a ∈ visited): isCircle (a::(getSubListToMember visited a mem)) G :=
 by
-  sorry
+  unfold isCircle
+  simp
+  have h : ¬ Nat.succ (List.length (getSubListToMember visited a mem)) < 2
+  push_neg
+  cases h':getSubListToMember visited a mem with
+  | nil =>
+    have p: getSubListToMember visited a mem ≠ []
+    apply getSubListToMemberNonEmpty
+    exact absurd h' p
+  | cons hd tl =>
+    simp
+    rw [Nat.two_le_iff]
+    simp
+
+  simp [h]
+  constructor
+  cases h':getSubListToMember visited a mem with
+  | nil =>
+    have p: getSubListToMember visited a mem ≠ []
+    apply getSubListToMemberNonEmpty
+    exact absurd h' p
+  | cons hd tl =>
+    apply isPath_extends_predecessors
+    rw [← h']
+    apply getSubListToMemberPreservesPath (path:= isPath_of_cons path)
+    unfold isPath at path
+    rcases path with ⟨_, conn⟩
+    specialize conn (Nat.succ 0)
+    simp at conn
+    have g : Nat.succ 0 < List.length (a :: visited)
+    simp
+    apply Nat.succ_lt_succ
+    cases visited with
+    | nil =>
+      simp at mem
+    | cons hd' tl' =>
+      simp
+    specialize conn g
+    have isLt: 0 < List.length visited
+    apply Nat.lt_of_succ_lt_succ
+    apply g
+    have first_vis: List.get visited { val := 0, isLt := isLt} = hd
+    cases visited with
+    | nil =>
+      simp at mem
+    | cons hd' tl' =>
+      simp [List.get_cons_zero]
+      apply getSubListToMemberPreservesFront (result:=h')
+    simp [first_vis] at conn
+    apply conn
+
+  apply Eq.symm
+  rw [List.get_eq_iff]
+  simp
+  rw [getSubListToMember_length  a visited mem, List.get?_cons_succ, getSubListToMemberEndsWithElement]
+
+
+
 
 def dfsStep (G: Graph A) (a:A) (visited: List A) (path: isPath (a::visited) G): Except String Unit :=
   if h: a ∈ visited
@@ -424,11 +608,32 @@ by
 
   simp [h]
   rw [List.map_except_unitIsUnitIffAll]
-  simp [NotInCircleIfAllPredecessorsAreNot]
+  constructor
 
+  intro h'
+  apply NotInCircleIfAllPredecessorsAreNot
+  simp at h'
 
+  intro b b_a
+  specialize h' b b_a
+  specialize ih b (a::visited) (isPath_extends_predecessors path b b_a)
 
+  have card: Finset.card (List.toFinset G.vertices) - Finset.card (List.toFinset (a :: visited)) = n
+  admit
+  specialize ih card
+  rw [← ih]
+  apply h'
 
+  -- back direction
+  intro h'
+  simp
+  intro b b_a
+  specialize ih b (a::visited) (isPath_extends_predecessors path b b_a)
+  have card: Finset.card (List.toFinset G.vertices) - Finset.card (List.toFinset (a :: visited)) = n
+  admit
+  specialize ih card
+
+  rw [ih]
 
 
 
