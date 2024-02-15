@@ -10,7 +10,7 @@ structure Graph (A: Type) where
   (predecessors: A → List A)
   (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ predecessors a → a' ∈ vertices)
 
-
+section dfs
 variable {A: Type}[DecidableEq A]
 
 lemma pred_lt (n m: ℕ) (h:n < m ): n.pred < m :=
@@ -82,112 +82,9 @@ def isCircle (l: List A) (G: Graph A): Prop :=
 
 def isAcyclic (G: Graph A) := ∀ (l: List A), ¬ isCircle l G
 
-lemma isAcyclicIffAllVerticesAreNotInCircle (G: Graph A): isAcyclic G ↔ ∀ (a:A), a ∈ G.vertices → ∀ (c: List A), isCircle c G → a ∉ c :=
-by
-  constructor
-  intro h
-  intro a _ c circle
-  unfold isAcyclic at h
-  specialize h c
-  exact absurd circle h
-
-  intro h
-  by_contra p
-  unfold isAcyclic at p
-  push_neg at p
-  rcases p with ⟨c, circle⟩
-  have mem_c: ∃ (a:A), a ∈ G.vertices ∧ a ∈ c
-  unfold isCircle at circle
-  by_cases c_len: List.length c < 2
-  simp [c_len] at circle
-  simp [c_len] at circle
-  rcases circle with ⟨path, _⟩
-  unfold isPath at path
-  rcases path with ⟨mem,_⟩
-  push_neg at c_len
-  use (List.get c (Fin.mk 0 (ge_two_im_gt_zero c.length c_len)))
-  constructor
-  apply mem
-  rw [List.mem_iff_get]
-  simp
-  rw [List.mem_iff_get]
-  simp
-
-  rcases mem_c with ⟨b, b_G, b_c⟩
-  specialize h b b_G c circle
-  exact absurd b_c h
 
 
-lemma NotInCircleIfAllPredecessorsAreNot (a: A) (G: Graph A) (h: ∀ (b:A), b ∈ G.predecessors a → ¬ (∃ (c: List A), isCircle c G ∧ b ∈ c) ): ∀ (c: List A), isCircle c G  → ¬  a ∈ c :=
-by
-  by_contra p
-  push_neg at p
-  rcases p with ⟨c, circle, a_c⟩
-  have circle': isCircle c G
-  apply circle
 
-
-  unfold isCircle at circle
-  by_cases c_length: c.length < 2
-  simp [c_length] at circle
-
-  simp [c_length] at circle
-  rcases circle with ⟨path, ends⟩
-  unfold isPath at path
-  rcases path with ⟨subs, connected⟩
-  rw [List.mem_iff_get] at a_c
-  rcases a_c with ⟨n, c_n⟩
-
-  by_cases h_n: n.val = 0
-  specialize connected c.length.pred
-  simp at c_length
-
-  have pred_n_gt_0: c.length.pred > 0
-  rw [Nat.pred_gt_zero_iff]
-  apply c_length
-
-  specialize connected pred_n_gt_0
-  have pred_lt_self: Nat.pred (List.length c) < List.length c
-  apply Nat.pred_lt
-  by_contra p
-  rw [p] at c_length
-  simp at c_length
-  specialize connected pred_lt_self
-  have predpred_lt_self: Nat.pred (Nat.pred (List.length c)) < List.length c
-  apply Nat.lt_of_le_of_lt (m:= Nat.pred (List.length c))
-  apply Nat.pred_le
-  apply pred_lt_self
-  specialize h (List.get c (Fin.mk (Nat.pred (Nat.pred (List.length c))) predpred_lt_self))
-  rw [← ends] at connected
-
-  have h_n': n = { val := 0, isLt := (_ : 0 < List.length c) }
-  rw [Fin.mk_eq_mk]
-  apply h_n
-  apply ge_two_im_gt_zero
-  apply c_length
-
-  rw [← h_n', c_n] at connected
-  specialize h connected
-  push_neg at h
-  specialize h c circle'
-  simp [List.mem_iff_get] at h
-
-  --negative case
-  specialize connected n.val
-  simp at connected
-  have zero_lt_n: 0 < n.val
-  cases q: n.val with
-  | zero =>
-    simp [q] at h_n
-  | succ m =>
-    simp
-  specialize connected zero_lt_n n.isLt
-  specialize h (List.get c (Fin.mk n.val.pred (pred_lt n.val c.length n.isLt)))
-  rw [← c_n] at h
-  specialize h connected
-  push_neg at h
-  specialize h c circle'
-  simp [List.mem_iff_get] at h
 
 lemma isPath_extends_predecessors {a: A} {l: List A} {G: Graph A} (path: isPath (a::l) G): ∀ (b:A), b ∈ (G.predecessors a) → isPath (b::a::l) G :=
 by
@@ -243,6 +140,12 @@ by
   simp [List.mem_toFinset]
   apply h
 
+lemma isPathImplSubset' {l: List A} {G: Graph A} (path: isPath l G ): ∀ (a:A), a ∈ l → a ∈ G.vertices :=
+by
+  unfold isPath at path
+  rcases path with ⟨path,_⟩
+  apply path
+
 lemma isPath_of_cons {a: A} {l:List A} {G:Graph A} (path: isPath (a::l) G): isPath l G :=
 by
   unfold isPath at *
@@ -268,6 +171,186 @@ by
   | succ j =>
     rw [List.get_cons_succ] at conn
     apply conn
+
+lemma getFirstForNonequal_isLt  (l: List A) (h:l ≠ []): 0 < l.length :=
+by
+  cases l with
+  | nil => simp at h
+  | cons hd tl => simp
+
+lemma getLastForNonequal_isLt (l: List A) (h:l ≠ []): l.length.pred < l.length :=
+by
+  cases l with
+  | nil => simp at h
+  | cons hd tl =>
+    apply Nat.pred_lt
+    simp
+
+def canReach (a b: A) (G: Graph A):= ∃ (p: List A) (neq: p ≠ []), isPath p G ∧ p.get (Fin.mk 0 (getFirstForNonequal_isLt p neq)) = a ∧ p.get (Fin.mk p.length.pred (getLastForNonequal_isLt p neq)) = b
+
+-- added based on https://leanprover.zulipchat.com/#narrow/stream/113488-general/topic/finset.2Efilter
+noncomputable def Finset.filter_nc (p: A → Prop) (S: Finset A):= @Finset.filter A p (Classical.decPred p) S
+
+lemma Finset.mem_filter_nc (a:A) (p: A → Prop) (S: Finset A): a ∈ Finset.filter_nc p S ↔ p a ∧ a ∈ S :=
+by
+  unfold filter_nc
+  have dec: DecidablePred p
+  apply Classical.decPred
+  simp [Finset.mem_filter]
+  rw [And.comm]
+
+noncomputable def globalPredecessors (b:A) (G: Graph A): Finset A := Finset.filter_nc (fun a => canReach a b G) G.vertices.toFinset
+
+
+lemma isPathExtendBack (p: List A) (a: A) (G: Graph A) (path: isPath p G) (nonempty_p: p ≠ []) (mem: a ∈ G.vertices) (backExtend: p.get (Fin.mk p.length.pred (getLastForNonequal_isLt p nonempty_p)) ∈ G.predecessors a): isPath (p++[a]) G :=
+by
+  unfold isPath at *
+  simp at *
+  rcases path with ⟨subs, conn⟩
+  constructor
+  intro b b_mem
+  cases b_mem with
+  | inl b_p =>
+    apply subs b b_p
+  | inr b_a =>
+    rw [b_a]
+    apply mem
+
+  intro i i_zero i_len
+  by_cases i_original: i < p.length
+  rw [List.get_append i i_original]
+  have i_original_pred: i.pred < p.length
+  apply Nat.lt_trans (m:= i)
+  apply Nat.pred_lt
+  apply Ne.symm
+  apply Nat.ne_of_lt
+  apply i_zero
+  apply i_original
+  rw [List.get_append i.pred i_original_pred]
+  apply conn i i_zero
+
+  simp at i_original
+  cases i_original with
+  | refl =>
+    rw [List.get_append_right (i:= p.length), List.get_append p.length.pred (getLastForNonequal_isLt p nonempty_p)]
+    simp
+    apply backExtend
+    simp
+    push_neg
+    apply Nat.le_refl
+  | step h =>
+    simp at i_len
+    rw [← Nat.succ_eq_add_one, Nat.succ_lt_succ_iff] at i_len
+    simp at h
+    rw [← not_lt] at h
+    exact absurd i_len h
+
+lemma globalPredecessorsSubsetWhenPredecessor (a b:A) (G: Graph A) (mem: a ∈ G.vertices) (pred: b ∈ G.predecessors a): globalPredecessors b G ⊆ globalPredecessors a G:=
+by
+  rw [Finset.subset_iff]
+  intro x
+  rw [globalPredecessors, Finset.mem_filter_nc]
+  intro h
+  rcases h with ⟨reach, mem'⟩
+  rw [globalPredecessors, Finset.mem_filter_nc]
+  constructor
+  unfold canReach at *
+  rcases reach with ⟨p, neq, path, get_x, get_b⟩
+  use (p++[a])
+  have neq': (p++[a]) ≠ []
+  simp
+  use neq'
+  constructor
+  apply isPathExtendBack p a G path neq mem
+  rw [get_b]
+  apply pred
+
+  constructor
+  rw [List.get_append_left]
+  apply get_x
+  rw [List.get_append_right]
+  simp
+  simp
+  simp
+  apply mem'
+
+
+
+
+lemma nodeNotInGlobalPredecessorOfPredecessorInAcyclic (a b:A) (G: Graph A) (acyclic: isAcyclic G) (pred: b ∈ G.predecessors a): ¬  a ∈ globalPredecessors b G :=
+by
+  by_contra p
+  unfold globalPredecessors at p
+  rw [Finset.mem_filter_nc] at p
+  rcases p with ⟨reach,mem⟩
+  unfold canReach at reach
+  rcases reach with ⟨p,nonempty, path, get_a, get_b⟩
+  have circle: isCircle (p++[a]) G
+  unfold isCircle
+  simp
+  cases p with
+  | nil =>
+    simp at nonempty
+  | cons hd tl =>
+    have h : ¬  List.length (hd :: tl) + 1 < 2
+    simp
+    rw [← Nat.succ_eq_add_one]
+    simp_arith
+    simp only [h]
+    simp
+    constructor
+    rw [← List.cons_append]
+    apply isPathExtendBack
+    apply path
+    rw [← List.mem_toFinset]
+    apply mem
+    rw [get_b]
+    apply pred
+    simp
+
+    rw [List.get_append_right]
+    simp
+    rw [List.get_eq_iff, List.get?_cons_zero, Option.some_inj] at get_a
+    apply get_a
+    simp
+    simp
+
+
+  unfold isAcyclic at acyclic
+  specialize acyclic (p++[a])
+  exact absurd circle acyclic
+
+lemma globalPredecessorsSSubsetWhenAcyclicAndPredecessor (G: Graph A) (a b: A) (acyclic: isAcyclic G) (pred: b ∈ G.predecessors a) (mem_a: a ∈ G.vertices): globalPredecessors b G  ⊂ globalPredecessors a G :=
+by
+  rw [Finset.ssubset_def]
+  constructor
+  apply globalPredecessorsSubsetWhenPredecessor a b G mem_a pred
+
+  rw [Finset.subset_iff]
+  simp
+  use a
+  constructor
+  unfold globalPredecessors
+  rw [Finset.mem_filter_nc]
+  constructor
+  unfold canReach
+  use [a]
+  have neq: [a] ≠ []
+  simp
+  use neq
+  constructor
+  apply isPathSingleton
+  apply mem_a
+  constructor
+  simp
+  simp
+  rw [List.mem_toFinset]
+  apply mem_a
+
+  apply nodeNotInGlobalPredecessorOfPredecessorInAcyclic
+  apply acyclic
+  apply pred
+
 
 lemma removeFrontOfLtMin (a b c: ℕ) (hab: b ≤ a) (hac: c ≤ a) : a - b < a -c ↔ b > c :=
 by
@@ -486,8 +569,6 @@ by
         apply conn_ih
 
 
-
-
 lemma frontRepetitionInPathImpliesCircle (a:A) (G:Graph A) (visited: List A) (path: isPath (a::visited) G) (mem: a ∈ visited): isCircle (a::(getSubListToMember visited a mem)) G :=
 by
   unfold isCircle
@@ -547,118 +628,63 @@ by
   rw [getSubListToMember_length  a visited mem, List.get?_cons_succ, getSubListToMemberEndsWithElement]
 
 
+def foldl_except_set (f: A → Finset B → (Except String (Finset B))) (l: List A) (init: Finset B): Except String (Finset B) :=
+  match l with
+  | [] => Except.ok init
+  | hd::tl =>
+    match f hd init with
+    | Except.error msg => Except.error msg
+    | Except.ok S => foldl_except_set f tl S
 
-
-def dfsStep (G: Graph A) (a:A) (visited: List A) (path: isPath (a::visited) G): Except String Unit :=
-  if h: a ∈ visited
-  then Except.error "Circle detected"
-  else
-      List.map_except_unit (G.predecessors a).attach (fun ⟨x, _h⟩ => dfsStep G x (a::visited) (isPath_extends_predecessors path x _h ) )
-termination_by dfsStep G a visited path => ((List.toFinset G.vertices).card - (List.toFinset visited).card)
+def extractTree {A: Type} [DecidableEq A] (a:A) (G: Graph A) (mem: a ∈ G.vertices) (acyclic: isAcyclic G): tree A :=
+  tree.node a (List.map (fun ⟨x, _h⟩ => extractTree x G (G.complete a mem x _h) acyclic) (G.predecessors a).attach)
+termination_by extractTree a G mem acyclic => Finset.card (globalPredecessors a G)
 decreasing_by
   simp_wf
-  rw [← List.mem_toFinset] at h
-  rw [removeFrontOfLtMin]
-  simp
+  apply Finset.card_lt_card
+  apply globalPredecessorsSSubsetWhenAcyclicAndPredecessor
+  apply acyclic
+  apply _h
+  apply mem
+
+def dfs_step (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (visited: Finset A) : Except String (Finset A) :=
+  if a ∈ visited
+  then Except.ok visited
+  else
+    if a_path: a ∈ currPath
+    then Except.error "Cycle detected"
+    else
+      match f a (G.predecessors a) with
+      | Except.error msg => Except.error msg
+      | Except.ok _ =>
+        match foldl_except_set (fun ⟨x, _h⟩ S => dfs_step x G f (a::currPath) (isPath_extends_predecessors path x _h) S) (G.predecessors a).attach visited with
+        | Except.error msg => Except.error msg
+        | Except.ok S => Except.ok (S ∪ {a})
+termination_by dfs_step node G f currPath path visited => Finset.card (List.toFinset G.vertices \ List.toFinset currPath)
+decreasing_by
+  simp_wf
   apply Finset.card_lt_card
   rw [Finset.ssubset_iff]
+  simp
   use a
-  apply Finset.card_le_of_subset
+  constructor
+  intro _
+  left
+  rfl
+
   rw [Finset.subset_iff]
-  intro x
+  intro b
   simp
-  intro p
-  rw [← List.mem_toFinset]
-  unfold isPath at path
-  apply isPathImplSubset path
-  simp
-  apply p
-
-  apply Finset.card_le_of_subset
-  apply isPathImplSubset
-  apply isPath_of_cons path
-
-lemma dfsStepUnitIffNoCircleWithA (G: Graph A) (a:A) (visited: List A) (path: isPath (a::visited) G): dfsStep G a visited path = Except.ok () ↔ ¬ ∃ (c: List A), isCircle c G ∧ a ∈ c :=
-by
-  induction' h:((List.toFinset G.vertices).card - (List.toFinset visited).card) with n ih generalizing visited a
-
-  -- base: there is a circle as every vertex is in the path
-  rw [CardOfGraphSubCardOfPathZeroIffPathContainsEveryVertex G visited (isPath_of_cons path)] at h
-  unfold dfsStep
-  specialize h a
-  have a_mem: a ∈ G.vertices
-  unfold isPath at path
-  rcases path with ⟨path,_⟩
-  apply path
-  simp
-  specialize h a_mem
-  simp [h]
-  use (a :: getSubListToMember visited a h)
-  simp
-  apply frontRepetitionInPathImpliesCircle a G visited path h
-
-  unfold dfsStep
-  by_cases h: a ∈ visited
-  simp [h]
-  use (a::(getSubListToMember visited a h))
-  constructor
-  apply frontRepetitionInPathImpliesCircle
-  apply path
-  simp
-
-  simp [h]
-  rw [List.map_except_unitIsUnitIffAll]
-  constructor
-
-  intro h'
-  apply NotInCircleIfAllPredecessorsAreNot
-  simp at h'
-
-  intro b b_a
-  specialize h' b b_a
-  specialize ih b (a::visited) (isPath_extends_predecessors path b b_a)
-
-  have card: Finset.card (List.toFinset G.vertices) - Finset.card (List.toFinset (a :: visited)) = n
-  admit
-  specialize ih card
-  rw [← ih]
-  apply h'
-
-  -- back direction
-  intro h'
-  simp
-  intro b b_a
-  specialize ih b (a::visited) (isPath_extends_predecessors path b b_a)
-  have card: Finset.card (List.toFinset G.vertices) - Finset.card (List.toFinset (a :: visited)) = n
-  admit
-  specialize ih card
-
-  rw [ih]
-
-
-
-def validateAndStep (G: Graph A) (f: A → List A → Except String Unit) (a:A) (mem: a ∈ G.vertices): Except String Unit:=
-  match f a (G.predecessors a) with
-  | Except.error e => Except.error e
-  | Except.ok _ =>
-    dfsStep G a [] (isPathSingleton G a mem)
-
-lemma validateAndStepSemantics (G: Graph A) (f: A → List A → Except String Unit) (a:A) (mem: a ∈ G.vertices): validateAndStep G f a mem = Except.ok () ↔ f a (G.predecessors a) = Except.ok () ∧ ¬ ∃ (c: List A), isCircle c G ∧ a ∈ c :=
-by
-  unfold validateAndStep
-  cases f a (G.predecessors a) with
-  | error e =>
+  intro h
+  cases h with
+  | inl h =>
+    rw [h]
+    constructor
+    have mem_path: a ∈ a::currPath
     simp
-  | ok _ =>
-    simp
-    rw [dfsStepUnitIffNoCircleWithA]
-    simp
-
-def dfs (G: Graph A) (f: A → List A → Except String Unit): Except String Unit :=
-  List.map_except_unit (G.vertices).attach (fun ⟨x, _h⟩ => validateAndStep G f x _h)
-
-lemma dfs_semantics (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok () :=
-by
-  unfold dfs
-  rw [List.map_except_unitIsUnitIffAll, isAcyclicIffAllVerticesAreNotInCircle]
-  simp [validateAndStepSemantics, imp_and, forall_and, and_comm]
+    apply isPathImplSubset' path a mem_path
+    apply a_path
+  | inr h =>
+    rcases h with ⟨left,right⟩
+    push_neg at right
+    simp [left,right]
