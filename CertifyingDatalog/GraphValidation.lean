@@ -11,7 +11,7 @@ structure Graph (A: Type) where
   (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ predecessors a → a' ∈ vertices)
 
 section dfs
-variable {A: Type}[DecidableEq A]
+variable {A: Type}[DecidableEq A] {B: Type} [DecidableEq B]
 
 lemma pred_lt (n m: ℕ) (h:n < m ): n.pred < m :=
 by
@@ -63,7 +63,7 @@ by
   | succ m =>
     simp
 
-def isCircle (l: List A) (G: Graph A): Prop :=
+def isCycle (l: List A) (G: Graph A): Prop :=
   if h: l.length < 2
   then False
   else
@@ -79,8 +79,16 @@ def isCircle (l: List A) (G: Graph A): Prop :=
 
   isPath l G ∧ l.get (Fin.mk 0 l_not_zero) = l.get (Fin.mk l.length.pred (Nat.pred_lt (Ne.symm (Nat.ne_of_lt l_not_zero))))
 
+lemma IsPathOfisCycle (l: List A) (G: Graph A) (h: isCycle l G): isPath l G :=
+by
+  unfold isCycle at h
+  by_cases h' : List.length l < 2
+  simp [h'] at h
 
-def isAcyclic (G: Graph A) := ∀ (l: List A), ¬ isCircle l G
+  simp [h'] at h
+  simp [h]
+
+def isAcyclic (G: Graph A) := ∀ (l: List A), ¬ isCycle l G
 
 
 
@@ -285,8 +293,8 @@ by
   rcases p with ⟨reach,mem⟩
   unfold canReach at reach
   rcases reach with ⟨p,nonempty, path, get_a, get_b⟩
-  have circle: isCircle (p++[a]) G
-  unfold isCircle
+  have cycle: isCycle (p++[a]) G
+  unfold isCycle
   simp
   cases p with
   | nil =>
@@ -318,7 +326,7 @@ by
 
   unfold isAcyclic at acyclic
   specialize acyclic (p++[a])
-  exact absurd circle acyclic
+  exact absurd cycle acyclic
 
 lemma globalPredecessorsSSubsetWhenAcyclicAndPredecessor (G: Graph A) (a b: A) (acyclic: isAcyclic G) (pred: b ∈ G.predecessors a) (mem_a: a ∈ G.vertices): globalPredecessors b G  ⊂ globalPredecessors a G :=
 by
@@ -350,6 +358,9 @@ by
   apply nodeNotInGlobalPredecessorOfPredecessorInAcyclic
   apply acyclic
   apply pred
+
+
+
 
 
 lemma removeFrontOfLtMin (a b c: ℕ) (hab: b ≤ a) (hac: c ≤ a) : a - b < a -c ↔ b > c :=
@@ -424,6 +435,16 @@ by
   simp [result]
   }
 
+lemma zero_lt_inhabited_list_length (a:A) (l: List A) (mem: a ∈ l): 0 < l.length :=
+by
+  cases l with
+  | nil =>
+    simp at mem
+  | cons hd tl =>
+    simp
+
+
+
 lemma getSubListToMemberNonEmpty (a: A) (l: List A) (mem: a ∈ l): getSubListToMember l a mem ≠ [] :=
 by
   unfold getSubListToMember
@@ -470,6 +491,30 @@ by
     simp[a_hd] at mem
     rw [Nat.succ_le_succ_iff]
     apply ih
+
+lemma zero_lt_inhabited_list_length' (l: List A) (nonempty: l ≠ []): 0 < l.length :=
+by
+  cases l with
+  | nil =>
+    simp at nonempty
+  | cons hd tl =>
+    simp
+
+lemma getSubListToMemberPreservesFront' (a:A) (l: List A) (mem: a ∈ l) : List.get l (Fin.mk 0 (zero_lt_inhabited_list_length a l mem)) = List.get (getSubListToMember l a mem) (Fin.mk 0 (zero_lt_inhabited_list_length' (getSubListToMember l a mem) (getSubListToMemberNonEmpty a l mem))) :=
+by
+  cases l with
+  | nil =>
+    simp at mem
+  | cons hd tl =>
+    simp
+    apply Eq.symm
+    rw [List.get_eq_iff]
+    simp
+    unfold getSubListToMember
+    by_cases a_hd: a = hd
+    simp [a_hd]
+    simp [a_hd]
+
 
 lemma getSubListToMemberEndsWithElement (a: A) (l: List A) (mem: a ∈ l): List.get? (getSubListToMember l a mem) (getSubListToMember l a mem).length.pred  = a  :=
 by
@@ -568,10 +613,307 @@ by
         specialize conn_ih i_len
         apply conn_ih
 
+def reachedFromCycle (a:A) (G: Graph A):= ∃ (c: List A), isCycle c G ∧ ∃ (b: A), b ∈ c ∧ canReach b a G
 
-lemma frontRepetitionInPathImpliesCircle (a:A) (G:Graph A) (visited: List A) (path: isPath (a::visited) G) (mem: a ∈ visited): isCircle (a::(getSubListToMember visited a mem)) G :=
+lemma NotreachedFromCycleIffPredecessorsNotReachedFromCycle (a: A) (G: Graph A) (mem: a ∈ G.vertices): ¬ reachedFromCycle a G ↔ ∀ (b:A), b ∈ G.predecessors a → ¬ reachedFromCycle b G :=
 by
-  unfold isCircle
+  constructor
+  intro h
+  unfold reachedFromCycle at h
+  simp at h
+  by_contra p
+  simp at p
+  rcases p with ⟨x, x_pred, reach⟩
+  unfold reachedFromCycle at reach
+  rcases reach with ⟨c, cycle, b, b_c, reach_b_x⟩
+  specialize h c cycle b b_c
+  have reach_b_a: canReach b a G
+  unfold canReach
+  unfold canReach at reach_b_x
+  rcases reach_b_x with ⟨p, neq, path, get_b, get_x⟩
+  use p++[a]
+  have neq': p++[a] ≠ []
+  simp
+  use neq'
+  constructor
+  apply isPathExtendBack p a G path neq mem
+  rw [get_x]
+  apply x_pred
+  constructor
+  rw [List.get_append_left]
+  apply get_b
+  rw [List.get_append_right]
+  simp
+  simp
+  simp
+  exact absurd reach_b_a h
+
+  --back direction
+  intro h
+  by_contra p
+  unfold reachedFromCycle at p
+  rcases p with ⟨c, cycle, b, b_c, reach_b_a⟩
+  unfold canReach at reach_b_a
+  rcases reach_b_a with ⟨p, neq, path, get_b, get_a⟩
+  by_cases b_pred: b ∈ G.predecessors a
+  have reachCirc_b: reachedFromCycle b G
+  unfold reachedFromCycle
+  use c
+  constructor
+  apply cycle
+  use b
+  constructor
+  apply b_c
+  unfold canReach
+  use [b]
+  have neq': [b] ≠ []
+  simp
+  use neq'
+  constructor
+  apply isPathSingleton
+  apply G.complete
+  apply mem
+  apply b_pred
+  simp
+
+  specialize h b b_pred
+  exact absurd reachCirc_b h
+
+  -- b not connected with a directly
+  by_cases singletonPath: p.length = 1
+  have a_b: a = b
+  simp [singletonPath] at get_a
+  rw [← get_a, get_b]
+
+  have pred_in_c: ∃ (d:A), d ∈ c ∧ d ∈ G.predecessors a
+  unfold isCycle at cycle
+  by_cases h : List.length c < 2
+  simp [h] at cycle
+  simp [h] at cycle
+  rcases cycle with ⟨path, ends⟩
+  unfold isPath at path
+  rcases path with ⟨subs,conn⟩
+  have isLt_zero_c: 0 < c.length
+  cases c with
+  | nil =>
+    simp at b_c
+  | cons hd tl =>
+    simp
+  rw [List.mem_iff_get?] at b_c
+  rcases b_c with ⟨n, get_c_b⟩
+  cases n with
+  | zero =>
+    specialize conn (Nat.pred c.length)
+    have conn_1: Nat.pred (List.length c) > 0
+    simp at h
+    cases c with
+    | nil =>
+      simp at h
+    | cons hd tl =>
+      cases tl with
+      | nil =>
+        simp at h
+      | cons hd tl =>
+        simp
+    specialize conn conn_1
+    have g : Nat.pred (List.length c) < List.length c
+    apply Nat.pred_lt
+    cases c with
+    | nil =>
+      simp at h
+    | cons hd tl =>
+      simp
+    specialize conn g
+    have ha: List.get c (Fin.mk (Nat.pred (List.length c)) g) = b
+    rw [← ends, List.get_eq_iff]
+    simp
+    apply get_c_b
+    rw [ha, ← a_b] at conn
+    have isLt': Nat.pred (Nat.pred (List.length c)) < c.length
+    apply Nat.lt_of_le_of_lt (m:= Nat.pred c.length)
+    rw [Nat.pred_le_iff, Nat.succ_pred]
+    apply Nat.pred_le
+    cases c with
+    | nil =>
+      simp at h
+    | cons hd tl =>
+      simp
+    apply Nat.pred_lt
+    cases c with
+    | nil =>
+      simp at h
+    | cons hd tl =>
+      simp
+    use (List.get c (Fin.mk (Nat.pred (Nat.pred (List.length c))) isLt' ))
+    constructor
+    apply List.get_mem
+    apply conn
+  | succ m =>
+    specialize conn (Nat.succ m)
+    have conn1: Nat.succ m > 0
+    simp
+    specialize conn conn1
+    rw [List.get?_eq_some] at get_c_b
+    rcases get_c_b with ⟨g,c_get⟩
+    specialize conn g
+    have isLt: Nat.pred (Nat.succ m) < c.length
+    simp
+    apply Nat.lt_trans (m:= Nat.succ m)
+    apply Nat.lt_succ_self
+    apply g
+    use List.get c (Fin.mk (Nat.pred (Nat.succ m)) isLt)
+    constructor
+    apply List.get_mem
+    rw [c_get, ← a_b] at conn
+    apply conn
+
+
+  rcases pred_in_c with ⟨d, d_c, d_pred⟩
+  specialize h d d_pred
+  have reachCirc_d: reachedFromCycle d G
+  unfold reachedFromCycle
+  use c
+  constructor
+  apply cycle
+  use d
+  constructor
+  apply d_c
+  unfold canReach
+  use [d]
+  have neq': [d] ≠ []
+  simp
+  use neq'
+  simp
+  apply isPathSingleton
+  apply isPathImplSubset' (IsPathOfisCycle c G cycle) d d_c
+  exact absurd reachCirc_d h
+
+
+  have isLt: Nat.pred (Nat.pred p.length) < p.length
+  cases p with
+  | nil =>
+    simp at neq
+  | cons hd tl =>
+    cases tl with
+    | nil =>
+      simp
+    | cons hd' tl' =>
+      simp
+      apply Nat.lt_trans (m:= Nat.succ tl'.length)
+      apply Nat.lt_succ_self
+      apply Nat.lt_succ_self
+
+  have reachCirc: reachedFromCycle (p.get (Fin.mk (Nat.pred (Nat.pred p.length)) isLt)) G
+  unfold reachedFromCycle
+  use c
+  constructor
+  apply cycle
+  use b
+  constructor
+  apply b_c
+  unfold canReach
+  have mem_p: (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) ∈ p
+  apply List.get_mem
+
+  use (getSubListToMember p (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) mem_p)
+  have neq': (getSubListToMember p (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) mem_p) ≠ []
+  apply getSubListToMemberNonEmpty
+  use neq'
+  constructor
+  apply getSubListToMemberPreservesPath (path:= path)
+  constructor
+  rw [← get_b]
+  apply Eq.symm
+  apply getSubListToMemberPreservesFront'
+  rw [List.get_eq_iff]
+  simp
+  apply getSubListToMemberEndsWithElement
+
+
+  specialize h (List.get p { val := Nat.pred (Nat.pred (List.length p)), isLt := isLt })
+  unfold isPath at path
+  rcases path with ⟨_, conn⟩
+  specialize conn  (Nat.pred (List.length p))
+
+  have gt_zero:  Nat.pred (List.length p) > 0
+  cases p with
+  | nil =>
+    simp at neq
+  | cons hd tl =>
+    simp
+    cases tl with
+    | nil =>
+      simp at singletonPath
+    | cons hd' tl' =>
+      simp
+
+  have g : Nat.pred (List.length p) < List.length p
+  cases p with
+  | nil =>
+    simp at neq
+  | cons hd tl =>
+    simp
+  specialize conn gt_zero g
+
+  rw [get_a] at conn
+  specialize h conn
+  exact absurd reachCirc h
+
+lemma acyclicIffAllNotReachedFromCycle (G: Graph A): isAcyclic G ↔ ∀ (a:A), ¬ reachedFromCycle a G :=
+by
+  constructor
+  intro acyclic
+  intro a
+  unfold reachedFromCycle
+  simp
+  intro c cycle
+  unfold isAcyclic at acyclic
+  specialize acyclic c
+  exact absurd cycle acyclic
+
+  intro h
+  by_contra cyclic
+  unfold isAcyclic at cyclic
+  simp at cyclic
+  rcases cyclic with ⟨c, cycle⟩
+  unfold isCycle at cycle
+  by_cases g:List.length c < 2
+  simp [g] at cycle
+  simp [g] at cycle
+  have isLt: 0 < List.length c
+  cases c with
+  | nil =>
+    simp at g
+  | cons hd tl =>
+    simp
+  specialize h (List.get c (Fin.mk 0 isLt))
+  unfold reachedFromCycle at h
+  simp at h
+  specialize h c
+  unfold isCycle at h
+  simp [g, cycle] at h
+  specialize h (List.get c (Fin.mk 0 isLt))
+  simp [List.get_mem] at h
+  unfold canReach at h
+  simp at h
+  specialize h ([List.get c (Fin.mk 0 isLt)])
+  have path: isPath [List.get c { val := 0, isLt := isLt }] G
+  apply isPathSingleton
+  rcases cycle with ⟨path_c,_⟩
+  unfold isPath at path_c
+  rcases path_c with ⟨path_c,_⟩
+  apply path_c
+  apply List.get_mem
+
+  specialize h path
+  simp[cycle] at h
+
+
+
+
+lemma frontRepetitionInPathImpliesCycle (a:A) (G:Graph A) (visited: List A) (path: isPath (a::visited) G) (mem: a ∈ visited): isCycle (a::(getSubListToMember visited a mem)) G :=
+by
+  unfold isCycle
   simp
   have h : ¬ Nat.succ (List.length (getSubListToMember visited a mem)) < 2
   push_neg
@@ -635,6 +977,10 @@ def foldl_except_set (f: A → Finset B → (Except String (Finset B))) (l: List
     match f hd init with
     | Except.error msg => Except.error msg
     | Except.ok S => foldl_except_set f tl S
+
+lemma foldl_except_set_subset_prop (f: A → Finset B → (Except String (Finset B))) (a_b: A → B)(l: List A) (init S': Finset B) (p: A → Prop)(init_prop: ∀ (a:A), a_b a ∈ init → p a) (isOk: foldl_except_set f l init = Except.ok S'): init ⊆ S' ∧ (List.map a_b l).toFinset ⊆ S' ∧ ∀ (a:A), a_b a ∈ S' → p a :=
+by
+  sorry
 
 
 def dfs_step (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (visited: Finset A) : Except String (Finset A) :=
@@ -710,8 +1056,7 @@ variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [Decid
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
  (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms v (G.predecessors v) ) ∨ ((G.predecessors v) = [] ∧ d.contains v)
 
-def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ)(ruleToString: rule τ → String): Except String Unit :=
-  let l:= G.predecessors a
+def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ)(ruleToString: rule τ → String): Except String Unit :=
   if l.isEmpty
   then
     if d.contains a
@@ -720,10 +1065,11 @@ def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: d
   else
     checkRuleMatch m (groundRule.mk a l) ruleToString
 
-lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ)(ruleToString: rule τ → String) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])):  locallyValidityChecker m d G a ruleToString = Except.ok () ↔ locallyValid P.toFinset d a G :=
+lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.predecessors a) (ruleToString: rule τ → String) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])):  locallyValidityChecker m d l a ruleToString = Except.ok () ↔ locallyValid P.toFinset d a G :=
 by
   unfold locallyValid
   unfold locallyValidityChecker
+  rw [l_prop]
   simp
   constructor
 
