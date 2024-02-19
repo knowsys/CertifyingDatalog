@@ -1023,6 +1023,70 @@ def foldl_except_set (f: A → Finset B → (Except String (Finset B))) (l: List
     | Except.error msg => Except.error msg
     | Except.ok S => foldl_except_set f tl S
 
+lemma foldl_except_set_subset (f: A → Finset B → (Except String (Finset B))) (l: List A) (init: Finset B) (subs: ∀ (S S':Finset B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(S: Finset B) (get_S: foldl_except_set f l init = Except.ok S) : init ⊆ S :=
+by
+  revert S
+  induction l generalizing init with
+  | nil =>
+    intro S
+    unfold foldl_except_set
+    simp
+    intro h
+    rw [h]
+  | cons hd tl ih =>
+    intro S
+    unfold foldl_except_set
+    intro h
+    cases h':f hd init with
+    | error e =>
+      simp[h'] at h
+    | ok S' =>
+      simp [h'] at h
+      apply subset_trans (b:= S')
+      have hd_mem: hd ∈ hd::tl
+      simp
+      apply subs init S' hd hd_mem h'
+      apply ih S'
+      intro T T' a' a_tl
+      apply subs
+      simp [a_tl]
+      apply h
+
+lemma foldl_except_set_contains_list_map (f: A → Finset B → (Except String (Finset B))) (l: List A) (init: Finset B) (subs: ∀ (S S':Finset B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(map: A → B) (map_prop: ∀ (a:A) (S S':Finset B ), f a S  = Except.ok S' → map a ∈ S') (T: Finset B) (get_T: foldl_except_set f l init = Except.ok T) : ∀ (b:B), b ∈  (List.map map l) → b ∈  T :=
+by
+  revert T
+  induction l generalizing init with
+  | nil =>
+    simp
+  | cons hd tl ih =>
+    intro T get_T b b_mem
+    unfold foldl_except_set at get_T
+    cases f_hd: f hd init with
+    | error e =>
+      simp [f_hd] at get_T
+    | ok S =>
+      simp [f_hd] at get_T
+      unfold List.map at b_mem
+      simp at b_mem
+      have subs':  ∀ (S S' : Finset B) (a : A), a ∈ tl → f a S = Except.ok S' → S ⊆ S'
+      intro S S' a a_tl f_a
+      apply subs S S' a
+      simp [a_tl]
+      apply f_a
+      cases b_mem with
+      | inl b_hd =>
+        have S_T: S ⊆ T
+        apply foldl_except_set_subset (subs:=subs') (get_S:=get_T)
+        rw [Finset.subset_iff] at S_T
+        apply S_T
+        rw [b_hd]
+        apply map_prop hd init S f_hd
+      | inr b_tl =>
+        apply ih
+        apply subs'
+        apply get_T
+        simp
+        apply b_tl
 
 lemma foldl_except_set_preserves_p {A B: Type} (f: A → Finset B → (Except String (Finset B))) (p: B → Prop) (l: List A) (init: Finset B) (init_prop: ∀ (b:B), b ∈ init → p b) (S: Finset B) (h: foldl_except_set f l init = Except.ok S ) (f_prev: ∀ (a:A) (S S': Finset B), (∀ (b:B), b ∈ S → p b) → f a S = Except.ok S' → (∀ (b:B), b ∈ S' → p b) ): ∀ (b:B), b ∈ S → p b :=
 by
@@ -1251,18 +1315,30 @@ by
   -/
 
 
-def dfs_step (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) : Except String (Finset A) :=
+lemma not_mem_of_empty_intersection {l1 l2: List A} (inter: l1 ∩ l2 = ∅): ∀ (a:A), a ∈ l1 → ¬ a ∈ l2 :=
+by
+  intro a a_l1
+  by_contra a_l2
+  have h: a ∈ l1 ∧ a ∈ l2
+  apply And.intro a_l1 a_l2
+  rw [← List.mem_inter_iff] at h
+  rw [inter] at h
+  simp at h
+
+def dfs_step (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ (a ∈ currPath))(visited: Finset A) : Except String (Finset A) :=
   if a ∈ visited
   then Except.ok visited
   else
     match f a (G.predecessors a) with
     | Except.error msg => Except.error msg
     | Except.ok _ =>
+      if pred_path:  (G.predecessors a) ∩ (a::currPath) = []
+      then
+
       addElementIfOk (foldl_except_set (fun ⟨x, _h⟩ S =>
-      if x_path: x ∈ (a::currPath)
-      then Except.error "Cycle detected"
+        dfs_step x G f (a::currPath) (isPath_extends_predecessors path x _h) (not_mem_of_empty_intersection pred_path x _h) S) (G.predecessors a).attach visited) a
       else
-        dfs_step x G f (a::currPath) (isPath_extends_predecessors path x _h) x_path S) (G.predecessors a).attach visited) a
+        Except.error "Cycle detected"
 termination_by dfs_step node G f currPath path not_mem visited => Finset.card (List.toFinset G.vertices \ List.toFinset currPath)
 decreasing_by
   simp_wf
@@ -1291,6 +1367,110 @@ decreasing_by
     rcases h with ⟨left,right⟩
     push_neg at right
     simp [left,right]
+
+
+
+lemma dfs_step_subset (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A): ∀ (S:Finset A), dfs_step a G f currPath path not_mem visited = Except.ok S → visited ⊆ S :=
+by
+  induction' h:Finset.card (List.toFinset G.vertices \ List.toFinset currPath)  with n ih generalizing a currPath visited
+
+  --base case: impossible as a is not in path and yet everything must be in the path
+  rw[Finset.card_eq_zero, Finset.sdiff_eq_empty_iff_subset, Finset.subset_iff] at h
+  simp at h
+  have a_G: a ∈ G.vertices
+  apply isPathImplSubset' path
+  simp
+  specialize h a_G
+  exact absurd h not_mem
+
+  intro S get_S
+  have a_mem: a ∈ G.vertices
+  apply isPathImplSubset' path
+  simp
+  have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currPath)) = n
+  rw [Nat.succ_eq_add_one] at h
+  have h': List.toFinset G.vertices \ List.toFinset currPath = insert a (List.toFinset G.vertices \ List.toFinset (a :: currPath))
+  rw [Finset.ext_iff]
+  simp
+  intro a'
+  by_cases a_a': a = a'
+  simp [a_a']
+  rw [← a_a']
+  constructor
+  apply a_mem
+  apply not_mem
+  constructor
+  intro ha
+  right
+  simp [ha]
+  apply Ne.symm a_a'
+  intro ha
+  cases ha with
+  | inl a_a =>
+    exact absurd (Eq.symm a_a) a_a'
+  | inr ha =>
+    rw [not_or] at ha
+    simp [ha]
+  rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
+  apply h
+  simp
+
+  unfold dfs_step at get_S
+  by_cases a_vis: a ∈ visited
+  simp [a_vis] at get_S
+  rw [get_S]
+
+  simp [a_vis] at get_S
+  cases f_a: f a (Graph.predecessors G a) with
+  | error e=>
+    simp[f_a] at get_S
+  | ok _ =>
+    simp [f_a] at get_S
+    have int_path_pred: Graph.predecessors G a ∩ (a :: currPath) = []
+    by_contra p
+    simp [p] at get_S
+    simp [int_path_pred] at get_S
+    rw [addElementIfOk_exists_ok'] at get_S
+    rcases get_S with ⟨S', S_S', foldl_result⟩
+    rw [S_S']
+    have visit_S': visited ⊆ S'
+    apply foldl_except_set_subset (l:=(G.predecessors a).attach) (get_S:= foldl_result)
+    simp
+    intro T T' x x_pred
+    apply ih
+    apply card
+    -- end have visit_S'
+    rw [Finset.subset_iff]
+    intro x x_vis
+    simp
+    left
+    rw [Finset.subset_iff] at visit_S'
+    apply visit_S' x_vis
+
+lemma dfs_returns_root_element (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) (S:Finset A) (get_S:dfs_step a G f currPath path not_mem visited = Except.ok S): a ∈ S :=
+by
+  unfold dfs_step at get_S
+  by_cases a_visit: a ∈ visited
+  simp [a_visit] at get_S
+  rw [get_S] at a_visit
+  apply a_visit
+
+  simp [a_visit] at get_S
+  cases f_a: f a (Graph.predecessors G a) with
+  | error e=>
+    simp[f_a] at get_S
+  | ok _ =>
+    simp[f_a] at get_S
+    by_cases h : Graph.predecessors G a ∩ (a :: currPath) = []
+    simp [h] at get_S
+    rw [addElementIfOk_exists_ok'] at get_S
+    rcases get_S with ⟨S', S_S',_⟩
+    rw [S_S']
+    simp
+
+    simp [h] at get_S
+
+
 
 
 lemma dfs_step_sematics' (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) (visited_prop: ∀ (a:A), a ∈ visited → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()):  Except.isOk (dfs_step a G f currPath path not_mem visited) ↔  ¬ reachedFromCycle a G ∧ (∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) ∧ ∀ (S: Finset A), (dfs_step a G f currPath path not_mem visited) = Except.ok S →  ∀ (a:A), a ∈ S → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
@@ -1337,6 +1517,37 @@ by
   rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
   apply h
   simp
+
+  --show that the lower functions preserve the property
+  have f_prev:  ∀ (a_1 : A) (b : a_1 ∈ Graph.predecessors G a) (S S' : Finset A),
+  (∀ (b : A),
+      b ∈ S → ¬reachedFromCycle b G ∧ ∀ (b_1 : A), canReach b_1 b G → f b_1 (Graph.predecessors G b_1) = Except.ok ()) →
+    (if h : a_1 ∈ a::currPath then Except.error "Cycle detected"
+        else
+          dfs_step a_1 G f (a :: currPath)
+            (isPath_extends_predecessors path a_1 b) h
+            S) =
+        Except.ok S' →
+      ∀ (b : A),
+        b ∈ S' → ¬reachedFromCycle b G ∧ ∀ (b_1 : A), canReach b_1 b G → f b_1 (Graph.predecessors G b_1) = Except.ok ()
+  intro pred pred_mem S S' S_prop get_S'
+  have n_path: ¬ (pred ∈ a :: currPath)
+  by_contra p
+  simp at p
+  simp [p] at get_S'
+  simp at n_path
+  simp [n_path] at get_S'
+  rw [← List.mem_cons] at  n_path
+  specialize ih pred (a::currPath) (isPath_extends_predecessors path pred pred_mem) n_path S S_prop card
+  have isOk: Except.isOk (dfs_step pred G f (a :: currPath) (isPath_extends_predecessors path pred pred_mem) n_path S) = true
+  rw [← except_is_ok_iff_exists]
+  use S'
+  rw [ih] at isOk
+  rcases isOk with ⟨_,_, prev⟩
+  specialize prev S' get_S'
+  apply prev
+
+
 
   constructor
   intro dfs
@@ -1397,7 +1608,14 @@ by
     intro b_mem
     cases b_mem with
     | inl b_S' =>
-      admit
+      apply foldl_except_set_preserves_p (h:= S'_get) (p:= fun b => ¬reachedFromCycle b G ∧ ∀ (b_1 : A), canReach b_1 b G → f b_1 (Graph.predecessors G b_1) = Except.ok ())
+      simp
+      apply visited_prop
+      simp
+      simp at f_prev
+      apply f_prev
+      apply b_S'
+
     | inr b_a =>
       rw [b_a]
       admit
@@ -1427,30 +1645,62 @@ by
     rw [ih']
     simp
     intros
+    simp at f_prev
+    constructor
+    intro h
+    intro S get_S
+    specialize f_prev a' pred S' S S'_prop
+    simp at ha'
+    simp [ha'] at f_prev
+    specialize f_prev get_S
+    apply f_prev
+    intro h S' get_S'
+    specialize f_prev a' pred S S' S_prop
+    simp at ha'
+    simp [ha'] at f_prev
+    specialize f_prev get_S'
+    apply f_prev
 
-
-    admit
 
     simp
-    intro a' pred S S' S_prop dfs_S'
-    have ha': ¬ ( a' = a ∨ a' ∈ currPath)
-    by_contra p
-    simp [p] at dfs_S'
-    simp[ha'] at dfs_S'
-    rw [← List.mem_cons] at ha'
-    specialize ih a' (a::currPath) (isPath_extends_predecessors path a' pred) ha' S S_prop card
-    have h_ex: Except.isOk (dfs_step a' G f (a::currPath) (isPath_extends_predecessors path a' pred) ha' S) = true
-    rw [dfs_S']
-    apply except_is_ok_of_ok
-    rw [ih] at h_ex
-    rcases h_ex with ⟨_, _, hS⟩
-    specialize hS S' dfs_S'
-    apply hS
+    simp at f_prev
+    apply f_prev
 
   --back direction
-  simp
+  intro h
+  unfold dfs_step
+  by_cases a_vis: a ∈ visited
+  simp [a_vis]
+  apply except_is_ok_of_ok
 
-
+  rcases h with ⟨cycle, reach_f, pres⟩
+  simp [a_vis]
+  cases f_a: f a (Graph.predecessors G a) with
+  | error e =>
+    specialize reach_f a (canReach_refl a G a_mem)
+    rw [reach_f] at f_a
+    simp at f_a
+  | ok u =>
+    simp [f_a]
+    rw [← except_is_ok_iff_exists, addElementIfOk_exists_ok, foldl_except_set_is_ok]
+    simp
+    intro pred pred_mem
+    have n_cycle: ¬ (pred = a ∨ pred ∈ currPath)
+    rw [← List.mem_cons]
+    admit
+    simp [n_cycle]
+    rw [← List.mem_cons] at n_cycle
+    specialize ih pred (a::currPath) (isPath_extends_predecessors path pred pred_mem) n_cycle visited visited_prop card
+    rw [ih]
+    constructor
+    rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle a G a_mem] at cycle
+    specialize cycle pred pred_mem
+    apply cycle
+    constructor
+    rw [canReachLemma a G a_mem f] at reach_f
+    simp [f_a] at reach_f
+    specialize reach_f pred pred_mem
+    apply reach_f
 
 
 
