@@ -41,7 +41,7 @@ by
 
 
 def isPath (l: List A) (G: Graph A): Prop :=
- ( ∀ (a:A), a ∈ l → a ∈ G.vertices ) ∧ ∀ (i: ℕ)(h: i > 0) (g: i < l.length), l.get (Fin.mk i.pred (pred_lt i l.length g)) ∈ G.predecessors (l.get (Fin.mk i g) )
+ ( ∀ (a:A), a ∈ l → a ∈ G.vertices ) ∧ ∀ (i: ℕ), i > 0 → ∀ (g: i < l.length), l.get (Fin.mk i.pred (pred_lt i l.length g)) ∈ G.predecessors (l.get (Fin.mk i g) )
 
  lemma isPathSingleton (G: Graph A) (a:A) (mem: a ∈ G.vertices): isPath [a] G :=
 by
@@ -881,14 +881,14 @@ by
   specialize h conn
   exact absurd reachCirc h
 
-lemma acyclicIffAllNotReachedFromCycle (G: Graph A): isAcyclic G ↔ ∀ (a:A), ¬ reachedFromCycle a G :=
+lemma acyclicIffAllNotReachedFromCycle (G: Graph A): isAcyclic G ↔ ∀ (a:A), a ∈ G.vertices → ¬ reachedFromCycle a G :=
 by
   constructor
   intro acyclic
   intro a
   unfold reachedFromCycle
   simp
-  intro c cycle
+  intro _ c cycle
   unfold isAcyclic at acyclic
   specialize acyclic c
   exact absurd cycle acyclic
@@ -911,7 +911,14 @@ by
   specialize h (List.get c (Fin.mk 0 isLt))
   unfold reachedFromCycle at h
   simp at h
-  specialize h c
+
+  have get_c_mem: List.get c { val := 0, isLt := isLt } ∈ G.vertices
+  apply isPathImplSubset'
+  rcases cycle with ⟨path, _⟩
+  apply path
+  apply List.get_mem
+
+  specialize h get_c_mem c
   unfold isCycle at h
   simp [g, cycle] at h
   specialize h (List.get c (Fin.mk 0 isLt))
@@ -1205,8 +1212,7 @@ by
 
 lemma canReachLemma (a:A) (G: Graph A) (mem: a ∈ G.vertices) (f: A → List A → Except String Unit): (∀ (b : A), canReach b a G → f b (Graph.predecessors G b) = Except.ok ()) ↔ (∀ (b: A), b ∈ G.predecessors a → (∀ (c : A), canReach c b G → f c (Graph.predecessors G c) = Except.ok ())) ∧ f a (G.predecessors a) = Except.ok () :=
 by
-  sorry
-  /-
+
   constructor
   intro h
   constructor
@@ -1241,17 +1247,19 @@ by
     rw [List.get_append_left, List.get_append_left]
     apply conn i i_zero i_lt_p
   | inr i_p =>
+    simp [i_p]
     rw [List.get_append_left, List.get_append_right]
-    rw [List.get_eq_iff] at get_b
-    simp at get_b
-    rw [← i_p, List.get?_eq_some] at get_b
-    rcases get_b with ⟨h', getb⟩
-    simp
-    swap
-    rw [i_p]
-    simp
-    simp[getb]
+    simp[get_b]
     apply b_pred
+    simp
+    simp
+    cases p with
+    | nil =>
+      simp at i_p
+      rw [i_p] at i_zero
+      simp at i_zero
+    | cons hd tl =>
+      simp
 
   constructor
   rw [List.get_append_left]
@@ -1285,7 +1293,7 @@ by
       rw [← get_b, get_a]
       apply And.right h
     | cons hd' tl' =>
-      rcases h with ⟨left,right⟩
+      rcases h with ⟨left,_⟩
       have isLt: Nat.pred (Nat.pred (hd::hd'::tl').length) < (hd::hd'::tl').length
       simp
       apply Nat.lt_trans (m:= Nat.succ tl'.length)
@@ -1294,7 +1302,7 @@ by
       have pred: List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt) ∈ G.predecessors a
       rw [← get_a]
       unfold isPath at path
-      rcases path with ⟨subs,conn⟩
+      rcases path with ⟨_,conn⟩
       apply conn
       simp
       specialize left (List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt)) pred
@@ -1312,8 +1320,22 @@ by
       apply getSubListToMemberNonEmpty
       rw [List.get_eq_iff]
       apply getSubListToMemberEndsWithElement
-  -/
 
+lemma allTrueIfAllCanReachTrue (f: A → List A → Except String Unit) (G: Graph A): (∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok ()) ↔ ∀ (a:A), a ∈ G.vertices → ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
+by
+  constructor
+  intro h a _ b reach
+  apply h
+  unfold canReach at reach
+  rcases reach with ⟨p, _, path, get_b, _⟩
+  apply isPathImplSubset' path
+  rw [← get_b]
+  apply List.get_mem
+
+  intro h a a_mem
+  apply h a a_mem
+  apply canReach_refl
+  apply a_mem
 
 lemma not_mem_of_empty_intersection {l1 l2: List A} (inter: l1 ∩ l2 = ∅): ∀ (a:A), a ∈ l1 → ¬ a ∈ l2 :=
 by
@@ -1470,7 +1492,7 @@ by
 
     simp [h] at get_S
 
-lemma dfs_preserves_notReachedFromCycleAndCounterExample (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) (visited_prop: ∀ (a:A), a ∈ visited → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) (S: Finset A) (get_S: dfs_step a G f currPath path not_mem visited = Except.ok S): ∀ (a:A), a ∈ S → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
+lemma dfs_step_preserves_notReachedFromCycleAndCounterExample (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) (visited_prop: ∀ (a:A), a ∈ visited → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) (S: Finset A) (get_S: dfs_step a G f currPath path not_mem visited = Except.ok S): ∀ (a:A), a ∈ S → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
 by
   induction' h:Finset.card (List.toFinset G.vertices \ List.toFinset currPath)  with n ih generalizing a currPath visited S
 
@@ -1619,42 +1641,121 @@ by
   apply h
   simp
 
+  constructor
+  intro h'
+  rw [← except_is_ok_iff_exists] at h'
+  rcases h' with ⟨S, dfs_get⟩
+  apply dfs_step_preserves_notReachedFromCycleAndCounterExample (visited_prop:=visited_prop)
+  apply dfs_get
+  apply dfs_step_returns_root_element (get_S:=dfs_get)
 
+  intro h'
+  unfold dfs_step
+  by_cases a_visit: a ∈ visited
+  simp [a_visit]
+  apply except_is_ok_of_ok
 
+  simp[a_visit]
+  rcases h' with ⟨reach_cycle, reach_f⟩
+  have f_a: f a (G.predecessors a) = Except.ok ()
+  apply reach_f
+  apply canReach_refl a G a_mem
+  simp [f_a]
 
+  have pred_path: Graph.predecessors G a ∩ (a :: currPath) = []
+  cases inter: Graph.predecessors G a ∩ (a :: currPath) with
+  | nil =>
+    simp
+  | cons hd tl =>
+    have hd_mem: hd ∈ G.predecessors a ∧ hd ∈ (a::currPath)
+    rw [← List.mem_inter_iff, inter]
+    simp
+    rcases hd_mem with ⟨hd_pred, hd_a_currPath⟩
 
+    have cycle_hd: isCycle (hd::(getSubListToMember (a::currPath) hd hd_a_currPath)) G
+    apply frontRepetitionInPathImpliesCycle
+    apply isPath_extends_predecessors path hd hd_pred
 
+    have reachedFromCycleHd: reachedFromCycle hd G
+    unfold reachedFromCycle
+    use hd::(getSubListToMember (a::currPath) hd hd_a_currPath)
+    constructor
+    apply cycle_hd
+    use hd
+    simp
+    apply canReach_refl
+    apply G.complete
+    apply a_mem
+    apply hd_pred
 
+    rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
+    specialize reach_cycle hd hd_pred
+    exact absurd reachedFromCycleHd reach_cycle
 
+  simp [pred_path]
+  rw [← except_is_ok_iff_exists, addElementIfOk_exists_ok,foldl_except_set_is_ok (init_prop:=visited_prop)]
+  simp
+  intro b b_pred
+  have b_mem: b ∈ G.vertices
+  apply G.complete a a_mem b b_pred
+  specialize ih b (a::currPath) (isPath_extends_predecessors path b b_pred) (not_mem_of_empty_intersection pred_path b b_pred) visited visited_prop card
+  rw [ih]
+  constructor
+  rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
+  apply reach_cycle b b_pred
+  rw [canReachLemma (mem:=a_mem)] at reach_f
+  apply And.left (reach_f )
+  apply b_pred
 
+  simp
+  intro b b_pred S S' S_prop S'_prop
+  rw [ih, ih]
+  apply S'_prop
+  apply card
+  apply S_prop
+  apply card
 
+  simp
+  intro b b_pred S S' S_prop
+  apply dfs_step_preserves_notReachedFromCycleAndCounterExample
+  apply S_prop
 
-
-
-
-
-
-
-
-
-
-
-def dfs_go (G: Graph A) (f: A → List A → Except String Unit) (S: Finset A): Except String Unit :=
-  match foldl_except_set (fun ⟨x,_h⟩ S => dfs_step x G f [] (isPathSingleton G x _h) S) G.vertices.attach S with
+def isOkOrMessage (e: Except String A): Except String Unit :=
+  match e with
   | Except.error msg => Except.error msg
   | Except.ok _ => Except.ok ()
 
-lemma dfs_go_semantics (G: Graph A) (f: A → List A → Except String Unit) (S: Finset A) (hS: ∀ (a:A), a ∈ S → ¬reachedFromCycle a G ∧ f a (Graph.predecessors G a) = Except.ok ()): dfs_go G f S = Except.ok () ↔ (∀ (a : A), ¬reachedFromCycle a G) ∧ ∀ (a : A), a ∈ G.vertices → f a (Graph.predecessors G a) = Except.ok () :=
+lemma isOkOrMessageOkIffExceptionIsOk (e: Except String A): isOkOrMessage e = Except.ok () ↔ ∃ (a:A), e = Except.ok a :=
 by
-  unfold dfs_go
-  sorry
+  unfold isOkOrMessage
+  cases e with
+  | error msg =>
+    simp
+  | ok S =>
+    simp
 
-
-def dfs (G: Graph A) (f: A → List A → Except String Unit): Except String Unit := dfs_go G f ∅
+def dfs (G: Graph A) (f: A → List A → Except String Unit) : Except String Unit :=
+  isOkOrMessage (foldl_except_set (fun ⟨x,_h⟩ S => dfs_step x G f [] (isPathSingleton G x _h) (List.not_mem_nil x) S) G.vertices.attach ∅ )
 
 lemma dfs_semantics (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok () :=
 by
-  sorry
+  unfold dfs
+  rw [isOkOrMessageOkIffExceptionIsOk, acyclicIffAllNotReachedFromCycle, allTrueIfAllCanReachTrue]
+  rw [foldl_except_set_is_ok ]
+  simp [dfs_step_sematics,← forall_and, ← imp_and, ← forall_and]
+
+  use (fun x => ¬reachedFromCycle x G ∧ ∀ (b : A), canReach b x G → f b (Graph.predecessors G b) = Except.ok ())
+  simp
+
+  simp
+  intro a a_mem S S' S_prop S'_prop
+  rw [dfs_step_sematics (visited_prop:=S_prop), dfs_step_sematics (visited_prop:=S'_prop)]
+
+  simp
+  intro a _pred S S' S_prop get_S'
+  apply dfs_step_preserves_notReachedFromCycleAndCounterExample (visited_prop:=S_prop)
+  apply get_S'
+
 
 def extractTree {A: Type} [DecidableEq A] (a:A) (G: Graph A) (mem: a ∈ G.vertices) (acyclic: isAcyclic G): tree A :=
   tree.node a (List.map (fun ⟨x, _h⟩ => extractTree x G (G.complete a mem x _h) acyclic) (G.predecessors a).attach)

@@ -1,6 +1,7 @@
 import Std.Data.List.Basic
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.Basic
+import CertifyingDatalog.GraphValidation
 import Lean.Data.Json.FromToJson
 
 def NatToString (n: ℕ): String :=
@@ -232,7 +233,7 @@ structure verificationProblemSignatureWrapper where
   (helper: parsingArityHelper)
   (problem: verificationProblem helper)
 
-def converProblemInputToVerificationProblem (input: problemInput): Except String verificationProblemSignatureWrapper :=
+def convertProblemInputToVerificationProblem (input: problemInput): Except String verificationProblemSignatureWrapper :=
   match getArityHelperFromProgram input.program with
   | Except.error e => Except.error ("Error parsing program --" ++ e)
   | Except.ok helper =>
@@ -242,3 +243,159 @@ def converProblemInputToVerificationProblem (input: problemInput): Except String
     match List.map_except (transformMockRuleToRule helper) input.program with
     | Except.error e => Except.error ("Error parsing program -- " ++ e)
     | Except.ok program => Except.ok {helper := helper, problem := {trees := trees, program := program}}
+
+
+-- graph validation
+structure edge where
+  (start_node: mockAtom)
+  (end_node: mockAtom)
+deriving DecidableEq, Lean.FromJson, Lean.ToJson
+
+structure graphInputProblem where
+  (edges: List edge)
+  (program: List mockRule)
+deriving Lean.FromJson, Lean.ToJson
+
+
+def emptyGroundAtomGraph (helper: parsingArityHelper): Graph (groundAtom (parsingSignature helper)) :=
+  {
+    vertices := [],
+    predecessors := fun _ => []
+    complete :=by simp
+  }
+
+def addEdge_helper (helper: parsingArityHelper) (start_node end_node: groundAtom (parsingSignature helper)) (G: Graph (groundAtom (parsingSignature helper))): Graph (groundAtom (parsingSignature helper)) :=
+  if start_mem: start_node ∈ G.vertices
+  then
+    if end_node ∈ G.vertices
+    then
+      {
+        vertices:= G.vertices,
+        predecessors := fun  x => if x = end_node then start_node::(G.predecessors x) else G.predecessors x,
+        complete:= by
+          intro a a_mem b b_mem
+          simp at b_mem
+          by_cases a_end: a = end_node
+          simp [a_end] at b_mem
+          cases b_mem with
+          | inl b_start =>
+            rw [b_start]
+            apply start_mem
+          | inr b_end =>
+            rw [← a_end] at b_end
+            apply G.complete a a_mem b b_end
+
+          simp [a_end] at b_mem
+          apply G.complete a a_mem b b_mem
+      }
+    else
+      {
+        vertices:= end_node::G.vertices,
+        predecessors := fun  x => if x = end_node then [start_node] else G.predecessors x,
+        complete:= by
+          intro a a_mem b b_mem
+          simp at b_mem
+          simp
+          right
+          by_cases a_end: a = end_node
+          simp [a_end] at b_mem
+          rw [b_mem]
+          apply start_mem
+
+          simp [a_end] at b_mem
+          simp [a_end] at a_mem
+          apply G.complete a a_mem b b_mem
+          }
+  else
+    if end_mem: end_node ∈ G.vertices
+    then
+      {
+        vertices:= start_node::G.vertices,
+        predecessors := fun x => if x = end_node then start_node::(G.predecessors x) else if x= start_node then [] else (G.predecessors x),
+        complete :=by
+          intro a a_mem b b_mem
+          simp at b_mem
+          by_cases a_end: a = end_node
+          simp [a_end] at b_mem
+          cases b_mem with
+          | inl b_start =>
+            rw [b_start]
+            simp
+          | inr b_pred =>
+            simp
+            right
+            apply G.complete end_node end_mem b b_pred
+
+          simp [a_end]
+          simp [a_end] at b_mem
+          by_cases a_start: a = start_node
+          simp [a_start] at b_mem
+
+          simp [a_start] at b_mem
+          simp [a_start] at a_mem
+          right
+          apply G.complete a a_mem b b_mem
+      }
+    else
+      {
+        vertices := start_node::end_node::G.vertices,
+        predecessors := fun x => if x = end_node then [start_node] else if x = start_node then [] else G.predecessors x,
+        complete :=by
+          intro a a_mem b b_mem
+          simp at b_mem
+          by_cases a_end: a = end_node
+          simp [a_end] at b_mem
+          simp [b_mem]
+
+          simp [a_end] at b_mem
+          by_cases a_start: a = start_node
+          simp [a_start] at b_mem
+
+          simp [a_start] at b_mem
+          simp
+          right
+          right
+          simp [a_end, a_start] at a_mem
+          apply G.complete a a_mem b b_mem
+      }
+
+def addEdge (helper: parsingArityHelper) (e: edge) (G: Graph (groundAtom (parsingSignature helper))): Except String (Graph (groundAtom (parsingSignature helper))) :=
+  match transformMockAtomToGroundAtom helper e.start_node with
+  | Except.error msg =>
+      Except.error msg
+  | Except.ok start_node =>
+    match transformMockAtomToGroundAtom helper e.end_node with
+    | Except.error msg =>
+        Except.error msg
+    | Except.ok end_node => Except.ok (addEdge_helper helper start_node end_node G)
+
+def foldl_except {A B: Type} (f: A → B → Except String B) (l: List A) (init: B) :=
+  match l with
+  | [] => Except.ok init
+  | hd::tl =>
+    match f hd init with
+    | Except.error msg => Except.error msg
+    | Except.ok init' => foldl_except f tl init'
+
+def getGraph (helper: parsingArityHelper) (l:List edge): Except String (Graph (groundAtom (parsingSignature helper))) :=
+  foldl_except (addEdge helper) l (emptyGroundAtomGraph helper)
+
+
+structure graphVerificationProblem (helper: parsingArityHelper) where
+  (graph: Graph (groundAtom (parsingSignature helper)))
+  (program: List (rule (parsingSignature helper)))
+
+structure graphVerificationProblemSignatureWrapper where
+  (helper: parsingArityHelper)
+  (problem: graphVerificationProblem helper)
+
+def convertGraphProblemInputToGraphVerificationProblem (input: graphInputProblem): Except String graphVerificationProblemSignatureWrapper :=
+  match getArityHelperFromProgram input.program with
+  | Except.error e => Except.error ("Error parsing program --" ++ e)
+  | Except.ok helper =>
+    match getGraph helper input.edges with
+    | Except.error e => Except.error ("Error parsing graph --" ++ e)
+    | Except.ok graph =>
+      match List.map_except (transformMockRuleToRule helper) input.program with
+    | Except.error e => Except.error ("Error parsing program -- " ++ e)
+    | Except.ok program => Except.ok {helper := helper, problem := {graph := graph, program := program}}
