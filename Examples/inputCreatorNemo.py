@@ -190,6 +190,18 @@ def convertProofTreeToJson(tree):
 
     return {"node": {"label": label, "children": list(children)}}
 
+def parseGraph (json_object):
+    vertices = list(map(lambda x: convertNemoAtomToJson(tokenize(normalizeQuotationmarks(x))), json_object["finalConclusion"]))
+
+    edges = []
+    for inf in json_object["inferences"]:
+        end = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(inf["conclusion"])))
+        for prem in inf["premises"]:
+          start  = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(prem)))
+          edges.append({"start_node": start, "end_node": end})
+
+    return {"vertices": vertices, "edges": edges}        
+
 def main(*args):
     complete = False
     args = list(args)
@@ -200,19 +212,33 @@ def main(*args):
         if args[0] == "--help" or args[0] == "-h":
             print("First input: path to folder where the data and results are stored")
             print("Second input: program file name, stored at the path above")
+            print("Third input: -t for trees as output format or -g for graph output")
             print("Additional inputs may be ground atoms which should be tested")
             print("If no additional arguments are added, then the program will grab everything from the results folder and ask for trees for them.")
             return
-        if len(args) == 2:
+        if len(args) == 3:
             complete = True
             ruleFile = args[1]
             folder = args[0]
-        else:
+            if args[2] == "-t":
+                useTrees = True
+            elif args[2] == "-g":
+                useTrees = False
+            else:
+                print ("Unknown option. Neither -g nor -t")
+                return
+        else: 
             folder = args.pop(0)
             ruleFile = args.pop(0)
-
+            treeOption = args.pop(0)
+            if treeOption == "-t":
+                useTrees = True
+            elif treeOption == "-g":
+                useTrees = False
+            else:
+                print ("Unknown option. Neither -g nor -t")
+                return
             model = args
-
 
     problemName = ruleFile.split(".")[0]
     originalDir = os.getcwd()
@@ -227,29 +253,41 @@ def main(*args):
     os.system("nmo  --trace-input-file traceGoal.txt --trace-output temp " + ruleFile)
 
     print("Finished nemo process")
-    trees = []
-    with open("temp") as f:
-        trees = (parseTrees(json.load(f)))
 
-    newTrees = []
-    for tree in trees:
-        newTrees.append(convertProofTreeToJson(tree))
-
-    trees = newTrees
-
-    print("Parsed trees")
-    
-    #trees = filterTrees(trees)
-
-    print("Filtering done")
     program = []
     with open(ruleFile, "r") as file:
         program = convertNemoProgramToJson(file.readlines())
 
-    os.chdir(originalDir)
-    with open(problemName + ".json", "w") as f:
-        json.dump({"trees": trees, "program": program}, f, ensure_ascii=False, indent=4)
+    if useTrees:
+        trees = []
+        with open("temp") as f:
+            trees = (parseTrees(json.load(f)))
 
+        newTrees = []
+        for tree in trees:
+            newTrees.append(convertProofTreeToJson(tree))
+
+        trees = newTrees
+
+        print("Parsed trees")
+        
+        #trees = filterTrees(trees)
+
+        print("Filtering done")
+    
+
+        os.chdir(originalDir)
+        with open(problemName + ".json", "w") as f:
+            json.dump({"trees": trees, "program": program}, f, ensure_ascii=False, indent=4)
+    else:
+        # graph output
+        with open("temp") as f:
+            graph = (parseGraph(json.load(f)))
+        print("Parsed graph")
+        
+        os.chdir(originalDir)
+        with open(problemName + ".json", "w") as f:
+            json.dump({"graph": graph, "program": program}, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     import sys

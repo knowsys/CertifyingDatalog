@@ -251,15 +251,25 @@ structure edge where
   (end_node: mockAtom)
 deriving DecidableEq, Lean.FromJson, Lean.ToJson
 
-structure graphInputProblem where
+--#eval Lean.toJson (edge.mk (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]) (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]))
+
+structure mockGraph where
+  (vertices: List mockAtom)
   (edges: List edge)
+deriving Lean.FromJson, Lean.ToJson
+
+structure graphInputProblem where
+  (graph: mockGraph)
   (program: List mockRule)
 deriving Lean.FromJson, Lean.ToJson
 
 
-def emptyGroundAtomGraph (helper: parsingArityHelper): Graph (groundAtom (parsingSignature helper)) :=
+
+
+
+def unconnectedGroundAtomGraph (helper: parsingArityHelper) (l:List (groundAtom (parsingSignature helper))): Graph (groundAtom (parsingSignature helper)) :=
   {
-    vertices := [],
+    vertices := l,
     predecessors := fun _ => []
     complete :=by simp
   }
@@ -271,17 +281,17 @@ def addEdge_helper (helper: parsingArityHelper) (start_node end_node: groundAtom
     then
       {
         vertices:= G.vertices,
-        predecessors := fun  x => if x = end_node then start_node::(G.predecessors x) else G.predecessors x,
+        predecessors := fun  x => if x = end_node then (G.predecessors x) ++ [start_node] else G.predecessors x,
         complete:= by
           intro a a_mem b b_mem
           simp at b_mem
           by_cases a_end: a = end_node
           simp [a_end] at b_mem
           cases b_mem with
-          | inl b_start =>
+          | inr b_start =>
             rw [b_start]
             apply start_mem
-          | inr b_end =>
+          | inl b_end =>
             rw [← a_end] at b_end
             apply G.complete a a_mem b b_end
 
@@ -311,17 +321,17 @@ def addEdge_helper (helper: parsingArityHelper) (start_node end_node: groundAtom
     then
       {
         vertices:= start_node::G.vertices,
-        predecessors := fun x => if x = end_node then start_node::(G.predecessors x) else if x= start_node then [] else (G.predecessors x),
+        predecessors := fun x => if x = end_node then G.predecessors x ++ [start_node] else if x= start_node then [] else (G.predecessors x),
         complete :=by
           intro a a_mem b b_mem
           simp at b_mem
           by_cases a_end: a = end_node
           simp [a_end] at b_mem
           cases b_mem with
-          | inl b_start =>
+          | inr b_start =>
             rw [b_start]
             simp
-          | inr b_pred =>
+          | inl b_pred =>
             simp
             right
             apply G.complete end_node end_mem b b_pred
@@ -377,8 +387,11 @@ def foldl_except {A B: Type} (f: A → B → Except String B) (l: List A) (init:
     | Except.error msg => Except.error msg
     | Except.ok init' => foldl_except f tl init'
 
-def getGraph (helper: parsingArityHelper) (l:List edge): Except String (Graph (groundAtom (parsingSignature helper))) :=
-  foldl_except (addEdge helper) l (emptyGroundAtomGraph helper)
+def getGraph (helper: parsingArityHelper) (g: mockGraph): Except String (Graph (groundAtom (parsingSignature helper))) :=
+  match List.map_except (transformMockAtomToGroundAtom helper) g.vertices with
+  | Except.error e => Except.error ("Error parsing vertices -- " ++ e)
+  | Except.ok v' =>
+  foldl_except (addEdge helper) g.edges (unconnectedGroundAtomGraph helper v')
 
 
 structure graphVerificationProblem (helper: parsingArityHelper) where
@@ -393,7 +406,7 @@ def convertGraphProblemInputToGraphVerificationProblem (input: graphInputProblem
   match getArityHelperFromProgram input.program with
   | Except.error e => Except.error ("Error parsing program --" ++ e)
   | Except.ok helper =>
-    match getGraph helper input.edges with
+    match getGraph helper input.graph with
     | Except.error e => Except.error ("Error parsing graph --" ++ e)
     | Except.ok graph =>
       match List.map_except (transformMockRuleToRule helper) input.program with
