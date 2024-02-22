@@ -414,7 +414,6 @@ def main_graph (argsParsed: argsParsed): IO Unit := do
   match ← getGraphProblemFromJson argsParsed.programFileName with
   | Except.error e => IO.println e
   | Except.ok transformedInput =>
-    IO.println transformedInput.problem.graph.vertices.length
     let problem := transformedInput.problem
     if argsParsed.complete = true
     then
