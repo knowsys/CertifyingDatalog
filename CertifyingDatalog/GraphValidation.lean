@@ -12,6 +12,8 @@ structure Graph (A: Type) where
 
 section dfs
 variable {A: Type}[DecidableEq A] {B: Type} [DecidableEq B]
+open Lean
+
 
 lemma pred_lt (n m: ℕ) (h:n < m ): n.pred < m :=
 by
@@ -1022,7 +1024,45 @@ by
   unfold Except.toBool
   simp
 
-def foldl_except_set (f: A → Finset B → (Except String (Finset B))) (l: List A) (init: Finset B): Except String (Finset B) :=
+
+def Lean.HashSet.Subset [Hashable B] (S S': HashSet B): Prop := ∀ (b:B), S.contains b → S'.contains b
+
+instance [Hashable B]: HasSubset (HashSet B) := ⟨Lean.HashSet.Subset⟩
+
+lemma Lean.HashSet.Subset.refl [Hashable B] {S1: HashSet B} : S1 ⊆ S1 :=
+by
+  unfold_projs at *
+  unfold Subset at *
+  simp
+
+
+lemma Lean.HashSet.Subset.trans [Hashable B] {S1 S2 S3: HashSet B} (h1: S1 ⊆ S2) (h2: S2 ⊆ S3): S1 ⊆ S3 :=
+by
+  unfold_projs at *
+  unfold Subset at *
+  intro b S1_b
+  apply h2
+  apply h1
+  apply S1_b
+
+lemma Lean.HashSet.Subset.Iff [Hashable B] {S1 S2: HashSet B} : S1 ⊆ S2 ↔ ∀ (b:B), S1.contains b → S2.contains b :=
+by
+  unfold_projs
+  unfold HashSet.Subset
+  simp
+
+lemma Lean.HashSet.contains_insert [Hashable B] {S1: HashSet B} (b:B ): ∀ (b':B), (S1.insert b).contains b' ↔ S1.contains b' ∨ b = b' :=
+by
+  sorry
+
+
+lemma Lean.HashSet.empty_contains [Hashable B]: ∀ (b:B), ¬ HashSet.empty.contains b :=
+by
+  sorry
+
+
+
+def foldl_except_set [Hashable B] (f: A → HashSet B → (Except String (HashSet B))) (l: List A) (init: HashSet B): Except String (HashSet B) :=
   match l with
   | [] => Except.ok init
   | hd::tl =>
@@ -1030,7 +1070,7 @@ def foldl_except_set (f: A → Finset B → (Except String (Finset B))) (l: List
     | Except.error msg => Except.error msg
     | Except.ok S => foldl_except_set f tl S
 
-lemma foldl_except_set_subset (f: A → Finset B → (Except String (Finset B))) (l: List A) (init: Finset B) (subs: ∀ (S S':Finset B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(S: Finset B) (get_S: foldl_except_set f l init = Except.ok S) : init ⊆ S :=
+lemma foldl_except_set_subset [Hashable B] (f: A → HashSet B → (Except String (HashSet B))) (l: List A) (init: HashSet B) (subs: ∀ (S S':HashSet B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(S: HashSet B) (get_S: foldl_except_set f l init = Except.ok S) : init ⊆ S :=
 by
   revert S
   induction l generalizing init with
@@ -1040,6 +1080,7 @@ by
     simp
     intro h
     rw [h]
+    apply HashSet.Subset.refl
   | cons hd tl ih =>
     intro S
     unfold foldl_except_set
@@ -1049,7 +1090,7 @@ by
       simp[h'] at h
     | ok S' =>
       simp [h'] at h
-      apply subset_trans (b:= S')
+      apply HashSet.Subset.trans (S2:= S')
       have hd_mem: hd ∈ hd::tl
       simp
       apply subs init S' hd hd_mem h'
@@ -1059,7 +1100,7 @@ by
       simp [a_tl]
       apply h
 
-lemma foldl_except_set_contains_list_map (f: A → Finset B → (Except String (Finset B))) (l: List A) (init: Finset B) (subs: ∀ (S S':Finset B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(map: A → B) (map_prop: ∀ (a:A) (S S':Finset B ), f a S  = Except.ok S' → map a ∈ S') (T: Finset B) (get_T: foldl_except_set f l init = Except.ok T) : ∀ (b:B), b ∈  (List.map map l) → b ∈  T :=
+lemma foldl_except_set_contains_list_map [Hashable B] (f: A → HashSet B → (Except String (HashSet B))) (l: List A) (init: HashSet B) (subs: ∀ (S S':HashSet B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(map: A → B) (map_prop: ∀ (a:A) (S S':HashSet B ), f a S  = Except.ok S' →  S'.contains (map a) ) (T: HashSet B) (get_T: foldl_except_set f l init = Except.ok T) : ∀ (b:B), b ∈  (List.map map l) → T.contains b :=
 by
   revert T
   induction l generalizing init with
@@ -1075,7 +1116,7 @@ by
       simp [f_hd] at get_T
       unfold List.map at b_mem
       simp at b_mem
-      have subs':  ∀ (S S' : Finset B) (a : A), a ∈ tl → f a S = Except.ok S' → S ⊆ S'
+      have subs':  ∀ (S S' : HashSet B) (a : A), a ∈ tl → f a S = Except.ok S' → S ⊆ S'
       intro S S' a a_tl f_a
       apply subs S S' a
       simp [a_tl]
@@ -1084,7 +1125,7 @@ by
       | inl b_hd =>
         have S_T: S ⊆ T
         apply foldl_except_set_subset (subs:=subs') (get_S:=get_T)
-        rw [Finset.subset_iff] at S_T
+        rw [HashSet.Subset.Iff] at S_T
         apply S_T
         rw [b_hd]
         apply map_prop hd init S f_hd
@@ -1095,7 +1136,7 @@ by
         simp
         apply b_tl
 
-lemma foldl_except_set_preserves_p {A B: Type} (f: A → Finset B → (Except String (Finset B))) (p: B → Prop) (l: List A) (init: Finset B) (init_prop: ∀ (b:B), b ∈ init → p b) (S: Finset B) (h: foldl_except_set f l init = Except.ok S ) (f_prev: ∀ (a:A) (S S': Finset B), (∀ (b:B), b ∈ S → p b) → f a S = Except.ok S' → (∀ (b:B), b ∈ S' → p b) ): ∀ (b:B), b ∈ S → p b :=
+lemma foldl_except_set_preserves_p [Hashable B] (f: A → HashSet B → (Except String (HashSet B))) (p: B → Prop) (l: List A) (init: HashSet B) (init_prop: ∀ (b:B), init.contains b → p b) (S: HashSet B) (h: foldl_except_set f l init = Except.ok S ) (f_prev: ∀ (a:A) (S S': HashSet B), (∀ (b:B), S.contains b → p b) → f a S = Except.ok S' → (∀ (b:B), S'.contains b → p b) ): ∀ (b:B), S.contains b → p b :=
 by
   induction l generalizing init with
   | nil =>
@@ -1120,7 +1161,7 @@ by
 
 
 
-lemma foldl_except_set_is_ok {A B: Type} (f: A → Finset B → (Except String (Finset B))) (p: B → Prop) (l: List A) (init: Finset B) (init_prop: ∀ (b:B), b ∈ init → p b) (f_ignore_B: ∀ (a:A) (S S': Finset B), (∀ (b:B), b ∈ S → p b) →  (∀ (b:B), b ∈ S' → p b) → (Except.isOk (f a S) ↔ Except.isOk (f a S'))) (f_prev: ∀ (a:A) (S S': Finset B), (∀ (b:B), b ∈ S → p b) → f a S = Except.ok S' → (∀ (b:B), b ∈ S' → p b) ): (∃ (S: Finset B), foldl_except_set f l init = Except.ok S) ↔ ∀ (a:A), a ∈ l → Except.isOk (f a init) :=
+lemma foldl_except_set_is_ok [Hashable B] (f: A → HashSet B → (Except String (HashSet B))) (p: B → Prop) (l: List A) (init: HashSet B) (init_prop: ∀ (b:B), init.contains b → p b) (f_ignore_B: ∀ (a:A) (S S': HashSet B), (∀ (b:B), S.contains b → p b) →  (∀ (b:B), S'.contains b → p b) → (Except.isOk (f a S) ↔ Except.isOk (f a S'))) (f_prev: ∀ (a:A) (S S': HashSet B), (∀ (b:B), S.contains b → p b) → f a S = Except.ok S' → (∀ (b:B), S'.contains b → p b) ): (∃ (S: HashSet B), foldl_except_set f l init = Except.ok S) ↔ ∀ (a:A), a ∈ l → Except.isOk (f a init) :=
 by
   induction l generalizing init with
   | nil =>
@@ -1147,7 +1188,7 @@ by
       cases h: f hd init with
       | ok S' =>
         specialize ih S'
-        have S'_prop: ∀ (b : B), b ∈ S' → p b
+        have S'_prop: ∀ (b : B), S'.contains b → p b
         apply f_prev hd init S' init_prop h
         specialize ih S'_prop
         simp [h] at foldl
@@ -1159,7 +1200,7 @@ by
         simp [h] at foldl
 
     intro h
-    have f_hd_result: ∃ (S: Finset B), f hd init = Except.ok S
+    have f_hd_result: ∃ (S: HashSet B), f hd init = Except.ok S
     rw [except_is_ok_iff_exists]
     apply h
     simp
@@ -1167,7 +1208,7 @@ by
     rcases f_hd_result with ⟨S', f_S'⟩
     simp [f_S']
     specialize ih S'
-    have S'_prop: ∀ (b:B), b ∈ S' → p b
+    have S'_prop: ∀ (b:B), S'.contains b → p b
     apply f_prev hd init S' init_prop f_S'
     specialize ih S'_prop
     rw [ih]
@@ -1177,12 +1218,12 @@ by
     simp [a_mem]
 
 
-def addElementIfOk (e: Except String (Finset A)) (a:A): Except String (Finset A) :=
+def addElementIfOk [Hashable A] (e: Except String (HashSet A)) (a:A): Except String (HashSet A) :=
   match e with
-  | Except.ok S => Except.ok (S ∪ {a})
+  | Except.ok S => Except.ok (S.insert a)
   | Except.error msg => Except.error msg
 
-lemma addElementIfOk_exists_ok (e: Except String (Finset A)) (a:A): (∃ (S: Finset A), addElementIfOk e a = Except.ok S) ↔ ∃ (S:Finset A), e = Except.ok S :=
+lemma addElementIfOk_exists_ok [Hashable A] (e: Except String (HashSet A)) (a:A): (∃ (S: HashSet A), addElementIfOk e a = Except.ok S) ↔ ∃ (S:HashSet A), e = Except.ok S :=
 by
   constructor
   intro h
@@ -1199,7 +1240,7 @@ by
   rw [e_S]
   simp [addElementIfOk]
 
-lemma addElementIfOk_exists_ok' (e: Except String (Finset A)) (a:A) (S: Finset A): addElementIfOk e a = Except.ok S ↔ ∃ (S': Finset A), S = S' ∪ {a} ∧ e = Except.ok S' :=
+lemma addElementIfOk_exists_ok' [Hashable A] (e: Except String (HashSet A)) (a:A) (S: HashSet A): addElementIfOk e a = Except.ok S ↔ ∃ (S': HashSet A), S = S'.insert a ∧ e = Except.ok S' :=
 by
   cases e with
   | error e =>
@@ -1347,14 +1388,14 @@ by
   rw [inter] at h
   simp at h
 
-def dfs_step (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ (a ∈ currPath))(visited: Finset A) : Except String (Finset A) :=
-  if a ∈ visited
+def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ (a ∈ currPath))(visited: HashSet A) : Except String (HashSet A) :=
+  if visited.contains a
   then Except.ok visited
   else
     match f a (G.predecessors a) with
     | Except.error msg => Except.error msg
     | Except.ok _ =>
-      if pred_path:  (G.predecessors a) ∩ (a::currPath) = []
+      if pred_path: (G.predecessors a) ∩ (a::currPath) = []
       then
 
       addElementIfOk (foldl_except_set (fun ⟨x, _h⟩ S =>
@@ -1392,7 +1433,7 @@ decreasing_by
 
 
 
-lemma dfs_step_subset (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A): ∀ (S:Finset A), dfs_step a G f currPath path not_mem visited = Except.ok S → visited ⊆ S :=
+lemma dfs_step_subset [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: HashSet A): ∀ (S:HashSet A), dfs_step a G f currPath path not_mem visited = Except.ok S → visited ⊆ S :=
 by
   induction' h:Finset.card (List.toFinset G.vertices \ List.toFinset currPath)  with n ih generalizing a currPath visited
 
@@ -1438,9 +1479,10 @@ by
   simp
 
   unfold dfs_step at get_S
-  by_cases a_vis: a ∈ visited
+  by_cases a_vis: visited.contains a
   simp [a_vis] at get_S
   rw [get_S]
+  apply HashSet.Subset.refl
 
   simp [a_vis] at get_S
   cases f_a: f a (Graph.predecessors G a) with
@@ -1462,17 +1504,17 @@ by
     apply ih
     apply card
     -- end have visit_S'
-    rw [Finset.subset_iff]
+    rw [HashSet.Subset.Iff]
     intro x x_vis
-    simp
+    rw [HashSet.contains_insert]
     left
-    rw [Finset.subset_iff] at visit_S'
-    apply visit_S' x_vis
+    rw [HashSet.Subset.Iff] at visit_S'
+    apply visit_S' x x_vis
 
-lemma dfs_step_returns_root_element (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) (S:Finset A) (get_S:dfs_step a G f currPath path not_mem visited = Except.ok S): a ∈ S :=
+lemma dfs_step_returns_root_element [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: HashSet A) (S:HashSet A) (get_S:dfs_step a G f currPath path not_mem visited = Except.ok S): S.contains a :=
 by
   unfold dfs_step at get_S
-  by_cases a_visit: a ∈ visited
+  by_cases a_visit: visited.contains a
   simp [a_visit] at get_S
   rw [get_S] at a_visit
   apply a_visit
@@ -1488,11 +1530,13 @@ by
     rw [addElementIfOk_exists_ok'] at get_S
     rcases get_S with ⟨S', S_S',_⟩
     rw [S_S']
-    simp
+    rw [HashSet.contains_insert]
+    right
+    rfl
 
     simp [h] at get_S
 
-lemma dfs_step_preserves_notReachedFromCycleAndCounterExample (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) (visited_prop: ∀ (a:A), a ∈ visited → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) (S: Finset A) (get_S: dfs_step a G f currPath path not_mem visited = Except.ok S): ∀ (a:A), a ∈ S → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
+lemma dfs_step_preserves_notReachedFromCycleAndCounterExample [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: HashSet A) (visited_prop: ∀ (a:A), visited.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) (S: HashSet A) (get_S: dfs_step a G f currPath path not_mem visited = Except.ok S): ∀ (a:A),  S.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
 by
   induction' h:Finset.card (List.toFinset G.vertices \ List.toFinset currPath)  with n ih generalizing a currPath visited S
 
@@ -1538,7 +1582,7 @@ by
   simp
 
   unfold dfs_step at get_S
-  by_cases a_visit: a ∈ visited
+  by_cases a_visit: visited.contains a
   simp [a_visit] at get_S
   simp [← get_S]
   apply visited_prop
@@ -1555,7 +1599,7 @@ by
     simp [inter] at get_S
     rw [addElementIfOk_exists_ok'] at get_S
     rcases get_S with ⟨S', S_S', foldl_result⟩
-    have preserve_S': ∀ (a : A), a ∈ S' → ¬reachedFromCycle a G ∧ ∀ (b : A), canReach b a G → f b (Graph.predecessors G b) = Except.ok ()
+    have preserve_S': ∀ (a : A), S'.contains a → ¬reachedFromCycle a G ∧ ∀ (b : A), canReach b a G → f b (Graph.predecessors G b) = Except.ok ()
     apply foldl_except_set_preserves_p (init_prop:=visited_prop) (h:= foldl_result)
     simp
     intro b b_pred T T' T_prop dfs_T'
@@ -1567,16 +1611,16 @@ by
     intro b
     rw [S_S']
     intro b_mem
-    simp at b_mem
+    rw [HashSet.contains_insert] at b_mem
     cases b_mem with
     | inl b_S' =>
       apply preserve_S' b b_S'
     | inr b_a =>
       have b_mem: b ∈ G.vertices
-      rw [b_a]
+      rw [← b_a]
       apply a_mem
       rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:=b_mem), canReachLemma (mem:=b_mem)]
-      simp [b_a, f_a]
+      simp [← b_a, f_a]
       rw [← forall_and]
       intro a'
       rw [← imp_and]
@@ -1596,7 +1640,7 @@ by
 
 
 
-lemma dfs_step_sematics (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: Finset A) (visited_prop: ∀ (a:A), a ∈ visited → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()):  Except.isOk (dfs_step a G f currPath path not_mem visited) ↔  ¬ reachedFromCycle a G ∧ (∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) :=
+lemma dfs_step_sematics [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currPath: List A) (path: isPath (a::currPath) G) (not_mem: ¬ a ∈ currPath) (visited: HashSet A) (visited_prop: ∀ (a:A), visited.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()):  Except.isOk (dfs_step a G f currPath path not_mem visited) ↔  ¬ reachedFromCycle a G ∧ (∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) :=
 by
   induction' h:Finset.card (List.toFinset G.vertices \ List.toFinset currPath)  with n ih generalizing a currPath visited
 
@@ -1651,7 +1695,7 @@ by
 
   intro h'
   unfold dfs_step
-  by_cases a_visit: a ∈ visited
+  by_cases a_visit: visited.contains a
   simp [a_visit]
   apply except_is_ok_of_ok
 
@@ -1734,18 +1778,34 @@ by
   | ok S =>
     simp
 
-def dfs (G: Graph A) (f: A → List A → Except String Unit) : Except String Unit :=
-  isOkOrMessage (foldl_except_set (fun ⟨x,_h⟩ S => dfs_step x G f [] (isPathSingleton G x _h) (List.not_mem_nil x) S) G.vertices.attach ∅ )
+def dfs [Hashable A] (G: Graph A) (f: A → List A → Except String Unit) : Except String Unit :=
+  isOkOrMessage (foldl_except_set (fun ⟨x,_h⟩ S => dfs_step x G f [] (isPathSingleton G x _h) (List.not_mem_nil x) S) G.vertices.attach HashSet.empty )
 
-lemma dfs_semantics (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok () :=
+lemma dfs_semantics [Hashable A] (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok () :=
 by
   unfold dfs
   rw [isOkOrMessageOkIffExceptionIsOk, acyclicIffAllNotReachedFromCycle, allTrueIfAllCanReachTrue]
-  rw [foldl_except_set_is_ok ]
-  simp [dfs_step_sematics,← forall_and, ← imp_and, ← forall_and]
+  rw [foldl_except_set_is_ok]
+  simp [← forall_and, ← imp_and, ← forall_and]
+  constructor
+  intro h a a_mem
+  specialize h a a_mem
+  rw [dfs_step_sematics] at h
+  apply h
+  intro a a_mem
+  exfalso
+  apply HashSet.empty_contains a a_mem
+  intro h a a_mem
+  rw [dfs_step_sematics]
+  specialize h a a_mem
+  apply h
+  intro a a_mem
+  exfalso
+  apply HashSet.empty_contains a a_mem
+
 
   use (fun x => ¬reachedFromCycle x G ∧ ∀ (b : A), canReach b x G → f b (Graph.predecessors G b) = Except.ok ())
-  simp
+  simp [HashSet.empty_contains]
 
   simp
   intro a a_mem S S' S_prop S'_prop
@@ -1775,7 +1835,7 @@ by
   unfold root
   simp
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
  (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms v (G.predecessors v) ) ∨ ((G.predecessors v) = [] ∧ d.contains v)

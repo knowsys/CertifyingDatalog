@@ -124,6 +124,12 @@ by
 
 instance (helper: parsingArityHelper): DecidableEq (parsingSignature helper).relationSymbols :=  Subtype.instDecidableEqSubtype
 
+instance (helper: parsingArityHelper): Hashable (parsingSignature helper).relationSymbols :=  instHashableSubtype
+
+instance (helper: parsingArityHelper): Hashable (parsingSignature helper).constants :=  instHashableString
+
+instance (helper: parsingArityHelper): Hashable (parsingSignature helper).vars :=  instHashableString
+
 def getArityHelperFromMockAtom (helper: parsingArityHelper) (ma: mockAtom): Except String parsingArityHelper := extendParsingArityHelper helper ma.symbol (ma.terms.length)
 
 def getArityHelperFromMockAtomList (helper: parsingArityHelper) (l: List mockAtom): Except String parsingArityHelper :=

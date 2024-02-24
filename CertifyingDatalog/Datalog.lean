@@ -12,13 +12,13 @@ structure signature where
 
 
 section basic
-variable (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
+variable (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 
-inductive term (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]: Type
+inductive term (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]: Type
 | constant : τ.constants → term τ
 | variableDL : τ.vars → term τ
-deriving DecidableEq
+deriving DecidableEq, Hashable
 
 instance: Coe (τ.constants) (term τ) where
  coe
@@ -29,7 +29,7 @@ structure atom where
   (symbol: τ.relationSymbols)
   (atom_terms: List (term τ ))
   (term_length: atom_terms.length = τ.relationArity symbol)
-deriving DecidableEq
+deriving DecidableEq, Hashable
 
 
 lemma atomEquality (a1 a2: atom τ): a1 = a2 ↔ a1.symbol = a2.symbol ∧ a1.atom_terms = a2.atom_terms :=
@@ -72,14 +72,15 @@ end basic
 -- grounding
 
 section grounding
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 @[ext]
-structure groundAtom (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] where
+structure groundAtom (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+where
   symbol: τ.relationSymbols
   atom_terms: List (τ.constants )
   term_length: atom_terms.length = τ.relationArity symbol
-  deriving DecidableEq
+  deriving DecidableEq, Hashable
 
 lemma listMapPreservesTermLength (ga: groundAtom τ): (List.map term.constant ga.atom_terms).length = τ.relationArity ga.symbol :=
 by
@@ -382,7 +383,8 @@ lemma safetyCheckProgramUnitIffProgramSafe (P: List (rule τ)) (ruleToString: ru
 
 -- ext for groundRuleEquality
 @[ext]
-structure groundRule (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] where
+structure groundRule (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+where
   head: groundAtom τ
   body: List (groundAtom τ)
   deriving DecidableEq
@@ -527,7 +529,7 @@ def groundProgram (P: program τ) := {r: groundRule τ | ∃ (r': rule τ) (g: g
 
 end grounding
 section substitutions
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def substitution (τ: signature):= τ.vars → Option (τ.constants)
 
@@ -945,17 +947,20 @@ by
 
 end substitutions
 section semantics
-variable {τ:signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]
+variable {τ:signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
-class database (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]:=
+class database (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+:=
   (contains: groundAtom τ → Bool)
 
-abbrev interpretation (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] := Set (groundAtom τ)
+abbrev interpretation (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+:= Set (groundAtom τ)
 
 inductive tree (A: Type)
 | node: A → List (tree A) → tree A
 
-abbrev proofTree (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants]:= tree (groundAtom τ)
+abbrev proofTree (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+:= tree (groundAtom τ)
 
 variable {A: Type} [DecidableEq A]
 

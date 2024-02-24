@@ -8,8 +8,8 @@ import subprocess
 ruleFile = "el-calc.rls"
 folder = "/home/johannes/nemo-examples/examples/owl-el/from-preprocessed-csv"
 outputformat = "-g"
-tries = 10
-atomsPerTry = 10
+tries = 5
+atomsPerTry = 100
 
 def singleTry():
     originalDir = os.getcwd()
@@ -60,7 +60,7 @@ def multiTry():
 
     with open("log.txt", "a+") as log:
         for i in range(0,tries):
-            log.write("Try" + str(i) + "---\n")
+            # log.write("Try" + str(i) + "---\n")
             atoms = []
             while len(atoms) < atomsPerTry:
                 atom = random.choice(model)
@@ -105,6 +105,5 @@ def multiTry():
             
             log.write(json.dumps({"graph": problem["graph"], "Result": result.stdout, "Preparation time": str(preparation), "Validation time": str(duration)}, indent=4))
 
+
 multiTry()
-            
-        
