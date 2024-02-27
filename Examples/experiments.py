@@ -5,11 +5,11 @@ import random
 import json
 import subprocess
 
-ruleFile = "el-calc.rls"
-folder = "/home/johannes/nemo-examples/examples/owl-el/from-preprocessed-csv"
-outputformat = "-g"
-tries = 5
-atomsPerTry = 100
+ruleFile = "tc.rls"
+folder = "/home/johannes/nemo/resources/testcases/johannes/graphTreeTest"
+outputformat = "-t"
+tries = 1
+atomsPerTry = 45
 
 def singleTry():
     originalDir = os.getcwd()
@@ -23,10 +23,15 @@ def singleTry():
         for i in range(0,tries):
             log.write("---\n")
             atoms = []
+            choices = 0
             while len(atoms) < atomsPerTry:
                 atom = random.choice(model)
                 if atom not in atoms:
                     atoms.append(atom)
+                choices = choices + 1
+                if choices > 100 * atomsPerTry:
+                    break
+
                 #print(atoms)
             inputCreatorNemo.main(folder, ruleFile, outputformat, *atoms)
 
