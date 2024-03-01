@@ -1,22 +1,5 @@
 import «CertifyingDatalog»
 
-def termParsingSignatureToString {helper: parsingArityHelper} (t: term (parsingSignature helper)): String :=
-  match t with
-  | term.constant c => c
-  | term.variableDL v => v
-
-def atomParsingSignatureToString {helper: parsingArityHelper} (a: atom (parsingSignature helper)): String :=
- let terms :=
-    match a.atom_terms with
-    | [] => ""
-    | hd::tl => List.foldl (fun x y => x ++ "," ++ (termParsingSignatureToString y)) (termParsingSignatureToString hd) tl
-  a.symbol.val ++ "(" ++ terms ++ ")"
-
-def ruleParsingSignatureToString {helper: parsingArityHelper} (r: rule (parsingSignature helper)): String :=
-  match r.body with
-  | [] => atomParsingSignatureToString r.head ++ "."
-  | hd::tl => atomParsingSignatureToString r.head ++ ":-" ++ (List.foldl (fun x y => x ++ "," ++ (atomParsingSignatureToString y) ) (atomParsingSignatureToString hd) tl)
-
 def mergeList {A: Type} [DecidableEq A] (l1 l2: List A): List A :=
   match l1 with
   | [] => l2
@@ -93,9 +76,9 @@ by
 
 
 
-def checkValidnessMockDatabase {helper: parsingArityHelper}  (problem: verificationProblem helper): Except String Unit :=
+def checkValidnessMockDatabase {helper: parsingArityHelper} (problem: verificationProblem helper): Except String Unit :=
   let d:= mockDatabase (parsingSignature helper)
-  match validateTreeList problem.program d problem.trees  ruleParsingSignatureToString with
+  match validateTreeList problem.program d problem.trees with
   | Except.error e => Except.error e
   | Except.ok _ => Except.ok ()
 
@@ -103,8 +86,8 @@ lemma checkValidnessMockDatabaseUnitIffAllTreesAreValid {helper: parsingArityHel
 by
   unfold checkValidnessMockDatabase
   simp
-  rw [← validateTreeListUnitIffAllTreesValid (ruleToString:=ruleParsingSignatureToString)]
-  cases validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees ruleParsingSignatureToString with
+  rw [← validateTreeListUnitIffAllTreesValid]
+  cases validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees with
   | error e =>
     simp
   | ok u =>
@@ -113,7 +96,7 @@ by
 def checkValidnessGraphMockDatabase {helper: parsingArityHelper} (problem: graphVerificationProblem helper):  Except String Unit :=
   let m:= parseProgramToSymbolSequenceMap problem.program (fun _ => [])
   let d:= mockDatabase (parsingSignature helper)
-  dfs problem.graph (fun a l => locallyValidityChecker m d l a ruleParsingSignatureToString)
+  dfs problem.graph (fun a l => locallyValidityChecker m d l a)
 
 lemma checkValidnessGraphMockDatabaseIffAllValid {helper: parsingArityHelper}  (problem: graphVerificationProblem helper): checkValidnessGraphMockDatabase problem = Except.ok () ↔ isAcyclic problem.graph ∧ (∀ (a:groundAtom (parsingSignature helper) ), a ∈ problem.graph.vertices → locallyValid problem.program.toFinset (mockDatabase (parsingSignature helper)) a problem.graph) ∧ problem.graph.vertices.toSet ⊆ proofTheoreticSemantics problem.program.toFinset (mockDatabase (parsingSignature helper)) :=
 by
@@ -154,7 +137,7 @@ by
 def mainCheckMockDatabase {helper: parsingArityHelper} (problem: verificationProblem helper) (safe: ∀ (r: rule (parsingSignature helper) ), r ∈ problem.program → r.isSafe): Except String Unit :=
   let d:= mockDatabase (parsingSignature helper)
   let model:= collectModel problem.trees
-  match validateTreeList problem.program d problem.trees  ruleParsingSignatureToString  with
+  match validateTreeList problem.program d problem.trees with
   | Except.error e => Except.error e
   | Except.ok _ =>
     match modelChecker model problem.program safe with
@@ -170,8 +153,7 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
   simp
   intro h
 
-  cases valid_trees: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees
-   ruleParsingSignatureToString with
+  cases valid_trees: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees with
   | error e => simp [valid_trees] at h
   | ok _ =>
     simp [valid_trees] at h
@@ -204,7 +186,7 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
   rcases h with ⟨sol_eq, valid_tree⟩
   unfold mainCheckMockDatabase
   simp
-  have p: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees ruleParsingSignatureToString = Except.ok ()
+  have p: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees = Except.ok ()
   rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees]
   constructor
   rw [← collectModelToSetIsSetOfValidTreesElements]
@@ -230,7 +212,7 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
 def mainCheckGraphMockDatabase {helper: parsingArityHelper} (problem: graphVerificationProblem helper) (safe: ∀ (r: rule (parsingSignature helper) ), r ∈ problem.program → r.isSafe): Except String Unit :=
   let m:= parseProgramToSymbolSequenceMap problem.program (fun _ => [])
   let d:= mockDatabase (parsingSignature helper)
-  match dfs problem.graph (fun a l => locallyValidityChecker m d l a ruleParsingSignatureToString)   with
+  match dfs problem.graph (fun a l => locallyValidityChecker m d l a)   with
   | Except.error e => Except.error e
   | Except.ok _ =>
     match modelChecker problem.graph.vertices problem.program safe with
@@ -247,7 +229,7 @@ by
   constructor
   intro h
   simp at h
-  cases dfs_result: dfs problem.graph (fun a l => locallyValidityChecker (parseProgramToSymbolSequenceMap problem.program (fun _ => [])) (mockDatabase (parsingSignature helper)) l a ruleParsingSignatureToString )with
+  cases dfs_result: dfs problem.graph (fun a l => locallyValidityChecker (parseProgramToSymbolSequenceMap problem.program (fun _ => [])) (mockDatabase (parsingSignature helper)) l a) with
   | error e =>
     simp[dfs_result] at h
   | ok _ =>
@@ -296,7 +278,7 @@ by
   rcases h with ⟨semantics, acyclic, valid⟩
   have dfs_result: dfs problem.graph (fun a l =>
       locallyValidityChecker (parseProgramToSymbolSequenceMap problem.program fun _ => [])
-        (mockDatabase (parsingSignature helper)) l a ruleParsingSignatureToString) = Except.ok ()
+        (mockDatabase (parsingSignature helper)) l a) = Except.ok ()
   rw [dfs_semantics]
   constructor
   apply acyclic
@@ -382,7 +364,7 @@ def main_trees (argsParsed: argsParsed): IO Unit := do
     if argsParsed.complete = true
     then
       IO.println "Completeness check"
-      match safe: safetyCheckProgram problem.program ruleParsingSignatureToString (fun x => x) with
+      match safe: safetyCheckProgram problem.program with
       | Except.error msg => IO.println msg
       | Except.ok _ =>
         have safe': ∀ (r: rule (parsingSignature transformedInput.helper)), r ∈ problem.program → r.isSafe := by
@@ -418,7 +400,7 @@ def main_graph (argsParsed: argsParsed): IO Unit := do
     if argsParsed.complete = true
     then
       IO.println "Completeness check"
-      match safe: safetyCheckProgram problem.program ruleParsingSignatureToString (fun x => x) with
+      match safe: safetyCheckProgram problem.program with
       | Except.error msg => IO.println msg
       | Except.ok _ =>
         have safe': ∀ (r: rule (parsingSignature transformedInput.helper)), r ∈ problem.program → r.isSafe := by
