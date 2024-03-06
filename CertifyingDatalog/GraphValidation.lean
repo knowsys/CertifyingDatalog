@@ -1843,21 +1843,21 @@ by
   unfold root
   simp
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
  (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms v (G.predecessors v) ) ∨ ((G.predecessors v) = [] ∧ d.contains v)
 
-def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ)(ruleToString: rule τ → String): Except String Unit :=
+def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
   if l.isEmpty
   then
     if d.contains a
     then Except.ok ()
-    else checkRuleMatch m (groundRule.mk a l) ruleToString
+    else checkRuleMatch m (groundRule.mk a l)
   else
-    checkRuleMatch m (groundRule.mk a l) ruleToString
+    checkRuleMatch m (groundRule.mk a l)
 
-lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.predecessors a) (ruleToString: rule τ → String) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])):  locallyValidityChecker m d l a ruleToString = Except.ok () ↔ locallyValid P.toFinset d a G :=
+lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.predecessors a) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])):  locallyValidityChecker m d l a = Except.ok () ↔ locallyValid P.toFinset d a G :=
 by
   unfold locallyValid
   unfold locallyValidityChecker

@@ -3,7 +3,7 @@ import CertifyingDatalog.Unification
 import CertifyingDatalog.Basic
 
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 def symbolSequence (r: rule τ): List τ.relationSymbols := r.head.symbol::(List.map atom.symbol r.body)
 
@@ -123,12 +123,12 @@ by
   unfold groundRule.toRule
   simp
 
-def checkRuleMatch (m: List τ.relationSymbols → List (rule τ)) (gr: groundRule τ) (ruleToString: rule τ → String): Except String Unit :=
+def checkRuleMatch (m: List τ.relationSymbols → List (rule τ)) (gr: groundRule τ): Except String Unit :=
   if List.any (m (symbolSequence gr.toRule)) (fun x => Option.isSome (matchRule x gr)) = true
   then Except.ok ()
-  else Except.error ("No match for " ++ ruleToString gr)
+  else Except.error ("No match for " ++ ToString.toString gr)
 
-lemma checkRuleMatchOkIffExistsRuleForGroundRule (m: List τ.relationSymbols → List (rule τ)) (P: List (rule τ)) (gr: groundRule τ) (ruleToString: rule τ → String ) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])): checkRuleMatch m gr ruleToString = Except.ok () ↔ ∃ (r: rule τ) (g:grounding τ),r ∈ P ∧ ruleGrounding r g = gr :=
+lemma checkRuleMatchOkIffExistsRuleForGroundRule (m: List τ.relationSymbols → List (rule τ)) (P: List (rule τ)) (gr: groundRule τ) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])): checkRuleMatch m gr = Except.ok () ↔ ∃ (r: rule τ) (g:grounding τ),r ∈ P ∧ ruleGrounding r g = gr :=
 by
   simp [groundingSubstitutionEquivalence]
   unfold checkRuleMatch
@@ -168,28 +168,28 @@ by
   simp [h']
 
 
-def treeValidator (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (t: proofTree τ) (ruleToString: rule τ → String): Except String Unit :=
+def treeValidator (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (t: proofTree τ) : Except String Unit :=
   match t with
   | tree.node a l =>
     if l.isEmpty
     then  if d.contains a
           then Except.ok ()
           else
-            match checkRuleMatch m {head:= a, body := List.map root l} ruleToString with
+            match checkRuleMatch m {head:= a, body := List.map root l} with
             | Except.ok _ => Except.ok ()
             | Except.error msg => Except.error msg
     else
-      match checkRuleMatch m {head:= a, body := List.map root l} ruleToString with
-      | Except.ok _ => List.map_except_unit l.attach (fun ⟨x, _h⟩ => treeValidator m d x ruleToString)
+      match checkRuleMatch m {head:= a, body := List.map root l} with
+      | Except.ok _ => List.map_except_unit l.attach (fun ⟨x, _h⟩ => treeValidator m d x)
       | Except.error msg => Except.error msg
-termination_by treeValidator m d t ruleToString => sizeOf t
+termination_by treeValidator m d t => sizeOf t
 decreasing_by
   simp_wf
   apply Nat.lt_trans (m:= sizeOf l)
   apply List.sizeOf_lt_of_mem _h
   simp
 
-lemma treeValidatorOkIffIsValid (m: List τ.relationSymbols → List (rule τ)) (P: List (rule τ)) (d: database τ) (t: proofTree τ) (ruleToString: rule τ → String) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])): treeValidator m d t ruleToString = Except.ok () ↔ isValid (List.toFinset P) d t :=
+lemma treeValidatorOkIffIsValid (m: List τ.relationSymbols → List (rule τ)) (P: List (rule τ)) (d: database τ) (t: proofTree τ) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])): treeValidator m d t = Except.ok () ↔ isValid (List.toFinset P) d t :=
 by
   induction' h_t:(height t) using Nat.strongInductionOn with n ih generalizing t
   cases t with
@@ -212,14 +212,14 @@ by
 
     constructor
     intro h
-    have h': checkRuleMatch m { head := a, body := List.map root l } ruleToString = Except.ok ()
-    cases p: checkRuleMatch m { head := a, body := List.map root l } ruleToString with
+    have h': checkRuleMatch m { head := a, body := List.map root l } = Except.ok ()
+    cases p: checkRuleMatch m { head := a, body := List.map root l } with
     | ok u =>
       simp
     | error e =>
       simp [p] at h
     simp [h'] at h
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ _ ssm] at h'
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at h'
     left
     simp [← and_assoc, exists_and_right]
     constructor
@@ -233,12 +233,12 @@ by
     simp at a_l
 
     intro h'
-    by_cases p: checkRuleMatch m { head := a, body := List.map root l } ruleToString = Except.ok ()
+    by_cases p: checkRuleMatch m { head := a, body := List.map root l } = Except.ok ()
     simp [p]
     exfalso
     cases h' with
     | inl h' =>
-      rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ _ ssm] at p
+      rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at p
       rcases h' with ⟨r,g,r_P,r_ground,_⟩
       push_neg at p
       specialize p r g
@@ -256,14 +256,14 @@ by
     rw [if_neg emptyL]
     constructor
     intro h
-    cases h': checkRuleMatch m { head := a, body := List.map root l } ruleToString with
+    cases h': checkRuleMatch m { head := a, body := List.map root l } with
     | error e =>
       simp [h'] at h
     | ok _ =>
       simp [h'] at h
       rw [List.map_except_unitIsUnitIffAll] at h
       simp at h
-      rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ _ ssm] at h'
+      rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at h'
       left
       simp [← and_assoc, exists_and_right]
       constructor
@@ -289,7 +289,7 @@ by
     | inl h =>
       simp only [← and_assoc, exists_and_right, List.mem_toFinset] at h
       cases' h with left right
-      rw [← checkRuleMatchOkIffExistsRuleForGroundRule m P _ ruleToString ssm] at left
+      rw [← checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at left
       simp only [groundRuleFromAtoms] at left
       simp [left]
       rw [List.map_except_unitIsUnitIffAll]
@@ -314,11 +314,11 @@ by
       simp [emptyL] at h
 
 
-def validateTreeList (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (ruleToString: rule τ → String): Except String Unit :=
+def validateTreeList (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : Except String Unit :=
   let m:= parseProgramToSymbolSequenceMap P (fun _ => [])
-  List.map_except_unit l (fun t => treeValidator m d t  ruleToString)
+  List.map_except_unit l (fun t => treeValidator m d t)
 
-lemma validateTreeListUnitIffAllTreesValid (P: List (rule τ)) (d: database τ) (l: List (proofTree τ))  (ruleToString: rule τ → String): validateTreeList P d l ruleToString = Except.ok () ↔  ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t := by
+lemma validateTreeListUnitIffAllTreesValid (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () ↔  ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t := by
 
   unfold validateTreeList
   rw [List.map_except_unitIsUnitIffAll]
@@ -334,7 +334,7 @@ lemma validateTreeListUnitIffAllTreesValid (P: List (rule τ)) (d: database τ) 
   rfl
 
 
-lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database τ) (l: List (proofTree τ))  (ruleToString: rule τ → String) : validateTreeList P d l  ruleToString  = Except.ok () →  {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d := by
+lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () →  {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d := by
   intro h
   rw [Set.subset_def]
   intro ga
@@ -347,7 +347,7 @@ lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database �
   apply ga_t
 
 
-lemma validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) (ruleToString: rule τ → String) : validateTreeList P d l  ruleToString = Except.ok () ↔ {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t :=
+lemma validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () ↔ {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t :=
 by
   constructor
   intro h

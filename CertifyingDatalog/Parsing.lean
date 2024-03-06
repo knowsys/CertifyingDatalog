@@ -130,6 +130,12 @@ instance (helper: parsingArityHelper): Hashable (parsingSignature helper).consta
 
 instance (helper: parsingArityHelper): Hashable (parsingSignature helper).vars :=  instHashableString
 
+instance (helper: parsingArityHelper): ToString (parsingSignature helper).relationSymbols :=  instToStringSubtype
+
+instance (helper: parsingArityHelper): ToString (parsingSignature helper).constants :=  instToStringString
+
+instance (helper: parsingArityHelper): ToString (parsingSignature helper).vars :=  instToStringString
+
 def getArityHelperFromMockAtom (helper: parsingArityHelper) (ma: mockAtom): Except String parsingArityHelper := extendParsingArityHelper helper ma.symbol (ma.terms.length)
 
 def getArityHelperFromMockAtomList (helper: parsingArityHelper) (l: List mockAtom): Except String parsingArityHelper :=

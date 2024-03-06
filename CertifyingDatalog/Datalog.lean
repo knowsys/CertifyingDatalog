@@ -12,13 +12,18 @@ structure signature where
 
 
 section basic
-variable (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+variable (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 
 inductive term (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]: Type
 | constant : τ.constants → term τ
 | variableDL : τ.vars → term τ
 deriving DecidableEq, Hashable
+
+instance : ToString (term τ) where 
+  toString t := match t with
+    | term.constant c => ToString.toString c
+    | term.variableDL v => ToString.toString v
 
 instance: Coe (τ.constants) (term τ) where
  coe
@@ -31,6 +36,13 @@ structure atom where
   (term_length: atom_terms.length = τ.relationArity symbol)
 deriving DecidableEq, Hashable
 
+instance : ToString (atom τ) where 
+  toString a := 
+    let terms :=
+      match a.atom_terms with
+      | [] => ""
+      | hd::tl => List.foldl (fun x y => x ++ "," ++ (ToString.toString y)) (ToString.toString hd) tl
+    (ToString.toString a.symbol) ++ "(" ++ terms ++ ")"
 
 lemma atomEquality (a1 a2: atom τ): a1 = a2 ↔ a1.symbol = a2.symbol ∧ a1.atom_terms = a2.atom_terms :=
 by
@@ -51,6 +63,10 @@ structure rule where
   (body: List (atom τ))
 deriving DecidableEq
 
+instance : ToString (rule τ) where 
+  toString r := match r.body with
+    | [] => (ToString.toString r.head) ++ "."
+    | hd::tl => (ToString.toString r.head) ++ ":-" ++ (List.foldl (fun x y => x ++ "," ++ (ToString.toString y) ) (ToString.toString hd) tl)
 
 lemma ruleEquality (r1 r2: rule τ): r1 = r2 ↔ r1.head = r2.head ∧ r1.body = r2.body :=
 by
@@ -72,7 +88,7 @@ end basic
 -- grounding
 
 section grounding
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 @[ext]
 structure groundAtom (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
@@ -338,12 +354,12 @@ by
 
 def rule.isSafe (r: rule τ): Prop := atomVariables r.head ⊆ collectResultsToFinset atomVariables r.body
 
-def safetyCheckRule (r: rule τ) (varToString: τ.vars → String) (ruleToString: rule τ → String): Except String Unit :=
+def safetyCheckRule (r: rule τ) : Except String Unit :=
   match List.diff' (atomVariables_computable r.head) (collectResultsToList (atomVariables_computable) r.body) with
   | [] => Except.ok ()
-  | hd::_ => Except.error ("Rule" ++ ruleToString r ++ "is not safe " ++ (varToString hd ++ "only occurs in body"))
+  | hd::_ => Except.error ("Rule" ++ ToString.toString r ++ "is not safe " ++ (ToString.toString hd ++ "only occurs in body"))
 
-lemma safetyCheckRuleUnitIffRuleSafe (r: rule τ) (varToString: τ.vars → String) (ruleToString: rule τ → String): safetyCheckRule r varToString ruleToString = Except.ok () ↔ r.isSafe := by
+lemma safetyCheckRuleUnitIffRuleSafe (r: rule τ) : safetyCheckRule r = Except.ok () ↔ r.isSafe := by
   unfold safetyCheckRule
   constructor
   intro h
@@ -373,10 +389,10 @@ lemma safetyCheckRuleUnitIffRuleSafe (r: rule τ) (varToString: τ.vars → Stri
   apply safe
   simp [h]
 
-def safetyCheckProgram (P: List (rule τ)) (ruleToString: rule τ → String) (varToString: τ.vars → String): Except String Unit :=
-  List.map_except_unit P (fun r => safetyCheckRule r varToString ruleToString)
+def safetyCheckProgram (P: List (rule τ)): Except String Unit :=
+  List.map_except_unit P (fun r => safetyCheckRule r)
 
-lemma safetyCheckProgramUnitIffProgramSafe (P: List (rule τ)) (ruleToString: rule τ → String) (varToString: τ.vars → String): safetyCheckProgram P ruleToString varToString = Except.ok () ↔ ∀ (r: rule τ), r ∈ P → r.isSafe := by
+lemma safetyCheckProgramUnitIffProgramSafe (P: List (rule τ)): safetyCheckProgram P = Except.ok () ↔ ∀ (r: rule τ), r ∈ P → r.isSafe := by
   unfold safetyCheckProgram
   rw [List.map_except_unitIsUnitIffAll]
   simp [safetyCheckRuleUnitIffRuleSafe]
@@ -390,6 +406,9 @@ where
   deriving DecidableEq
 
 def groundRule.toRule (r: groundRule τ): rule τ := {head:= r.head.toAtom, body := List.map groundAtom.toAtom r.body}
+
+instance : ToString (groundRule τ) where 
+  toString gr := ToString.toString gr.toRule
 
 lemma groundRuletoRulePreservesLength (r: groundRule τ): List.length r.body = List.length r.toRule.body :=
 by
