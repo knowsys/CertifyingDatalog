@@ -1,0 +1,397 @@
+{
+    "graph": {
+        "vertices": [
+            {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "constant": "a"
+                    },
+                    {
+                        "constant": "b"
+                    }
+                ]
+            },
+            {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "constant": "a"
+                    },
+                    {
+                        "constant": "c"
+                    }
+                ]
+            },
+            {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "constant": "a"
+                    },
+                    {
+                        "constant": "d"
+                    }
+                ]
+            },
+            {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "constant": "b"
+                    },
+                    {
+                        "constant": "c"
+                    }
+                ]
+            },
+            {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "constant": "b"
+                    },
+                    {
+                        "constant": "d"
+                    }
+                ]
+            },
+            {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "constant": "c"
+                    },
+                    {
+                        "constant": "d"
+                    }
+                ]
+            }
+        ],
+        "edges": [
+            {
+                "start_node": {
+                    "symbol": "R",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "R",
+                    "terms": [
+                        {
+                            "constant": "c"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "c"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "c"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "R",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                }
+            },
+            {
+                "start_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "end_node": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "program": [
+        {
+            "head": {
+                "symbol": "R",
+                "terms": [
+                    {
+                        "constant": "a"
+                    },
+                    {
+                        "constant": "b"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "R",
+                "terms": [
+                    {
+                        "constant": "b"
+                    },
+                    {
+                        "constant": "c"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "R",
+                "terms": [
+                    {
+                        "constant": "c"
+                    },
+                    {
+                        "constant": "d"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "variable": "?X"
+                    },
+                    {
+                        "variable": "?Y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "R",
+                    "terms": [
+                        {
+                            "variable": "?X"
+                        },
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "T",
+                "terms": [
+                    {
+                        "variable": "?X"
+                    },
+                    {
+                        "variable": "?Z"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "variable": "?X"
+                        },
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        },
+                        {
+                            "variable": "?Z"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
