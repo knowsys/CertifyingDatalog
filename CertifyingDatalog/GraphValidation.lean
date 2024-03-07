@@ -1032,18 +1032,84 @@ by
   unfold HashSet.Subset
   simp
 
-lemma Lean.HashSet.contains_insert [Hashable B] {S1: HashSet B} (b:B ): ∀ (b':B), (S1.insert b).contains b' ↔ S1.contains b' ∨ b = b' :=
+lemma List.replace_self [LawfulBEq A] (l:List A) (a:A): l.replace a a = l :=
+by
+  induction l with
+  | nil =>
+    unfold replace
+    rfl
+  | cons hd tl ih =>
+    unfold replace
+    by_cases hd_a: hd == a
+    simp [hd_a]
+    apply Eq.symm
+    apply eq_of_beq hd_a
+
+    simp[hd_a]
+    apply ih
+
+lemma List.set_self (l:List A) (n:ℕ) (hn: n < l.length): l.set n l[n] = l :=
+by
+  induction l with
+  | nil =>
+    simp at hn
+  | cons hd tl ih =>
+    cases n with
+    | zero =>
+      unfold set
+      simp
+    | succ m =>
+      unfold set
+      sorry
+
+lemma Array.set_self (a:Array A) (n:ℕ) (hn: n < a.size): a.data.set n a[n] = a.data :=
+by
+  sorry
+
+lemma Lean.HashSetImp.contains_insert [Hashable B] {S1: HashSetImp B} (b:B ): ∀ (b':B), (S1.insert b).contains b' ↔ S1.contains b' ∨ b = b' :=
 by
   intro b'
-  unfold contains
   unfold insert
+  cases S1 with
+  | mk size buckets =>
+    simp only
+    split
+    rename_i h
+    unfold contains
+    simp only
+    unfold HashSetBucket.update
+    unfold Array.uset
+    unfold Array.set
+    simp
+    simp[List.replace_self]
+    simp [Array.set_self]
+    simp at h
+    admit
+
+
+
+    split
+    unfold contains
+    simp
+    sorry
+
+    sorry
+
+
+
+lemma HashSet.contains_insert [Hashable B] {S1: HashSet B} (b:B ): ∀ (b':B), (S1.insert b).contains b' ↔ S1.contains b' ∨ b = b' :=
+by
+  intro b'
+  unfold Lean.HashSet.insert
   cases S1 with
   | mk val prop =>
     simp
     unfold HashSetImp.insert
     cases val with
     | mk n buckets =>
-      simp
+      simp only
+      unfold HashSet.contains
+      simp only
       sorry
 
 
@@ -1226,7 +1292,7 @@ by
     simp [a_mem]
 
 
-def addElementIfOk [Hashable A] (e: Except String (HashSet A)) (a:A): Except String (HashSet A) :=
+def addElementIfOk [Hashable A] (e: Except B (HashSet A)) (a:A): Except B (HashSet A) :=
   match e with
   | Except.ok S => Except.ok (S.insert a)
   | Except.error msg => Except.error msg
@@ -1913,26 +1979,24 @@ by
     exact absurd n_empty empty
 
 
-
 lemma extractTreeStepValidProofTreeIffAllLocallyValidAndAcyclic (P: program τ) (d: database τ) (a: groundAtom τ) (G: Graph (groundAtom τ)) (acyclic: isAcyclic G) (mem: a ∈ G.vertices) (valid: ∀ (a: groundAtom τ), a ∈ G.vertices → locallyValid P d a G): isValid P d (extractTree a G mem acyclic) :=
 by
-  induction' h:(height (extractTree a G mem acyclic)) using Nat.strongInductionOn with n ih generalizing a
+  induction' h:(globalPredecessors a G).card using Nat.strongInductionOn with n ih generalizing a
+  unfold extractTree
+  unfold isValid
   have valid_a: locallyValid P d a G
   apply valid a mem
   unfold locallyValid at valid_a
   cases valid_a with
   | inl ruleCase =>
-    rcases ruleCase with ⟨r,g,rP, grounding_r⟩
-    unfold extractTree
-    unfold isValid
+    rcases ruleCase with ⟨r,g, rP, ground_r⟩
     left
     use r
     use g
     constructor
     apply rP
     constructor
-    simp
-    rw [grounding_r, groundRuleEquality]
+    rw [ground_r, groundRuleEquality]
     unfold groundRuleFromAtoms
     simp
     apply List.ext_get
@@ -1940,29 +2004,21 @@ by
     intro n h1 h2
     simp
     rw [rootOfExtractTree]
+
     rw [List.all₂_iff_forall]
     simp
-    intro t x x_pred extract
-    specialize ih (height t)
-    have height_t_n: height t < n
-    rw [← h]
-    apply heightOfMemberIsSmaller
-    unfold member
-    unfold extractTree
-    simp
-    use x
-    use x_pred
-
-    specialize ih height_t_n x (G.complete a mem x x_pred)
-    rw [extract] at ih
-    simp at ih
+    intro t b b_mem extract_b
+    specialize ih (globalPredecessors b G).card
+    rw [← h] at ih
+    rw [← extract_b]
     apply ih
+    apply Finset.card_lt_card
+    apply globalPredecessorsSSubsetWhenAcyclicAndPredecessor _ _ _ acyclic b_mem mem
+    rfl
   | inr dbCase =>
-    unfold extractTree
-    unfold isValid
     right
     simp
-    apply dbCase
+    exact dbCase
 
 lemma verticesOfLocallyValidAcyclicGraphAreInProofTheoreticSemantics (P: program τ) (d: database τ)  (G: Graph (groundAtom τ)) (acyclic: isAcyclic G)  (valid: ∀ (a: groundAtom τ), a ∈ G.vertices → locallyValid P d a G): List.toSet G.vertices ⊆ proofTheoreticSemantics P d :=
 by

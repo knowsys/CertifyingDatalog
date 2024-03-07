@@ -7,9 +7,9 @@ import subprocess
 
 ruleFile = "tc.rls"
 folder = "/home/johannes/nemo/resources/testcases/johannes/graphTreeTest"
-outputformat = "-t"
+outputformat = "-g"
 tries = 1
-atomsPerTry = 45
+atomsPerTry = 50
 
 def singleTry():
     originalDir = os.getcwd()

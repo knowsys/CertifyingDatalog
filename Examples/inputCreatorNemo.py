@@ -39,17 +39,21 @@ def parseTrees(json_object):
         trees.append({"node": {"label": normalizeQuotationmarks(atom), "children": []}})
 
     leafs = list(map(lambda t: set([t["node"]["label"]]), trees))
+
+    changed = True
     
+    while changed:
+        changed = False
+        for j in range(0, len(json_object["inferences"])):
+            inference = json_object["inferences"][j]
 
-    for j in range(0, len(json_object["inferences"])):
-        inference = json_object["inferences"][j]
-
-        for i in range(0, len(trees)):
-            if normalizeQuotationmarks(inference["conclusion"]) in leafs[i]:
-                trees[i] = expandTree(trees[i], getTree(inference))
-                leafs[i].remove(normalizeQuotationmarks(inference["conclusion"]))
-                for inf in inference["premises"]:
-                    leafs[i].add(normalizeQuotationmarks(inf))
+            for i in range(0, len(trees)):
+                if normalizeQuotationmarks(inference["conclusion"]) in leafs[i]:
+                    changed = True
+                    trees[i] = expandTree(trees[i], getTree(inference))
+                    leafs[i].remove(normalizeQuotationmarks(inference["conclusion"]))
+                    for inf in inference["premises"]:
+                        leafs[i].add(normalizeQuotationmarks(inf))
     return trees
 
 def getModel():
@@ -292,7 +296,7 @@ def main(*args):
 if __name__ == "__main__":
     import sys
     #main(*sys.argv[1:])
-    main("/home/johannes/nemo/resources/testcases/johannes/TC", "tc.rls")
+    main("/home/johannes/nemo/resources/testcases/johannes/test2",  "tc.rls", "-t")
 
 
 
