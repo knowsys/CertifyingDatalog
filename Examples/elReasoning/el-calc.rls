@@ -1,0 +1,68 @@
+@prefix nf: <http://rulewerk.semantic-web.org/normalForm/> .
+@prefix inf: <http://rulewerk.semantic-web.org/inferred/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix genid: <https://rulewerk.semantic-web.org/.well-known/genid/> .
+
+@source nf:isMainClass[any]: load-csv("data/isMainClass.csv.gz") .
+@source nf:isSubClass[any]: load-csv("data/isSubClass.csv.gz") .
+@source nf:conj[any,any,any]: load-csv("data/conj.csv.gz") .
+@source nf:exists[any,any,any]: load-csv("data/exists.csv.gz") .
+@source nf:subClassOf[any,any]: load-csv("data/subClassOf.csv.gz") .
+@source nf:subPropChain[any,any,any]: load-csv("data/subPropChain.csv.gz") .
+@source nf:subProp[any,any]: load-csv("data/subProp.csv.gz") .
+
+%%% Start classification for all named classes:
+
+inf:init(?C) :- nf:isMainClass(?C) .
+
+%%% Inference rules (from "The Incredible ELK", Fig. 3)
+
+% R_0
+inf:subClassOf(?C,?C) :- inf:init(?C) .
+
+% R_\top
+inf:subClassOf(?C,owl:Thing) :-
+	nf:isMainClass(?C), nf:isSubClass(owl:Thing) .
+
+% R_\sqcap^-
+inf:subClassOf(?C,?D1), inf:subClassOf(?C,?D2) :-
+	inf:subClassOf(?C,?Y), nf:conj(?Y,?D1,?D2) .
+
+% R_\sqcap^+
+inf:subClassOf(?C,?Y) :-
+	inf:subClassOf(?C,?D1), inf:subClassOf(?C,?D2),
+	nf:conj(?Y,?D1,?D2), nf:isSubClass(?Y) .
+
+% R_\exists^-
+inf:ex(?E,?R,?C) :- inf:subClassOf(?E,?Y), nf:exists(?Y,?R,?C) .
+
+% R_\exists^+
+inf:subClassOf(?E,?Y) :-
+	inf:ex(?E,?R,?C), inf:subClassOf(?C,?D),
+	nf:subProp(?R,?S), nf:exists(?Y,?S,?D), nf:isSubClass(?Y) .
+
+% R_\sqsubseteq
+inf:subClassOf(?C,?E) :-
+	inf:subClassOf(?C,?D), nf:subClassOf(?D,?E) .
+
+% R_\circ
+inf:ex(?E,?S,?D) :-
+	inf:ex(?E,?R1,?C), inf:ex(?C,?R2,?D),
+	nf:subProp(?R1,?S1), nf:subProp(?R2,?S2), nf:subPropChain(?S1,?S2,?S) .
+
+% R_\bot
+inf:subClassOf(?E,owl:Nothing) :-
+	inf:ex(?E,?R,?C), inf:subClassOf(?C,owl:Nothing) .
+
+% R_init
+inf:init(?C) :- inf:ex(?E,?R,?C) .
+
+%%% Extract final results for main classes
+
+mainSubClassOf(?A,?B) :-
+	inf:subClassOf(?A,?B), nf:isMainClass(?A), nf:isMainClass(?B) .
+
+@output mainSubClassOf .
+

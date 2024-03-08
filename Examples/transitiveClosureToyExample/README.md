@@ -15,9 +15,6 @@ These handcrafted examples are based on the datalog program `transitiveClosureTo
 - Build the `nmo` binary from the `tracing-playground` branch: <https://github.com/knowsys/nemo/tree/tracing-playground>; Run `cargo b -r`; The binary can be found in `/path/to/nemo/target/release/nmo`.
 - Install Python3 alongside the `rfc3987` package.
 - Adjust the path to the `nmo` binary in `inputCreatorNemo.py`
+- Run `nmo -so transitiveClosureToyExample.rls` to create all reasoning ressult in the `result` directory.
 - Run `python3 inputCreatorNemo.py`; This yields `transitiveClosureToyExample.tree.json` and `transitiveClosureToyExample.graph.json`. (These are the files that have been modified to obtain the handcrafted examples.)
-
-### Note on `experiments.py`
-
-The `experiments.py` script can in general be used to pick a number of facts from an initial reasoning result at random, create input files for them and execute the Lean program to verify them. We do not encourage usage of this file in the scope of this example but it should work nonetheless.
 

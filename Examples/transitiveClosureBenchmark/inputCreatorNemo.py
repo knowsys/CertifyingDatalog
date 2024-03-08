@@ -76,12 +76,14 @@ def elementForCommandLine(s):
     result = re.match(r"(.+)\((.+)\)",s)
     newElements = []
     for element in result[2].split(","):
-        try: 
-            parse(element, rule='IRI')
-            newElements.append('<' + element + '>')
-        except ValueError:
+        if element[0] != '<' or element[-1] != '>':
             newElements.append('"' + element + '"')
-
+        else:
+            try: 
+                parse(element[1:-1], rule='IRI')
+                newElements.append(element)
+            except ValueError:
+                newElements.append('"' + element + '"')
 
     return result[1] + "(" + ",".join(newElements) +  ")"
 

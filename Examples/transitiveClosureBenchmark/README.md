@@ -2,6 +2,7 @@
 
 This directory contains an example that computes the transitive closure along a long relational chain 
 in three different ways; only expanding to the right, only expanding to the left, and expanding in both directions.
+The example is inspired by <https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/tc>.
 
 ## Usage
 
