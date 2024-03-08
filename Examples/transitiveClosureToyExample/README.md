@@ -9,6 +9,7 @@ These handcrafted examples are based on the datalog program `transitiveClosureTo
 ### Running the already generated input file 
 
 - Build the Lean program in the root directory of this project using `lake build`. The binary is found here: `/build/bin/certifyingDatalog`
+- In this directory, run `../../build/bin/certifyingDatalog [-g] <file>.(tree|graph).json`
 
 ### Building input files from the datalog program 
 

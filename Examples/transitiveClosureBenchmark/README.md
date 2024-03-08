@@ -9,6 +9,7 @@ The example is inspired by <https://github.com/souffle-lang/benchmarks/tree/mast
 ### Running the already generated input file 
 
 - Build the Lean program in the root directory of this project using `lake build`. The binary is found here: `/build/bin/certifyingDatalog`
+- In this directory, run `../../build/bin/certifyingDatalog [-g] <file>.(tree|graph).json`
 
 ### Generate Input Facts for Datalog Program 
 

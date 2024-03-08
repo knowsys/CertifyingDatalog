@@ -15,6 +15,7 @@ The example has been taken from <https://github.com/knowsys/nemo-examples/tree/m
 ### Running the already generated input file 
 
 - Build the Lean program in the root directory of this project using `lake build`. The binary is found here: `/build/bin/certifyingDatalog`
+- In this directory, run `../../build/bin/certifyingDatalog [-g] <file>.(tree|graph).json`
 
 ### Building input files from the datalog program 
 
