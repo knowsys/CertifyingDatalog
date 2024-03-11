@@ -1,0 +1,5 @@
+@source R[2]: load-csv("sources/R.csv").
+
+T(?X,?Y) :- R(?X,?Y).
+T(?X,?Z) :- T(?X,?Y), T(?Y,?Z).
+
