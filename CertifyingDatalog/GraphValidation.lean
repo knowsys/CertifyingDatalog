@@ -1032,21 +1032,7 @@ by
   unfold HashSet.Subset
   simp
 
-lemma List.replace_self [LawfulBEq A] (l:List A) (a:A): l.replace a a = l :=
-by
-  induction l with
-  | nil =>
-    unfold replace
-    rfl
-  | cons hd tl ih =>
-    unfold replace
-    by_cases hd_a: hd == a
-    simp [hd_a]
-    apply Eq.symm
-    apply eq_of_beq hd_a
 
-    simp[hd_a]
-    apply ih
 
 lemma List.set_self (l:List A) (n:ℕ) (hn: n < l.length): l.set n l[n] = l :=
 by
@@ -1060,39 +1046,37 @@ by
       simp
     | succ m =>
       unfold set
+      rw [List.cons_getElem_succ]
       sorry
+
 
 lemma Array.set_self (a:Array A) (n:ℕ) (hn: n < a.size): a.data.set n a[n] = a.data :=
 by
-  sorry
+  apply List.set_self
 
-lemma Lean.HashSetImp.contains_insert [Hashable B] {S1: HashSetImp B} (b:B ): ∀ (b':B), (S1.insert b).contains b' ↔ S1.contains b' ∨ b = b' :=
+lemma Lean.HashSetImp.contains_insert [Hashable B] {S1: HashSetImp B} (b b':B): (S1.insert b).contains b' ↔ S1.contains b' ∨ b == b' :=
 by
-  intro b'
   unfold insert
   cases S1 with
   | mk size buckets =>
     simp only
     split
     rename_i h
-    unfold contains
-    simp only
     unfold HashSetBucket.update
     unfold Array.uset
     unfold Array.set
-    simp
-    simp[List.replace_self]
     simp [Array.set_self]
-    simp at h
-    admit
-
-
-
-    split
-    unfold contains
-    simp
+    by_cases b_b': b = b'
+    simp [b_b']
+    rw [b_b'] at h
     sorry
 
+    simp [b_b']
+    unfold contains
+    simp
+
+
+    sorry
     sorry
 
 

@@ -200,9 +200,7 @@ def parseGraph (json_object):
     edges = []
     for inf in json_object["inferences"]:
         end = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(inf["conclusion"])))
-        for prem in inf["premises"]:
-          start  = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(prem)))
-          edges.append({"start_node": start, "end_node": end})
+        edges.append({"vertex": end, "predecessors": list(map(lambda x: convertNemoAtomToJson(tokenize(normalizeQuotationmarks(x))), inf["premises"]))})
 
     return {"vertices": vertices, "edges": edges}        
 
@@ -282,7 +280,7 @@ def main(*args):
 
         os.chdir(originalDir)
         with open(problemName + ".json", "w") as f:
-            json.dump({"trees": trees, "program": program}, f, ensure_ascii=False, indent=4)
+            json.dump({"trees": trees, "program": program}, f, ensure_ascii=False)
     else:
         # graph output
         with open("temp") as f:
@@ -296,7 +294,7 @@ def main(*args):
 if __name__ == "__main__":
     import sys
     #main(*sys.argv[1:])
-    main("/home/johannes/nemo/resources/testcases/johannes/test2",  "tc.rls", "-t")
+    main("/home/johannes/nemo/resources/testcases/johannes/test2",  "tc.rls", "-g")
 
 
 

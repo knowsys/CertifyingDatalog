@@ -258,26 +258,22 @@ def convertProblemInputToVerificationProblem (input: problemInput): Except Strin
 
 
 -- graph validation
-structure edge where
-  (start_node: mockAtom)
-  (end_node: mockAtom)
+structure mockEdge where
+  (vertex: mockAtom)
+  (predecessors: List (mockAtom))
 deriving DecidableEq, Lean.FromJson, Lean.ToJson
 
 --#eval Lean.toJson (edge.mk (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]) (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]))
 
 structure mockGraph where
   (vertices: List mockAtom)
-  (edges: List edge)
+  (edges: List mockEdge)
 deriving Lean.FromJson, Lean.ToJson
 
 structure graphInputProblem where
   (graph: mockGraph)
   (program: List mockRule)
 deriving Lean.FromJson, Lean.ToJson
-
-
-
-
 
 def unconnectedGroundAtomGraph (helper: parsingArityHelper) (l:List (groundAtom (parsingSignature helper))): Graph (groundAtom (parsingSignature helper)) :=
   {
@@ -286,124 +282,78 @@ def unconnectedGroundAtomGraph (helper: parsingArityHelper) (l:List (groundAtom 
     complete :=by simp
   }
 
-def addEdge_helper (helper: parsingArityHelper) (start_node end_node: groundAtom (parsingSignature helper)) (G: Graph (groundAtom (parsingSignature helper))): Graph (groundAtom (parsingSignature helper)) :=
-  if start_mem: start_node ∈ G.vertices
-  then
-    if end_node ∈ G.vertices
-    then
-      {
-        vertices:= G.vertices,
-        predecessors := fun  x => if x = end_node then (G.predecessors x) ++ [start_node] else G.predecessors x,
-        complete:= by
-          intro a a_mem b b_mem
-          simp at b_mem
-          by_cases a_end: a = end_node
-          simp [a_end] at b_mem
-          cases b_mem with
-          | inr b_start =>
-            rw [b_start]
-            apply start_mem
-          | inl b_end =>
-            rw [← a_end] at b_end
-            apply G.complete a a_mem b b_end
 
-          simp [a_end] at b_mem
-          apply G.complete a a_mem b b_mem
-      }
+def insertListHashSet {A: Type} [DecidableEq A] [Hashable A] (l1 l2: List A) (S: Lean.HashSet A): List A × Lean.HashSet A :=
+  match l2 with
+  | [] => (l1, S)
+  | hd::tl =>
+    if S.contains hd
+    then insertListHashSet l1 tl S
     else
-      {
-        vertices:= end_node::G.vertices,
-        predecessors := fun  x => if x = end_node then [start_node] else G.predecessors x,
-        complete:= by
-          intro a a_mem b b_mem
-          simp at b_mem
-          simp
-          right
-          by_cases a_end: a = end_node
-          simp [a_end] at b_mem
-          rw [b_mem]
-          apply start_mem
+      insertListHashSet (l1.insert hd) tl (S.insert hd)
 
-          simp [a_end] at b_mem
-          simp [a_end] at a_mem
-          apply G.complete a a_mem b b_mem
-          }
-  else
-    if end_mem: end_node ∈ G.vertices
-    then
-      {
-        vertices:= start_node::G.vertices,
-        predecessors := fun x => if x = end_node then G.predecessors x ++ [start_node] else if x= start_node then [] else (G.predecessors x),
-        complete :=by
-          intro a a_mem b b_mem
-          simp at b_mem
-          by_cases a_end: a = end_node
-          simp [a_end] at b_mem
-          cases b_mem with
-          | inr b_start =>
-            rw [b_start]
-            simp
-          | inl b_pred =>
-            simp
-            right
-            apply G.complete end_node end_mem b b_pred
+lemma mem_insertHashSet {A: Type} [DecidableEq A] [Hashable A] (l1 l2: List A) (S: Lean.HashSet A) (h_mem: ∀ (a:A), a ∈ l1 ↔ S.contains a): ∀ (a:A), a ∈ (insertListHashSet l1 l2 S).fst ↔ (insertListHashSet l1 l2 S).snd.contains a :=
+by
+  sorry
 
-          simp [a_end]
-          simp [a_end] at b_mem
-          by_cases a_start: a = start_node
-          simp [a_start] at b_mem
+lemma mem_insertHashSet_contains_list {A: Type} [DecidableEq A] [Hashable A] (l1 l2: List A) (S : Lean.HashSet A) (h_mem: ∀ (a:A), a ∈ l1 ↔ S.contains a): ∀ (a:A), a ∈ l2 → a ∈ (insertListHashSet l1 l2 S).fst :=
+by
+  sorry
 
-          simp [a_start] at b_mem
-          simp [a_start] at a_mem
-          right
-          apply G.complete a a_mem b b_mem
-      }
-    else
-      {
-        vertices := start_node::end_node::G.vertices,
-        predecessors := fun x => if x = end_node then [start_node] else if x = start_node then [] else G.predecessors x,
-        complete :=by
-          intro a a_mem b b_mem
-          simp at b_mem
-          by_cases a_end: a = end_node
-          simp [a_end] at b_mem
-          simp [b_mem]
+lemma mem_insertHashSet_preserves_original {A: Type} [DecidableEq A] [Hashable A] (l1 l2: List A) (S : Lean.HashSet A) (h_mem: ∀ (a:A), a ∈ l1 ↔ S.contains a): ∀ (a:A), a ∈ l1 → a ∈ (insertListHashSet l1 l2 S).fst :=
+  sorry
 
-          simp [a_end] at b_mem
-          by_cases a_start: a = start_node
-          simp [a_start] at b_mem
+def completeGraph {helper: parsingArityHelper} (G: Graph (groundAtom (parsingSignature helper))) (vertex:groundAtom (parsingSignature helper) )(predecessors: List (groundAtom (parsingSignature helper))) (vertices: Lean.HashSet (groundAtom (parsingSignature helper))) (h_v: ∀ (ga: (groundAtom (parsingSignature helper))), ga ∈ G.vertices ↔ vertices.contains ga): Graph (groundAtom (parsingSignature helper)) × Lean.HashSet (groundAtom (parsingSignature helper)):=
+  let vertices' := insertListHashSet G.vertices (vertex::predecessors) vertices
+  ({
+    vertices := Prod.fst vertices',
+    predecessors := fun x => if x = vertex then predecessors else G.predecessors x,
+    complete :=by
+      sorry
+  },
+    Prod.snd vertices'
+  )
 
-          simp [a_start] at b_mem
-          simp
-          right
-          right
-          simp [a_end, a_start] at a_mem
-          apply G.complete a a_mem b b_mem
-      }
-
-def addEdge (helper: parsingArityHelper) (e: edge) (G: Graph (groundAtom (parsingSignature helper))): Except String (Graph (groundAtom (parsingSignature helper))) :=
-  match transformMockAtomToGroundAtom helper e.start_node with
+def addEdge (helper: parsingArityHelper) (e: mockEdge) (G: Graph (groundAtom (parsingSignature helper))) (vertices: Lean.HashSet (groundAtom (parsingSignature helper))) (h_v: ∀ (ga: (groundAtom (parsingSignature helper))), ga ∈ G.vertices ↔ vertices.contains ga): Except String (Graph (groundAtom (parsingSignature helper)) × Lean.HashSet (groundAtom (parsingSignature helper))) :=
+  match transformMockAtomToGroundAtom helper e.vertex with
   | Except.error msg =>
       Except.error msg
-  | Except.ok start_node =>
-    match transformMockAtomToGroundAtom helper e.end_node with
+  | Except.ok vertex =>
+    match List.map_except (transformMockAtomToGroundAtom helper) e.predecessors with
     | Except.error msg =>
         Except.error msg
-    | Except.ok end_node => Except.ok (addEdge_helper helper start_node end_node G)
+    | Except.ok predecessors => Except.ok (completeGraph G vertex predecessors vertices h_v )
 
-def foldl_except {A B: Type} (f: A → B → Except String B) (l: List A) (init: B) :=
+
+def HashSetFromList.go {A: Type} [DecidableEq A] [Hashable A] (l: List A) (S: Lean.HashSet A):=
   match l with
-  | [] => Except.ok init
+  | [] => S
   | hd::tl =>
-    match f hd init with
+    HashSetFromList.go tl (S.insert hd)
+
+def HashSetFromList {A: Type} [DecidableEq A] [Hashable A] (l: List A) := HashSetFromList.go l Lean.HashSet.empty
+
+
+def getGraph.go (helper: parsingArityHelper) (l: List mockEdge) (vertices: Lean.HashSet (groundAtom (parsingSignature helper))) (currGraph: Graph (groundAtom (parsingSignature helper))) (h_v: ∀ (ga: (groundAtom (parsingSignature helper))), ga ∈ currGraph.vertices ↔ vertices.contains ga): Except String (Graph (groundAtom (parsingSignature helper))) :=
+  match l with
+  | [] => Except.ok currGraph
+  | hd::tl =>
+    match transformMockAtomToGroundAtom helper hd.vertex with
     | Except.error msg => Except.error msg
-    | Except.ok init' => foldl_except f tl init'
+    | Except.ok v =>
+      match List.map_except (transformMockAtomToGroundAtom helper) hd.predecessors with
+      | Except.error msg => Except.error msg
+      | Except.ok predecessors =>
+        let currGraph' := completeGraph currGraph v predecessors vertices h_v
+        getGraph.go helper tl currGraph'.snd currGraph'.fst (mem_insertHashSet currGraph.vertices (v::predecessors) vertices h_v)
+
+
 
 def getGraph (helper: parsingArityHelper) (g: mockGraph): Except String (Graph (groundAtom (parsingSignature helper))) :=
   match List.map_except (transformMockAtomToGroundAtom helper) g.vertices with
   | Except.error e => Except.error ("Error parsing vertices -- " ++ e)
   | Except.ok v' =>
-  foldl_except (addEdge helper) g.edges (unconnectedGroundAtomGraph helper v')
+  getGraph.go helper g.edges (HashSetFromList v') (unconnectedGroundAtomGraph helper v') sorry
 
 
 structure graphVerificationProblem (helper: parsingArityHelper) where
