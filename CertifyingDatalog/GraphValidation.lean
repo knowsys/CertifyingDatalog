@@ -4,14 +4,120 @@ import CertifyingDatalog.TreeValidation
 import Mathlib.Data.List.Card
 import Mathlib.Data.Finset.Card
 
+-- Axioms for HashMap
+namespace Lean.HashMap 
+  variable {A: Type}[inst_dec_eq: BEq A][inst_hash: Hashable A]
 
-structure Graph (A: Type) where
-  (vertices: List A)
-  (predecessors: A → List A)
-  (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ predecessors a → a' ∈ vertices)
+  theorem toList_after_ofList_is_id (l : List (A × B)) : Lean.HashMap.toList (@Lean.HashMap.ofList _ _ inst_dec_eq inst_hash l) = l := by sorry
+
+  theorem in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := sorry
+end Lean.HashMap
+
+-- structure Graph (A: Type) where
+--   (vertices: List A)
+--   (predecessors: A → List A)
+--   (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ predecessors a → a' ∈ vertices)
+
+abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Lean.HashMap A (List A)
+
+namespace PreGraph
+  variable {A: Type}[DecidableEq A][Hashable A]
+  
+  def vertices (g : PreGraph A) : List A := g.toList.map Prod.fst
+  def predecessors (g : PreGraph A) (a : A) : List A := g.findD a []
+
+  def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.findD a []) → pg.contains a'
+
+  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Lean.HashMap.in_projection_of_toList_iff_contains
+  theorem in_predecessors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.findD a []) := by unfold predecessors; intros; rfl
+
+  def from_vertices (vs : List A) : PreGraph A := Lean.HashMap.ofList (vs.map (fun v => (v, [])))
+
+  def add_vertex (pg : PreGraph A) (v : A) : PreGraph A :=
+    if pg.contains v then 
+      pg 
+    else 
+      pg.insert v []
+
+  -- def add_edge (pg : PreGraph A) (u v : A) : PreGraph A := 
+  --   if pg.contains v then 
+  --     pg.insert v ((pg.predecessors v) ++ [u])
+  --   else 
+  --     pg.insert v [u]
+
+  def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A := 
+    vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) (pg.insert v vs)
+
+  -- Axioms 
+  theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 
+    induction vs with 
+    | nil => unfold vertices; unfold from_vertices; rw [Lean.HashMap.toList_after_ofList_is_id]; simp [List.map]
+    | cons v vs ih =>
+      sorry
+
+  theorem from_vertices_no_vertex_has_predecessors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
+    induction vs with 
+    | nil => intros; contradiction
+    | cons v vs ih =>
+      sorry
+
+  theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
+    let pg := PreGraph.from_vertices vs
+    have : ∀ v, v ∈ pg.vertices -> (pg.findD v [] = []) := by 
+      intro v hv 
+      apply from_vertices_no_vertex_has_predecessors
+      rw [from_vertices_contains_exactly_the_passed_vertices] at hv
+      exact hv
+    intro a ha b hb
+    rw [← in_vertices_iff_contains] at ha
+    rw [this a ha] at hb
+    contradiction
+
+  -- theorem add_edge_and_add_vertex_still_complete (pg : PreGraph A) (u v : A) (comp : pg.complete) : ((pg.add_edge u v).add_vertex u).complete := by sorry
+  
+  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (comp : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by sorry
+end PreGraph
+
+abbrev Graph (A: Type) [DecidableEq A] [Hashable A] := { pg : PreGraph A // pg.complete }
+
+namespace Graph
+  variable {A: Type}[DecidableEq A][Hashable A]
+
+  def vertices (g : Graph A) : List A := g.val.vertices
+  def predecessors (g : Graph A) (a : A) : List A := g.val.predecessors a
+
+  theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.predecessors a → a' ∈ g.vertices := by 
+    intro a ha b hb 
+    unfold vertices
+    rw [PreGraph.in_vertices_iff_contains]
+    apply g.property
+    . rw [← PreGraph.in_vertices_iff_contains]
+      apply ha
+    . rw [← PreGraph.in_predecessors_iff_found]
+      unfold predecessors at hb 
+      apply hb
+
+  def from_vertices (vs : List A) : Graph A := 
+    {
+      val := PreGraph.from_vertices vs
+      property := by apply PreGraph.from_vertices_is_complete
+    }
+
+  -- def add_edge (G : Graph A) (start_node end_node : A) : Graph A :=
+  --   {
+  --     val := (G.val.add_edge start_node end_node).add_vertex start_node
+  --     property := by apply PreGraph.add_edge_and_add_vertex_still_complete; apply G.property
+  --   }
+
+  def add_vertex_with_predecessors (g : Graph A) (v : A) (vs : List A) : Graph A := 
+    {
+      val := g.val.add_vertex_with_predecessors v vs
+      property := by apply PreGraph.add_vertex_with_predecessors_still_complete; apply g.property
+    }
+end Graph
 
 section dfs
-variable {A: Type}[DecidableEq A] {B: Type} [DecidableEq B]
+variable {A: Type}[DecidableEq A][Hashable A] {B: Type} [DecidableEq B]
 open Lean
 
 
@@ -1825,10 +1931,10 @@ by
   | ok S =>
     simp
 
-def dfs [Hashable A] (G: Graph A) (f: A → List A → Except String Unit) : Except String Unit :=
+def dfs (G: Graph A) (f: A → List A → Except String Unit) : Except String Unit :=
   isOkOrMessage (foldl_except_set (fun ⟨x,_h⟩ S => dfs_step x G f [] (isWalkSingleton G x _h) (List.not_mem_nil x) S) G.vertices.attach HashSet.empty )
 
-lemma dfs_semantics [Hashable A] (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok () :=
+lemma dfs_semantics (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok () :=
 by
   unfold dfs
   rw [isOkOrMessageOkIffExceptionIsOk, acyclicIffAllNotReachedFromCycle, allTrueIfAllCanReachTrue]
@@ -1864,7 +1970,7 @@ by
   apply get_S'
 
 
-def extractTree {A: Type} [DecidableEq A] (a:A) (G: Graph A) (mem: a ∈ G.vertices) (acyclic: isAcyclic G): tree A :=
+def extractTree (a: A) (G: Graph A) (mem: a ∈ G.vertices) (acyclic: isAcyclic G): tree A :=
   tree.node a (List.map (fun ⟨x, _h⟩ => extractTree x G (G.complete a mem x _h) acyclic) (G.predecessors a).attach)
 termination_by Finset.card (globalPredecessors a G)
 decreasing_by
