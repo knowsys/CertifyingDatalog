@@ -70,39 +70,39 @@ by
 lemma atomVariablesEmptyIffAllTermVariablesEmpty (a: atom τ): atomVariables a = ∅ ↔ ∀ (t: term τ), t ∈ a.atom_terms → termVariables t = ∅ :=
 by
   unfold atomVariables
-  have h: ∀ (l: List (term τ)), (collectResultsToFinset termVariables l = ∅ ↔ ∀ (t : term τ), t ∈ l → termVariables t = ∅)
-  intro l
-  induction l with
-  | nil =>
-    unfold collectResultsToFinset
-    simp
-  | cons hd tl ih =>
-    unfold collectResultsToFinset
-    constructor
-    intros h t t_l
-    rw [union_is_empty_iff_both] at h
-    rcases h with ⟨termVarHd, termVarTl⟩
-    simp at t_l
-    cases t_l with
-    | inl t_hd =>
-      rw [t_hd]
-      apply termVarHd
-    | inr t_tl =>
-      rw [ih] at termVarTl
-      apply termVarTl t t_tl
+  have h: ∀ (l: List (term τ)), (collectResultsToFinset termVariables l = ∅ ↔ ∀ (t : term τ), t ∈ l → termVariables t = ∅) := by
+    intro l
+    induction l with
+    | nil =>
+      unfold collectResultsToFinset
+      simp
+    | cons hd tl ih =>
+      unfold collectResultsToFinset
+      constructor
+      intros h t t_l
+      rw [union_is_empty_iff_both] at h
+      rcases h with ⟨termVarHd, termVarTl⟩
+      simp at t_l
+      cases t_l with
+      | inl t_hd =>
+        rw [t_hd]
+        apply termVarHd
+      | inr t_tl =>
+        rw [ih] at termVarTl
+        apply termVarTl t t_tl
 
-    intro h
-    rw [union_is_empty_iff_both]
-    constructor
-    apply h
-    simp
+      intro h
+      rw [union_is_empty_iff_both]
+      constructor
+      apply h
+      simp
 
-    rw [ih]
-    intros t t_tl
-    apply h
-    simp
-    right
-    apply t_tl
+      rw [ih]
+      intros t t_tl
+      apply h
+      simp
+      right
+      apply t_tl
   apply h
 
 
@@ -190,15 +190,15 @@ lemma inGetSubstitutionsImplNoVars (i: List (groundAtom τ))(a: atom τ) (s: sub
   unfold getSubstitutions at h
   rw [List.mem_filterMap] at h
   rcases h with ⟨ga, _, match_ga⟩
-  have matchAtomSome: Option.isSome (matchAtom emptySubstitution a ga) = true
-  rw [match_ga]
-  simp
-  have matchSemantic:applySubstitutionAtom (Option.get (matchAtom emptySubstitution a ga) matchAtomSome) a = ga
-  simp [matchAtomFindsSolution]
+  have matchAtomSome: Option.isSome (matchAtom emptySubstitution a ga) = true := by
+    rw [match_ga]
+    simp
+  have matchSemantic:applySubstitutionAtom (Option.get (matchAtom emptySubstitution a ga) matchAtomSome) a = ga := by
+    simp [matchAtomFindsSolution]
 
   simp at matchSemantic
-  have matchAtom_s: Option.get (matchAtom emptySubstitution a ga) matchAtomSome= s
-  simp [match_ga]
+  have matchAtom_s: Option.get (matchAtom emptySubstitution a ga) matchAtomSome= s := by
+    simp [match_ga]
   rw [← matchAtom_s]
   rw [matchSemantic]
   apply groundAtomsHaveNoVariables
@@ -209,15 +209,15 @@ by
   rw [List.mem_filterMap] at h
   rcases h with ⟨ga, ga_i, match_ga⟩
 
-  have matchAtomSome: Option.isSome (matchAtom emptySubstitution a ga) = true
-  rw [match_ga]
-  simp
-  have matchSemantic:applySubstitutionAtom (Option.get (matchAtom emptySubstitution a ga) matchAtomSome) a = ga
-  simp [matchAtomFindsSolution]
+  have matchAtomSome: Option.isSome (matchAtom emptySubstitution a ga) = true := by
+    rw [match_ga]
+    simp
+  have matchSemantic:applySubstitutionAtom (Option.get (matchAtom emptySubstitution a ga) matchAtomSome) a = ga := by
+    simp [matchAtomFindsSolution]
 
   simp at matchSemantic
-  have matchAtom_s: Option.get (matchAtom emptySubstitution a ga) matchAtomSome= s
-  simp [match_ga]
+  have matchAtom_s: Option.get (matchAtom emptySubstitution a ga) matchAtomSome= s := by
+    simp [match_ga]
 
   simp [← matchAtom_s]
   simp [matchSemantic]
@@ -238,11 +238,11 @@ by
   apply ga_i
   simp
   simp at match_ga
-  have match_some: Option.isSome (matchAtom emptySubstitution a ga) = true
-  rw [Option.isSome_iff_exists]
-  use s
-  have s_get: s = Option.get (matchAtom emptySubstitution a ga) match_some
-  simp [match_ga]
+  have match_some: Option.isSome (matchAtom emptySubstitution a ga) = true := by
+    rw [Option.isSome_iff_exists]
+    use s
+  have s_get: s = Option.get (matchAtom emptySubstitution a ga) match_some := by
+    simp [match_ga]
   constructor
   rw [s_get]
   simp [matchAtomFindsSolution]
@@ -263,37 +263,37 @@ by
   cases h:(matchAtom emptySubstitution a ga) with
   | none =>
     exfalso
-    have noneGa: Option.isNone (matchAtom emptySubstitution a ga) = true
-    simp [h]
-    have p:  ∀ (s': substitution τ), emptySubstitution ⊆ s' →  ¬ applySubstitutionAtom s' a = ga
-    apply matchAtomNoneImplNoSolution
-    apply noneGa
+    have noneGa: Option.isNone (matchAtom emptySubstitution a ga) = true := by
+      simp [h]
+    have p:  ∀ (s': substitution τ), emptySubstitution ⊆ s' →  ¬ applySubstitutionAtom s' a = ga := by
+      apply matchAtomNoneImplNoSolution
+      apply noneGa
     specialize p s
-    have emptySubs_s: emptySubstitution ⊆ s
-    apply emptySubstitutionIsMinimal
+    have emptySubs_s: emptySubstitution ⊆ s := by
+      apply emptySubstitutionIsMinimal
     specialize p emptySubs_s
     simp at p
     simp at apply_s
     exact absurd apply_s p
   | some s' =>
-    have someGa: Option.isSome (matchAtom emptySubstitution a ga) = true
-    rw [h]
-    simp
-    have min_s': ∀ (s2: substitution τ), applySubstitutionAtom s2 a = ga ∧ emptySubstitution ⊆ s2 → (Option.get (matchAtom emptySubstitution a ga) someGa) ⊆ s2
-    apply matchAtomFindsMinimalSolution
+    have someGa: Option.isSome (matchAtom emptySubstitution a ga) = true := by
+      rw [h]
+      simp
+    have min_s': ∀ (s2: substitution τ), applySubstitutionAtom s2 a = ga ∧ emptySubstitution ⊆ s2 → (Option.get (matchAtom emptySubstitution a ga) someGa) ⊆ s2 := by
+      apply matchAtomFindsMinimalSolution
     specialize s_min s'
-    have apply_s': applySubstitutionAtom s' a = ga
-    have s'_match: s' = Option.get (matchAtom emptySubstitution a ga) someGa
-    simp [h]
-    rw [s'_match]
-    simp [matchAtomFindsSolution]
+    have apply_s': applySubstitutionAtom s' a = ga := by
+      have s'_match: s' = Option.get (matchAtom emptySubstitution a ga) someGa := by
+        simp [h]
+      rw [s'_match]
+      simp [matchAtomFindsSolution]
     specialize s_min apply_s'
     specialize min_s' s
     simp  [apply_s, emptySubstitutionIsMinimal, h] at min_s'
-    have s_s': s= s'
-    apply substitution_subs_antisymm
-    apply s_min
-    apply min_s'
+    have s_s': s= s' := by
+      apply substitution_subs_antisymm
+      apply s_min
+      apply min_s'
     rw [s_s']
 
 lemma applySubstitutionAtomRemovesDomainFromAtomVars (a: atom τ) (s: substitution τ): atomVariables (applySubstitutionAtom s a) = (atomVariables a) \ (substitution_domain s) :=
@@ -526,10 +526,12 @@ def exploreGrounding (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSe
         Except.ok ()
     else
       List.map_except_unit (getSubstitutions i hd).attach (fun ⟨s, _h⟩ => exploreGrounding i (groundingStep s i pgr hd tl (noVars s _h) (inGetSubstitutionsImplInInterpretation i hd s _h (noVars s _h))) (groundingStepPreservesSafety s i pgr hd tl (noVars s _h) (inGetSubstitutionsImplInInterpretation i hd s _h (noVars s _h)) safe h) )
-termination_by exploreGrounding i pgr safe => pgr.ungroundedBody.length
+termination_by pgr.ungroundedBody.length
 decreasing_by
+  all_goals{
   simp_wf
   simp [groundingStep, groundingStepGroundAtom, h]
+  }
 
 lemma applyGroundingTermEqtermWithoutVariablesToConstant (t: term τ) (noVars: termVariables t = ∅) (g: grounding τ): termWithoutVariablesToConstant t noVars = applyGroundingTerm' g t := by
   cases t with
@@ -645,9 +647,9 @@ lemma decidableAtomVarsGoSemantics (l: List (term τ)) (curr: List τ.vars) (v: 
       simp
       rw [ih]
       simp
-      have h: v ∈ termVariables (term.variableDL w) ↔ v = w
-      unfold termVariables
-      simp
+      have h: v ∈ termVariables (term.variableDL w) ↔ v = w := by
+        unfold termVariables
+        simp
       rw [h]
       rw [or_assoc]
 
@@ -672,20 +674,20 @@ lemma atomSubOfGroundingEqOnTerm (a: atom τ) (g: grounding τ) (t: term τ) (me
     simp
   | variableDL v =>
     simp
-    have v_atomVars: v ∈ decidableAtomVars a
-    rw [← inDecidableAtomVarsIffInAtomVariables]
-    unfold atomVariables
-    rw [collectResultsToFinsetSemantics, Set.mem_setOf]
-    use (term.variableDL v)
-    constructor
-    apply mem
-    unfold termVariables
-    simp
+    have v_atomVars: v ∈ decidableAtomVars a := by
+      rw [← inDecidableAtomVarsIffInAtomVariables]
+      unfold atomVariables
+      rw [collectResultsToFinsetSemantics, Set.mem_setOf]
+      use (term.variableDL v)
+      constructor
+      apply mem
+      unfold termVariables
+      simp
 
-    have h: Option.isSome (if v ∈ decidableAtomVars a then some (g v) else none) = true
-    rw [Option.isSome_iff_exists]
-    use (g v)
-    simp [v_atomVars]
+    have h: Option.isSome (if v ∈ decidableAtomVars a then some (g v) else none) = true := by
+      rw [Option.isSome_iff_exists]
+      use (g v)
+      simp [v_atomVars]
 
     simp [h]
     simp [v_atomVars]
@@ -793,20 +795,20 @@ lemma atomSubOfGroundingIsMinimalForAtom (a: atom τ) (g: grounding τ):
   cases h:(atomSubOfGrounding a g v) with
   | some c =>
     unfold atomSubOfGrounding at h
-    have p: v ∈ decidableAtomVars a
-    by_contra q
-    simp [q] at h
+    have p: v ∈ decidableAtomVars a := by
+      by_contra q
+      simp [q] at h
     simp [p] at h
     rw [← inDecidableAtomVarsIffInAtomVariables] at p
     unfold applySubstitutionAtom at s'_a
     unfold atomGrounding at s'_a
     unfold groundAtom.toAtom at s'_a
     simp at s'_a
-    have s'_v: applySubstitutionTerm s' (term.variableDL v) = (term.constant ∘ applyGroundingTerm' g) (term.variableDL v)
-    apply equalOfListMapEqual (h:= s'_a)
-    rw [variableMemberOfcollecResultsIffMemberList]
-    unfold atomVariables at p
-    apply p
+    have s'_v: applySubstitutionTerm s' (term.variableDL v) = (term.constant ∘ applyGroundingTerm' g) (term.variableDL v) := by
+      apply equalOfListMapEqual (h:= s'_a)
+      rw [variableMemberOfcollecResultsIffMemberList]
+      unfold atomVariables at p
+      apply p
     unfold applySubstitutionTerm at s'_v
     unfold applyGroundingTerm' at s'_v
     simp at s'_v
@@ -815,10 +817,10 @@ lemma atomSubOfGroundingIsMinimalForAtom (a: atom τ) (g: grounding τ):
       simp [h'] at s'_v
       rw [h] at s'_v
       simp
-      apply Eq.symm
       rw [inDecidableAtomVarsIffInAtomVariables] at p
       simp [p]
       rw [h]
+      apply Eq.symm
       apply s'_v
     | none =>
       simp [h'] at *
@@ -860,28 +862,28 @@ by
   rw [h]
   simp
   rw [toAtomOfatomWithoutVariablesIsSelf]
-  have groundedBodyEq:  List.map (applySubstitutionAtom s ∘ groundAtom.toAtom) pgr.groundedBody = List.map groundAtom.toAtom pgr.groundedBody
-  apply List.ext_get
-  rw [List.length_map, List.length_map]
-  intros n h1 h2
-  rw [List.get_map, List.get_map]
-  simp
-  have p: ∀ (ga:groundAtom τ), applySubstitutionAtom s (groundAtom.toAtom ga) = groundAtom.toAtom ga
-  intro ga
-  unfold groundAtom.toAtom
-  unfold applySubstitutionAtom
-  simp
-  apply List.ext_get
-  rw [List.length_map, List.length_map]
-  intros n' h1' h2'
-  rw [List.get_map, List.get_map]
-  simp
-  have q: ∀ (c: τ.constants), applySubstitutionTerm s (term.constant c) =term.constant c
-  intro c
-  unfold applySubstitutionTerm
-  simp
-  rw [q]
-  rw [p]
+  have groundedBodyEq:  List.map (applySubstitutionAtom s ∘ groundAtom.toAtom) pgr.groundedBody = List.map groundAtom.toAtom pgr.groundedBody := by
+    apply List.ext_get
+    rw [List.length_map, List.length_map]
+    intros n h1 h2
+    rw [List.get_map, List.get_map]
+    simp
+    have p: ∀ (ga:groundAtom τ), applySubstitutionAtom s (groundAtom.toAtom ga) = groundAtom.toAtom ga := by
+      intro ga
+      unfold groundAtom.toAtom
+      unfold applySubstitutionAtom
+      simp
+      apply List.ext_get
+      rw [List.length_map, List.length_map]
+      intros n' h1' h2'
+      rw [List.get_map, List.get_map]
+      simp
+      have q: ∀ (c: τ.constants), applySubstitutionTerm s (term.constant c) =term.constant c := by
+        intro c
+        unfold applySubstitutionTerm
+        simp
+      rw [q]
+    rw [p]
   rw [groundedBodyEq]
 
 
@@ -917,14 +919,14 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       rw [Set.subset_def]
       intro ga body
       apply members
-      have groundingBody: ∀ (g: grounding τ), List.map (atomGrounding g ∘ groundAtom.toAtom ) groundedBody = groundedBody
-      intro g
-      apply List.ext_get
-      rw [List.length_map]
-      intros n h1 h2
-      rw [List.get_map]
-      simp
-      rw [atomGroundingIsSelfOnGroundAtom]
+      have groundingBody: ∀ (g: grounding τ), List.map (atomGrounding g ∘ groundAtom.toAtom ) groundedBody = groundedBody := by
+        intro g
+        apply List.ext_get
+        rw [List.length_map]
+        intros n h1 h2
+        rw [List.get_map]
+        simp
+        rw [atomGroundingIsSelfOnGroundAtom]
       simp [groundingBody, atomGroundingIsSelfOnGroundAtom] at body
       apply body
       use (substitutionToGrounding emptySubstitution) -- we have to use some substitution
@@ -965,11 +967,11 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       intro body
       specialize body (atomWithoutVariablesToGroundAtom hd varsHd)
       simp [Finset.mem_insert] at body
-      have n_hd_i: atomWithoutVariablesToGroundAtom hd varsHd ∈ i
-      rw [List.toSet_mem]
-      apply body
-      left
-      rw [atomGroundingEqAtomWithoutVariablesToGroundAtom]
+      have n_hd_i: atomWithoutVariablesToGroundAtom hd varsHd ∈ i := by
+        rw [List.toSet_mem]
+        apply body
+        left
+        rw [atomGroundingEqAtomWithoutVariablesToGroundAtom]
       exfalso
       exact absurd n_hd_i hd_i
 
@@ -987,9 +989,9 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       rw [inGetSubstitutionsIffMinimalSolutionAndInInterpretation] at s_prop
       simp at s_prop
       rcases s_prop with ⟨ga, ga_i, apply_s_ga, _⟩
-      have varsHdS: atomVariables (applySubstitutionAtom s hd) = ∅
-      rw [apply_s_ga]
-      apply groundAtomsHaveNoVariables
+      have varsHdS: atomVariables (applySubstitutionAtom s hd) = ∅ := by
+        rw [apply_s_ga]
+        apply groundAtomsHaveNoVariables
 
       rw [swapApplySubstitutionPgrToRule (hd:=hd) (tl:= tl) (varsHd:= varsHdS)]
       simp

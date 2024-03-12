@@ -29,21 +29,21 @@ by
   by_contra h'
   push_neg at h'
   rcases h' with ⟨s, apply_s⟩
-  have symbols2: symbolSequence (applySubstitutionRule s r1) = symbolSequence r2
-  rw [apply_s]
+  have symbols2: symbolSequence (applySubstitutionRule s r1) = symbolSequence r2 := by
+    rw [apply_s]
   unfold symbolSequence at symbols2
   unfold applySubstitutionRule at symbols2
   simp at symbols2
   rcases symbols2 with ⟨head, body⟩
   unfold applySubstitutionAtom at head
   simp at head
-  have map_r1: List.map (atom.symbol ∘ applySubstitutionAtom s) r1.body = List.map atom.symbol r1.body
-  apply List.ext_get
-  rw [List.comp_map, List.length_map, List.length_map, List.length_map]
-  intros n h1 h2
-  rw [List.get_map, List.get_map]
-  unfold applySubstitutionAtom
-  simp
+  have map_r1: List.map (atom.symbol ∘ applySubstitutionAtom s) r1.body = List.map atom.symbol r1.body := by
+    apply List.ext_get
+    rw [List.comp_map, List.length_map, List.length_map, List.length_map]
+    intros n h1 h2
+    rw [List.get_map, List.get_map]
+    unfold applySubstitutionAtom
+    simp
   rw [map_r1] at body
   unfold symbolSequence at h
   simp at h
@@ -134,9 +134,9 @@ by
   unfold checkRuleMatch
   constructor
   intro h
-  have h': (List.any (m (symbolSequence (groundRule.toRule gr))) fun x => Option.isSome (matchRule x gr)) = true
-  by_contra p
-  simp [p] at h
+  have h': (List.any (m (symbolSequence (groundRule.toRule gr))) fun x => Option.isSome (matchRule x gr)) = true := by
+    by_contra p
+    simp [p] at h
   rw [List.any_eq_true] at h'
   rcases h' with ⟨r,r_mem, match_r⟩
   use r
@@ -151,20 +151,20 @@ by
   simp [r_mem]
 
   intro h
-  have h': List.any (m (symbolSequence (groundRule.toRule gr))) (fun x => Option.isSome (matchRule x gr)) = true
-  rw [List.any_eq_true]
-  rcases h with ⟨r,rP, match_r⟩
-  use r
-  constructor
-  rw [parseProgramToSymbolSequenceMap_semantics P m ssm]
-  constructor
-  apply rP
-  apply symbolSequenceOfMatchIsEqual r gr match_r
-  rw [matchRuleIsSomeIffSolution]
-  apply match_r
-  rw [groundRuleToRuleBodyLengthEqBodyLength]
-  apply symbolSequenceEqImplSameLength
-  apply symbolSequenceOfMatchIsEqual r gr match_r
+  have h': List.any (m (symbolSequence (groundRule.toRule gr))) (fun x => Option.isSome (matchRule x gr)) = true := by
+    rw [List.any_eq_true]
+    rcases h with ⟨r,rP, match_r⟩
+    use r
+    constructor
+    rw [parseProgramToSymbolSequenceMap_semantics P m ssm]
+    constructor
+    apply rP
+    apply symbolSequenceOfMatchIsEqual r gr match_r
+    rw [matchRuleIsSomeIffSolution]
+    apply match_r
+    rw [groundRuleToRuleBodyLengthEqBodyLength]
+    apply symbolSequenceEqImplSameLength
+    apply symbolSequenceOfMatchIsEqual r gr match_r
   simp [h']
 
 
@@ -182,7 +182,7 @@ def treeValidator (m: List τ.relationSymbols → List (rule τ)) (d: database �
       match checkRuleMatch m {head:= a, body := List.map root l} with
       | Except.ok _ => List.map_except_unit l.attach (fun ⟨x, _h⟩ => treeValidator m d x)
       | Except.error msg => Except.error msg
-termination_by treeValidator m d t => sizeOf t
+termination_by sizeOf t
 decreasing_by
   simp_wf
   apply Nat.lt_trans (m:= sizeOf l)
@@ -212,12 +212,12 @@ by
 
     constructor
     intro h
-    have h': checkRuleMatch m { head := a, body := List.map root l } = Except.ok ()
-    cases p: checkRuleMatch m { head := a, body := List.map root l } with
-    | ok u =>
-      simp
-    | error e =>
-      simp [p] at h
+    have h': checkRuleMatch m { head := a, body := List.map root l } = Except.ok () := by
+      cases p: checkRuleMatch m { head := a, body := List.map root l } with
+      | ok u =>
+        simp
+      | error e =>
+        simp [p] at h
     simp [h'] at h
     rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at h'
     left
@@ -225,7 +225,7 @@ by
     constructor
     simp at h'
     apply h'
-    rw [List.all₂_iff_forall]
+    rw [List.forall_iff_forall_mem]
     simp
     intros a' a_l
     rw [List.isEmpty_iff_eq_nil] at emptyL
@@ -269,16 +269,16 @@ by
       constructor
       simp at h'
       apply h'
-      rw [List.all₂_iff_forall]
+      rw [List.forall_iff_forall_mem]
       simp
       intros a' a_l
       specialize ih (height a')
       simp [← h_t] at ih
-      have height_case: height a' < height (tree.node a l)
-      apply heightOfMemberIsSmaller
-      unfold member
-      simp
-      apply a_l
+      have height_case: height a' < height (tree.node a l) := by
+        apply heightOfMemberIsSmaller
+        unfold member
+        simp
+        apply a_l
       specialize ih height_case a'
       simp at ih
       rw [← ih]
@@ -295,17 +295,17 @@ by
       rw [List.map_except_unitIsUnitIffAll]
       simp
       intros t t_l
-      have height_t: (height t) < height (tree.node a l)
-      apply heightOfMemberIsSmaller
-      unfold member
-      simp
-      apply t_l
+      have height_t: (height t) < height (tree.node a l) := by
+        apply heightOfMemberIsSmaller
+        unfold member
+        simp
+        apply t_l
       specialize ih (height t)
       simp [← h_t] at ih
       specialize ih height_t t
       simp at ih
       rw [ih]
-      rw [List.all₂_iff_forall] at right
+      rw [List.forall_iff_forall_mem] at right
       simp at right
       apply right t t_l
 

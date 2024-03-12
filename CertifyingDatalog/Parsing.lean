@@ -90,8 +90,8 @@ def extendParsingArityHelper (sig: parsingArityHelper) (symbol: String) (arity: 
   else
     Except.ok {relationList := sig.relationList ++ [symbol], arity := (fun x => if q:(x = symbol) then arity else
       have p: x.val ∈ sig.relationList := by
-        have h': x.val ∈ (sig.relationList ++ [symbol] )
-        apply x.property
+        have h': x.val ∈ (sig.relationList ++ [symbol] ) := by
+          apply x.property
         simp at h'
         cases h' with
         | inl h' =>
@@ -231,11 +231,10 @@ def proofTreeFromTree (helper: parsingArityHelper) (t: jsonTree mockAtom) : Exce
         Except.ok (tree.node a l)
       | Except.error msg => Except.error msg
     | Except.error msg => Except.error msg
-termination_by proofTreeFromTree relationList t => sizeOf t
+termination_by sizeOf t
 decreasing_by
   simp_wf
   decreasing_trivial
-  apply Nat.zero_le
 
 structure verificationProblem (helper: parsingArityHelper) where
   (trees: List (proofTree (parsingSignature helper)))

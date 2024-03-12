@@ -53,9 +53,9 @@ by
     simp
     unfold matchTerm at h
     simp at h
-    have c_c': c = c'
-    by_contra h'
-    simp [h'] at h
+    have c_c': c = c' := by
+      by_contra h'
+      simp [h'] at h
     constructor
     unfold matchTerm
     unfold applySubstitutionTerm
@@ -66,12 +66,12 @@ by
   | variableDL v =>
     unfold matchTerm at h
     by_cases p: Option.isSome (s v)
-    have sv_c: Option.get (s v) p = c
-    by_contra h'
-    simp [p, h'] at h
-    have h': (Option.get (matchTerm (term.variableDL v) c s) h) = s
-    unfold matchTerm
-    simp [p, sv_c]
+    have sv_c: Option.get (s v) p = c := by
+      by_contra h'
+      simp [p, h'] at h
+    have h': (Option.get (matchTerm (term.variableDL v) c s) h) = s := by
+      unfold matchTerm
+      simp [p, sv_c]
     simp
     constructor
     rw [h']
@@ -79,9 +79,9 @@ by
     simp [p, sv_c]
     rw [h']
     apply substitution_subs_refl
-    have h': Option.get (matchTerm (term.variableDL v) c s) h = extend s v c
-    unfold matchTerm
-    simp [p]
+    have h': Option.get (matchTerm (term.variableDL v) c s) h = extend s v c := by
+      unfold matchTerm
+      simp [p]
     rw [h']
     constructor
     unfold applySubstitutionTerm
@@ -97,9 +97,9 @@ by
   | constant c' =>
     unfold matchTerm at h
     simp at h
-    have c_c': c = c'
-    by_contra h'
-    simp [h'] at h
+    have c_c': c = c' := by
+      by_contra h'
+      simp [h'] at h
     intros s' s'_prop
     unfold matchTerm
     simp [c_c', s'_prop]
@@ -110,9 +110,9 @@ by
     simp at h
     unfold matchTerm
     by_cases p: Option.isSome (s v) = true
-    have h': Option.get (s v) p = c
-    by_contra p'
-    simp [p, p'] at h
+    have h': Option.get (s v) p = c := by
+      by_contra p'
+      simp [p, p'] at h
     simp [p, h']
     simp [s_s']
     simp [p]
@@ -128,9 +128,9 @@ by
     | some c' =>
       simp [sv] at x_prop
       unfold applySubstitutionTerm at apply_s'
-      have p': Option.isSome (s' v) = true
-      rw [sv]
-      simp
+      have p': Option.isSome (s' v) = true := by
+        rw [sv]
+        simp
       simp [p'] at apply_s'
       rw [option_get_iff_eq_some] at apply_s'
       simp [apply_s'] at sv
@@ -143,8 +143,8 @@ by
     cases q:s x with
     | some c =>
       simp [q] at x_prop
-      have s'x: s' x = some c
-      apply substitution_subs_get s s' s_s' _ _ q
+      have s'x: s' x = some c := by
+        apply substitution_subs_get s s' s_s' _ _ q
       simp [s'x] at x_prop
     | none =>
       rcases x_prop with ⟨left,_⟩
@@ -159,21 +159,21 @@ by
   cases t with
   | constant c' =>
     simp at h
-    have c_c': ¬ c' = c
-    by_contra h'
-    simp [h'] at h
+    have c_c': ¬ c' = c := by
+      by_contra h'
+      simp [h'] at h
     intros s' _
     unfold applySubstitutionTerm
     simp [c_c']
   | variableDL v =>
     simp at h
-    have h': Option.isSome (s v) = true
-    by_contra p
-    simp [p] at h
+    have h': Option.isSome (s v) = true := by
+      by_contra p
+      simp [p] at h
     simp [h'] at h
-    have p: ¬ Option.get (s v) h' = c
-    by_contra q
-    simp [q] at h
+    have p: ¬ Option.get (s v) h' = c := by
+      by_contra q
+      simp [q] at h
     intros s' s_s'
     unfold applySubstitutionTerm
     unfold_projs at s_s'
@@ -210,13 +210,13 @@ by
   push_neg at h
   rcases h with ⟨left, right⟩
   simp at right
-  have h': ¬ ∃ s, emptySubstitution ⊆ s ∧ applySubstitutionTerm s t = term.constant c
-  apply matchTermNoneImpNoSolution (h:= right)
+  have h': ¬ ∃ s, emptySubstitution ⊆ s ∧ applySubstitutionTerm s t = term.constant c := by
+    apply matchTermNoneImpNoSolution (h:= right)
   push_neg at h'
   rcases left with ⟨s, s_prop⟩
   specialize h' s
-  have p: emptySubstitution ⊆ s
-  apply emptySubstitutionIsMinimal
+  have p: emptySubstitution ⊆ s := by
+    apply emptySubstitutionIsMinimal
   specialize h' p
   exact absurd s_prop h'
 
@@ -259,9 +259,9 @@ by
       simp at len
       unfold matchTermList at h
       simp at h
-      have p : Option.isSome (matchTerm hd hd' s) = true
-      by_contra p'
-      simp [p'] at h
+      have p : Option.isSome (matchTerm hd hd' s) = true := by
+        by_contra p'
+        simp [p'] at h
       simp [p] at h
       constructor
       simp
@@ -300,9 +300,9 @@ by
       intros s' s'_prop
       unfold matchTermList
       unfold matchTermList at h
-      have p : Option.isSome (matchTerm hd hd' s) = true
-      by_contra p'
-      simp [p'] at h
+      have p : Option.isSome (matchTerm hd hd' s) = true := by
+        by_contra p'
+        simp [p'] at h
       simp [p]
       apply ih
       simp at len
@@ -349,8 +349,8 @@ by
       simp [s'_hd]
 
       simp at p
-      have h': ¬ ∃ (s1: substitution τ), s ⊆ s1 ∧ applySubstitutionTerm s1 hd = hd'
-      apply matchTermNoneImpNoSolution (h:= p)
+      have h': ¬ ∃ (s1: substitution τ), s ⊆ s1 ∧ applySubstitutionTerm s1 hd = hd' := by
+        apply matchTermNoneImpNoSolution (h:= p)
       push_neg at h'
       specialize h' s' s_s'
       simp [h']
@@ -368,9 +368,9 @@ by
 lemma matchAtomFindsSolution (s: substitution τ) (a: atom τ) (ga: groundAtom τ) (h: Option.isSome (matchAtom s a ga)): applySubstitutionAtom (Option.get (matchAtom s a ga) h) a = ga ∧ s ⊆ (Option.get (matchAtom s a ga) h) :=
 by
   unfold matchAtom at h
-  have symbol_eq: a.symbol = ga.symbol
-  by_contra p
-  simp [p] at h
+  have symbol_eq: a.symbol = ga.symbol := by
+    by_contra p
+    simp [p] at h
   simp [symbol_eq] at h
   unfold matchAtom
   simp [symbol_eq]
@@ -385,9 +385,9 @@ by
 lemma matchAtomFindsMinimalSolution (s: substitution τ) (a: atom τ) (ga: groundAtom τ) (h: Option.isSome (matchAtom s a ga)): ∀ (s': substitution τ), applySubstitutionAtom s' a = ga ∧ s ⊆ s' → (Option.get (matchAtom s a ga) h) ⊆ s' :=
 by
   unfold matchAtom at h
-  have symbol_eq: a.symbol = ga.symbol
-  by_contra p
-  simp [p] at h
+  have symbol_eq: a.symbol = ga.symbol := by
+    by_contra p
+    simp [p] at h
   simp [symbol_eq] at h
   unfold matchAtom
   simp [symbol_eq]
@@ -408,8 +408,8 @@ by
   unfold applySubstitutionAtom
   unfold groundAtom.toAtom
   simp [symbol_eq] at h
-  have h': ∀ s', s ⊆ s' → ¬  List.map (applySubstitutionTerm s') a.atom_terms = List.map term.constant ga.atom_terms
-  apply matchTermListNoneImplNoSolution (len:= sameSymbolImplSameLength a ga symbol_eq) (h:= h)
+  have h': ∀ s', s ⊆ s' → ¬  List.map (applySubstitutionTerm s') a.atom_terms = List.map term.constant ga.atom_terms := by
+    apply matchTermListNoneImplNoSolution (len:= sameSymbolImplSameLength a ga symbol_eq) (h:= h)
   intros s' s_s'
   simp [symbol_eq]
   apply h' s' s_s'
@@ -431,8 +431,8 @@ by
   push_neg at h
   simp at h
   rcases h with ⟨left,right⟩
-  have h': ∀ (s': substitution τ), emptySubstitution ⊆ s' →  ¬ applySubstitutionAtom s' a = ga
-  apply matchAtomNoneImplNoSolution (h:= right)
+  have h': ∀ (s': substitution τ), emptySubstitution ⊆ s' →  ¬ applySubstitutionAtom s' a = ga := by
+    apply matchAtomNoneImplNoSolution (h:= right)
   push_neg at h'
   rcases left with ⟨s, s_prop⟩
   specialize h' s (emptySubstitutionIsMinimal (τ:= τ) s)
@@ -475,9 +475,9 @@ by
       unfold matchAtomList at h
       simp at h
       unfold matchAtomList
-      have p: Option.isSome (matchAtom s hd hd') = true
-      by_contra h'
-      simp [h'] at h
+      have p: Option.isSome (matchAtom s hd hd') = true := by
+        by_contra h'
+        simp [h'] at h
       simp [p]
       simp [p] at h
       simp at len
@@ -511,9 +511,9 @@ by
       simp
       unfold matchAtomList at h
       simp at h
-      have p : Option.isSome (matchAtom s hd hd') = true
-      by_contra q
-      simp [q] at h
+      have p : Option.isSome (matchAtom s hd hd') = true := by
+        by_contra q
+        simp [q] at h
       simp [p]
       simp [p] at h
       apply ih
@@ -558,10 +558,10 @@ by
       apply matchAtomFindsMinimalSolution
       simp [h', s_s']
 
-      have h': ∀ (s': substitution τ), s ⊆ s' → ¬ applySubstitutionAtom s' hd = hd'
-      apply matchAtomNoneImplNoSolution
-      simp at p
-      apply p
+      have h': ∀ (s': substitution τ), s ⊆ s' → ¬ applySubstitutionAtom s' hd = hd' := by
+        apply matchAtomNoneImplNoSolution
+        simp at p
+        apply p
       push_neg at h'
       specialize h' s' s_s'
       simp
@@ -583,14 +583,14 @@ by
   unfold matchRule at *
   simp at h
   simp
-  have p: Option.isSome (matchAtom emptySubstitution r.head gr.head) = true
-  by_contra q
-  simp [q] at h
+  have p: Option.isSome (matchAtom emptySubstitution r.head gr.head) = true := by
+    by_contra q
+    simp [q] at h
   simp [p]
   simp [p] at h
-  have h': List.map (applySubstitutionAtom (Option.get (matchAtomList (Option.get (matchAtom emptySubstitution r.head gr.head) p) r.body gr.body) h )) r.body = List.map groundAtom.toAtom gr.body ∧ (Option.get (matchAtom emptySubstitution r.head gr.head) p) ⊆ (Option.get (matchAtomList (Option.get (matchAtom emptySubstitution r.head gr.head) p) r.body gr.body) h )
-  apply matchAtomListFindsSolution
-  apply len
+  have h': List.map (applySubstitutionAtom (Option.get (matchAtomList (Option.get (matchAtom emptySubstitution r.head gr.head) p) r.body gr.body) h )) r.body = List.map groundAtom.toAtom gr.body ∧ (Option.get (matchAtom emptySubstitution r.head gr.head) p) ⊆ (Option.get (matchAtomList (Option.get (matchAtom emptySubstitution r.head gr.head) p) r.body gr.body) h ) := by
+    apply matchAtomListFindsSolution
+    apply len
   rcases h' with ⟨left,right⟩
   constructor
   apply subs_ext_groundAtom (s1:= Option.get (matchAtom emptySubstitution r.head gr.head) p)
@@ -610,8 +610,8 @@ by
   intro s_hd
   by_cases p: Option.isSome (matchAtom emptySubstitution r.head gr.head)
   simp [p] at h
-  have h': ∀ (s': substitution τ), Option.get (matchAtom emptySubstitution r.head gr.head) p ⊆ s' → ¬  List.map (applySubstitutionAtom s') r.body = List.map groundAtom.toAtom gr.body
-  apply matchAtomListNoneImplNoSolution (len:= len) (h:= h)
+  have h': ∀ (s': substitution τ), Option.get (matchAtom emptySubstitution r.head gr.head) p ⊆ s' → ¬  List.map (applySubstitutionAtom s') r.body = List.map groundAtom.toAtom gr.body := by
+    apply matchAtomListNoneImplNoSolution (len:= len) (h:= h)
   specialize h' s
   apply h'
   apply matchAtomFindsMinimalSolution
@@ -619,9 +619,9 @@ by
   apply emptySubstitutionIsMinimal
 
   simp at p
-  have n_s_hd: ¬ applySubstitutionAtom s r.head = groundAtom.toAtom gr.head
-  apply matchAtomNoneImplNoSolution (h:= p)
-  apply emptySubstitutionIsMinimal
+  have n_s_hd: ¬ applySubstitutionAtom s r.head = groundAtom.toAtom gr.head := by
+    apply matchAtomNoneImplNoSolution (h:= p)
+    apply emptySubstitutionIsMinimal
   exfalso
   exact absurd s_hd n_s_hd
 
@@ -637,8 +637,8 @@ by
   push_neg at h
   rcases h with ⟨left,right⟩
   simp at right
-  have h: ¬ ∃ (s: substitution τ), applySubstitutionRule s r = gr
-  apply matchRuleNoneImplNoSolution (len:= len) (h:= right)
+  have h: ¬ ∃ (s: substitution τ), applySubstitutionRule s r = gr := by
+    apply matchRuleNoneImplNoSolution (len:= len) (h:= right)
   exact absurd left h
 
 end rule_matching

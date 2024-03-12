@@ -20,7 +20,7 @@ inductive term (τ: signature) [DecidableEq τ.vars] [DecidableEq τ.relationSym
 | variableDL : τ.vars → term τ
 deriving DecidableEq, Hashable
 
-instance : ToString (term τ) where 
+instance : ToString (term τ) where
   toString t := match t with
     | term.constant c => ToString.toString c
     | term.variableDL v => ToString.toString v
@@ -36,8 +36,8 @@ structure atom where
   (term_length: atom_terms.length = τ.relationArity symbol)
 deriving DecidableEq, Hashable
 
-instance : ToString (atom τ) where 
-  toString a := 
+instance : ToString (atom τ) where
+  toString a :=
     let terms :=
       match a.atom_terms with
       | [] => ""
@@ -63,7 +63,7 @@ structure rule where
   (body: List (atom τ))
 deriving DecidableEq
 
-instance : ToString (rule τ) where 
+instance : ToString (rule τ) where
   toString r := match r.body with
     | [] => (ToString.toString r.head) ++ "."
     | hd::tl => (ToString.toString r.head) ++ ":-" ++ (List.foldl (fun x y => x ++ "," ++ (ToString.toString y) ) (ToString.toString hd) tl)
@@ -380,13 +380,14 @@ lemma safetyCheckRuleUnitIffRuleSafe (r: rule τ) : safetyCheckRule r = Except.o
   unfold rule.isSafe
   rw [Set.subset_def]
   intro safe
-  have h: List.diff' (atomVariables_computable r.head) (collectResultsToList atomVariables_computable r.body) = []
-  rw [List.diff'_empty]
-  intro v v_head
-  rw [← atomVariables_mem_iff_atomVariables_computable_mem] at v_head
-  specialize safe v v_head
-  rw [List.toSet_mem,collectResultsToListEqCollectResultsToFinset, ← atomVariablesEqAtomVariables_computableToList]
-  apply safe
+  have h: List.diff' (atomVariables_computable r.head) (collectResultsToList atomVariables_computable r.body) = [] :=by
+
+    rw [List.diff'_empty]
+    intro v v_head
+    rw [← atomVariables_mem_iff_atomVariables_computable_mem] at v_head
+    specialize safe v v_head
+    rw [List.toSet_mem,collectResultsToListEqCollectResultsToFinset, ← atomVariablesEqAtomVariables_computableToList]
+    apply safe
   simp [h]
 
 def safetyCheckProgram (P: List (rule τ)): Except String Unit :=
@@ -407,7 +408,7 @@ where
 
 def groundRule.toRule (r: groundRule τ): rule τ := {head:= r.head.toAtom, body := List.map groundAtom.toAtom r.body}
 
-instance : ToString (groundRule τ) where 
+instance : ToString (groundRule τ) where
   toString gr := ToString.toString gr.toRule
 
 lemma groundRuletoRulePreservesLength (r: groundRule τ): List.length r.body = List.length r.toRule.body :=
@@ -443,11 +444,11 @@ by
   intro h
   simp at h
   rcases h with ⟨head_eq, body_eq⟩
-  have inj_toAtom: Function.Injective (groundAtom.toAtom (τ:= τ))
-  unfold Function.Injective
-  intros a1 a2 h
-  rw [groundAtomToAtomEquality]
-  apply h
+  have inj_toAtom: Function.Injective (groundAtom.toAtom (τ:= τ)) := by
+    unfold Function.Injective
+    intros a1 a2 h
+    rw [groundAtomToAtomEquality]
+    apply h
   constructor
   unfold Function.Injective at inj_toAtom
   apply inj_toAtom head_eq
@@ -618,9 +619,9 @@ by
     rcases t_mem with ⟨v_pos, v_pos_proof⟩
     rw [← v_pos_proof]
     rcases v_pos with ⟨v_pos, v_pos_a⟩
-    have v_pos_a': v_pos < List.length a'.atom_terms
-    rw [← List.length_map (f:= term.constant),←  terms_eq, List.length_map]
-    apply v_pos_a
+    have v_pos_a': v_pos < List.length a'.atom_terms := by
+      rw [← List.length_map (f:= term.constant),←  terms_eq, List.length_map]
+      apply v_pos_a
     use List.get a'.atom_terms {val:= v_pos, isLt:= v_pos_a'}
     rw [← List.get_map' (f:= applySubstitutionTerm s), ← List.get_map' (f:= term.constant)]
     apply List.get_of_eq terms_eq
@@ -653,17 +654,17 @@ by
   rw [List.mem_iff_get] at a_mem
   rcases a_mem with ⟨a_pos, pos_prop⟩
   rcases a_pos with ⟨a_pos, a_pos_proof⟩
-  have a_pos_proof': a_pos < List.length r'.body
-  rw [← List.length_map r'.body groundAtom.toAtom, ← right, List.length_map r.body]
-  apply a_pos_proof
+  have a_pos_proof': a_pos < List.length r'.body := by
+    rw [← List.length_map r'.body groundAtom.toAtom, ← right, List.length_map r.body]
+    apply a_pos_proof
   use List.get r'.body (Fin.mk a_pos a_pos_proof')
   rw [← pos_prop]
-  have h: a_pos < (List.map (applySubstitutionAtom s) r.body ).length
-  rw [List.length_map]
-  apply a_pos_proof
-  have h': a_pos < (List.map groundAtom.toAtom r'.body ).length
-  rw [List.length_map]
-  apply a_pos_proof'
+  have h: a_pos < (List.map (applySubstitutionAtom s) r.body ).length := by
+    rw [List.length_map]
+    apply a_pos_proof
+  have h': a_pos < (List.map groundAtom.toAtom r'.body ).length := by
+    rw [List.length_map]
+    apply a_pos_proof'
   rw [← List.get_map' (applySubstitutionAtom s) r.body a_pos a_pos_proof h, ← List.get_map' groundAtom.toAtom r'.body a_pos a_pos_proof' h']
   apply List.get_of_eq
   apply right
@@ -844,12 +845,12 @@ by
   | none =>
     exact absurd q p
   | some c =>
-    have s1_s2: s1 v = s2 v
-    apply subs
-    unfold substitution_domain
-    simp
-    rw [q]
-    simp
+    have s1_s2: s1 v = s2 v := by
+      apply subs
+      unfold substitution_domain
+      simp
+      rw [q]
+      simp
     rw [s1_s2] at p
     exact absurd h p
 
@@ -922,13 +923,13 @@ by
   | variableDL v =>
     unfold applySubstitutionTerm at *
     simp at *
-    have p: Option.isSome (s1 v) = true
-    by_contra h'
-    simp [h'] at eq
+    have p: Option.isSome (s1 v) = true := by
+      by_contra h'
+      simp [h'] at eq
     simp [p] at eq
     rw [option_get_iff_eq_some] at eq
-    have s2_v: s2 v = some c
-    apply substitution_subs_get s1 s2 subs _ _ eq
+    have s2_v: s2 v = some c := by
+      apply substitution_subs_get s1 s2 subs _ _ eq
     simp [s2_v]
 
 lemma subs_ext_listConstant {s1 s2: substitution τ} {l1: List (term τ)} {l2: List (τ.constants)} (subs: s1 ⊆ s2) (eq: List.map (applySubstitutionTerm s1) l1 = List.map term.constant l2): List.map (applySubstitutionTerm s2) l1 = List.map term.constant l2 :=
@@ -992,19 +993,21 @@ def member (t1 t2: tree A): Prop :=
 def elementMember (a: A) (t: tree A): Bool  :=
   match t with
   | tree.node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elementMember a x)
-termination_by elementMember a t => sizeOf t
+termination_by sizeOf t
 decreasing_by
-  simp_wf
-  decreasing_trivial
+  all_goals {
+    simp_wf
+    decreasing_trivial
+  }
+
 
 def proofTreeElements (t: proofTree τ): List (groundAtom τ) :=
   match t with
   | tree.node a l => List.foldl (fun x ⟨y,_h⟩ => x ++ proofTreeElements y) [a] l.attach
-termination_by proofTreeElements t => sizeOf t
+termination_by sizeOf t
 decreasing_by
   simp_wf
   decreasing_trivial
-  apply Nat.zero_le
 
 lemma foldl_append_mem {A B: Type} (l1: List A) (l2: List B) (f: B → List A) (a: A): a ∈ List.foldl (fun x y => x ++ f y) l1 l2 ↔ a ∈ l1 ∨ ∃ (b: B), b ∈ l2 ∧  a ∈ f b := by
   induction l2 generalizing l1 with
@@ -1072,9 +1075,10 @@ by
     rw [ih]
 
 
-def height: tree A → ℕ
-| tree.node a l => 1 + listMax (fun ⟨x, _h⟩ => height x) l.attach
-termination_by height t => sizeOf t
+def height (t:tree A): ℕ :=
+  match t with
+  | tree.node a l => 1 + listMax (fun ⟨x, _h⟩ => height x) l.attach
+termination_by sizeOf t
 decreasing_by
   simp_wf
   apply Nat.lt_trans (m:= sizeOf l)
@@ -1115,12 +1119,12 @@ by
     | inr h =>
       rcases h with ⟨t', t_l, a_t⟩
       specialize ih (height t')
-      have height_t': height t' < n
-      rw [← h']
-      apply heightOfMemberIsSmaller
-      unfold member
-      simp
-      apply t_l
+      have height_t': height t' < n := by
+        rw [← h']
+        apply heightOfMemberIsSmaller
+        unfold member
+        simp
+        apply t_l
       specialize ih height_t' t'
       right
       use t'
@@ -1138,12 +1142,12 @@ by
     | inr h =>
       rcases h with ⟨t', t_l, a_t⟩
       specialize ih (height t')
-      have height_t': height t' < n
-      rw [← h']
-      apply heightOfMemberIsSmaller
-      unfold member
-      simp
-      apply t_l
+      have height_t': height t' < n := by
+        rw [← h']
+        apply heightOfMemberIsSmaller
+        unfold member
+        simp
+        apply t_l
       specialize ih height_t' t'
       right
       use t'
@@ -1156,8 +1160,8 @@ by
 
 def isValid(P: program τ) (d: database τ) (t: proofTree τ): Prop :=
   match t with
-  | tree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms a (List.map root l) ∧ l.attach.All₂ (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
-termination_by isValid t => sizeOf t
+  | tree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms a (List.map root l) ∧ l.attach.Forall (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
+termination_by sizeOf t
 decreasing_by
   simp_wf
   apply Nat.lt_trans (m:= sizeOf l)
@@ -1201,27 +1205,27 @@ by
     simp [ga_a'] at mem
     rcases mem with ⟨t', t'_t, a_t'⟩
     specialize ih (height t')
-    have height_t': height t' < n
-    rw [← h']
-    apply heightOfMemberIsSmaller
-    unfold member
-    apply t'_t
-    specialize ih height_t' t'
-    have valid_t': isValid P d t'
-    unfold isValid at valid
-    cases valid with
-    | inl valid =>
-      rcases valid with ⟨_,_,_,_,all⟩
-      simp at all
-      rw [List.all₂_iff_forall] at all
-      simp at all
-      apply all
+    have height_t': height t' < n := by
+      rw [← h']
+      apply heightOfMemberIsSmaller
+      unfold member
       apply t'_t
-    | inr valid =>
-      exfalso
-      rcases valid with ⟨left,_⟩
-      rw [left] at t'_t
-      simp at t'_t
+    specialize ih height_t' t'
+    have valid_t': isValid P d t' := by
+      unfold isValid at valid
+      cases valid with
+      | inl valid =>
+        rcases valid with ⟨_,_,_,_,all⟩
+        simp at all
+        rw [List.forall_iff_forall_mem] at all
+        simp at all
+        apply all
+        apply t'_t
+      | inr valid =>
+        exfalso
+        rcases valid with ⟨left,_⟩
+        rw [left] at t'_t
+        simp at t'_t
     specialize ih valid_t'
     apply ih
     apply a_t'
@@ -1242,20 +1246,20 @@ by
     use []
     simp
   | cons hd tl ih =>
-    have mem': (∀ (a : A), a ∈ tl → a ∈ S)
-    intro a a_tl
-    apply mem
-    simp
-    right
-    apply a_tl
+    have mem': (∀ (a : A), a ∈ tl → a ∈ S) := by
+      intro a a_tl
+      apply mem
+      simp
+      right
+      apply a_tl
 
     specialize ih mem'
     rcases ih with ⟨l_tl, l_tl_map, valid_l_tl⟩
 
     specialize subs hd
-    have hd_S: hd ∈ S
-    apply mem
-    simp
+    have hd_S: hd ∈ S := by
+      apply mem
+      simp
     specialize subs hd_S
     rcases subs with ⟨hd_b, f_b, valid_b⟩
     use (hd_b::l_tl)
@@ -1279,12 +1283,12 @@ by
 
 lemma createProofTreeForRule (P: program τ) (d: database τ) (r: groundRule τ) (rGP: r ∈ groundProgram P)(subs: (groundRuleBodySet r).toSet ⊆ proofTheoreticSemantics P d): ∃ t, root t = r.head ∧ isValid P d t :=
 by
-  have h: ∃ (l: List (proofTree τ)), List.map root l = r.body ∧ ∀ (t: proofTree τ), t ∈ l → isValid P d t
-  apply getTree_Helper (S:= groundRuleBodySet r)
-  simp [groundRuleBodySet_iff_groundRuleBody]
-  unfold proofTheoreticSemantics at subs
-  simp [Set.subset_def] at subs
-  apply subs
+  have h: ∃ (l: List (proofTree τ)), List.map root l = r.body ∧ ∀ (t: proofTree τ), t ∈ l → isValid P d t := by
+    apply getTree_Helper (S:= groundRuleBodySet r)
+    simp [groundRuleBodySet_iff_groundRuleBody]
+    unfold proofTheoreticSemantics at subs
+    simp [Set.subset_def] at subs
+    apply subs
 
   rcases h with ⟨l, l_body, valid⟩
   use tree.node r.head l
@@ -1308,7 +1312,7 @@ by
   simp
   rw [l_body]
 
-  rw [List.all₂_iff_forall]
+  rw [List.forall_iff_forall_mem]
   simp
   apply valid
 
@@ -1354,18 +1358,17 @@ by
   by_contra h'
   push_neg at h'
   rcases h' with ⟨i, m, n_head⟩
-  have m': model P d i
-  apply m
-  unfold model at m
+  have m': model P d i := by
+    apply m
   rcases m with ⟨left,_⟩
-  have r_true: ruleTrue r i
-  apply left
-  apply rGP
+  have r_true: ruleTrue r i := by
+    apply left
+    apply rGP
   unfold ruleTrue at r_true
-  have head: r.head ∈ i
-  apply r_true
-  apply subset_trans h
-  apply leastModel (m:= m')
+  have head: r.head ∈ i := by
+    apply r_true
+    apply subset_trans h
+    apply leastModel (m:= m')
   exact absurd head n_head
 
   intros a a_db
@@ -1375,10 +1378,10 @@ by
   push_neg at h
   rcases h with ⟨i, m, a_n_i⟩
   unfold model at m
-  have a_i: a ∈ i
-  rcases m with ⟨_, right⟩
-  apply right
-  apply a_db
+  have a_i: a ∈ i := by
+    rcases m with ⟨_, right⟩
+    apply right
+    apply a_db
   exact absurd a_i a_n_i
 
 lemma proofTreeAtomsInEveryModel (P: program τ) (d: database τ) (a: groundAtom τ) (pt: a ∈ proofTheoreticSemantics P d)(i: interpretation τ) (m: model P d i): a ∈ i := by
@@ -1394,19 +1397,19 @@ lemma proofTreeAtomsInEveryModel (P: program τ) (d: database τ) (a: groundAtom
   | inl ruleCase =>
     rcases ruleCase with ⟨r,g,rP, r_ground, all⟩
 
-    have r_true: ruleTrue (ruleGrounding r g) i
-    apply ruleModel
-    unfold groundProgram
-    rw [Set.mem_setOf]
-    use r
-    use g
+    have r_true: ruleTrue (ruleGrounding r g) i := by
+      apply ruleModel
+      unfold groundProgram
+      rw [Set.mem_setOf]
+      use r
+      use g
     unfold ruleTrue at r_true
-    have head_a: (ruleGrounding r g).head = a
-    unfold root at root_t
-    simp at root_t
-    rw [← root_t, r_ground]
-    unfold groundRuleFromAtoms
-    simp
+    have head_a: (ruleGrounding r g).head = a := by
+      unfold root at root_t
+      simp at root_t
+      rw [← root_t, r_ground]
+      unfold groundRuleFromAtoms
+      simp
     rw [head_a] at r_true
     apply r_true
     rw [Set.subset_def]
@@ -1416,7 +1419,7 @@ lemma proofTreeAtomsInEveryModel (P: program τ) (d: database τ) (a: groundAtom
     unfold groundRuleFromAtoms at x_body
     simp at x_body
     rcases x_body with ⟨t_x, t_x_l, t_x_root⟩
-    rw [List.all₂_iff_forall] at all
+    rw [List.forall_iff_forall_mem] at all
     simp at all
     apply ih (m:=height t_x)
     rw [← h']
@@ -1448,9 +1451,9 @@ end semantics
 
 lemma List.map_except_ok_length' {A B C: Type} (f: A → Except B C) (l1: List A) (l2: List C) (h: List.map_except f l1 = Except.ok l2): List.length l1 = List.length l2 :=
 by
-  have h': length l1 + length nil = length l2
-  apply List.map_except_go_ok_length f l1
-  unfold map_except at h
-  apply h
+  have h': length l1 + length nil = length l2 := by
+    apply List.map_except_go_ok_length f l1
+    unfold map_except at h
+    apply h
   simp at h'
   apply h'

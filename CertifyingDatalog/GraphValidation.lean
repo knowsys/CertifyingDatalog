@@ -134,11 +134,11 @@ by
       specialize connected (Nat.succ k)
       simp at connected
       simp at i_len
-      have g: Nat.succ k < List.length (a :: l)
-      rw [Nat.succ_lt_succ_iff] at i_len
-      simp
-      rw [Nat.succ_eq_add_one, Nat.succ_eq_add_one]
-      apply i_len
+      have g: Nat.succ k < List.length (a :: l) := by
+        rw [Nat.succ_lt_succ_iff] at i_len
+        simp
+        rw [Nat.succ_eq_add_one, Nat.succ_eq_add_one]
+        apply i_len
       specialize connected g
       apply connected
 
@@ -170,10 +170,10 @@ by
   intro i i_zero i_len
   specialize conn (Nat.succ i)
   simp at conn
-  have g:  Nat.succ i < List.length (a :: l)
-  simp
-  apply Nat.succ_lt_succ
-  apply i_len
+  have g:  Nat.succ i < List.length (a :: l) := by
+    simp
+    apply Nat.succ_lt_succ
+    apply i_len
   specialize conn g
   cases i with
   | zero =>
@@ -202,8 +202,8 @@ lemma canReach_refl (a:A) (G: Graph A) (mem: a ∈ G.vertices): canReach a a G :
 by
   unfold canReach
   use [a]
-  have neq: [a] ≠ []
-  simp
+  have neq: [a] ≠ [] := by
+    simp
   use neq
   constructor
   unfold isWalk
@@ -226,8 +226,7 @@ noncomputable def Finset.filter_nc (p: A → Prop) (S: Finset A):= @Finset.filte
 lemma Finset.mem_filter_nc (a:A) (p: A → Prop) (S: Finset A): a ∈ Finset.filter_nc p S ↔ p a ∧ a ∈ S :=
 by
   unfold filter_nc
-  have dec: DecidablePred p
-  apply Classical.decPred
+  have dec: DecidablePred p := Classical.decPred p
   simp [Finset.mem_filter]
   rw [And.comm]
 
@@ -251,13 +250,13 @@ by
   intro i i_zero i_len
   by_cases i_original: i < p.length
   rw [List.get_append i i_original]
-  have i_original_pred: i.pred < p.length
-  apply Nat.lt_trans (m:= i)
-  apply Nat.pred_lt
-  apply Ne.symm
-  apply Nat.ne_of_lt
-  apply i_zero
-  apply i_original
+  have i_original_pred: i.pred < p.length := by
+    apply Nat.lt_trans (m:= i)
+    apply Nat.pred_lt
+    apply Ne.symm
+    apply Nat.ne_of_lt
+    apply i_zero
+    apply i_original
   rw [List.get_append i.pred i_original_pred]
   apply conn i i_zero
 
@@ -271,7 +270,6 @@ by
     push_neg
     apply Nat.le_refl
   | step h =>
-    simp at i_len
     rw [← Nat.succ_eq_add_one, Nat.succ_lt_succ_iff] at i_len
     simp at h
     rw [← not_lt] at h
@@ -289,8 +287,8 @@ by
   unfold canReach at *
   rcases reach with ⟨p, neq, walk, get_x, get_b⟩
   use (p++[a])
-  have neq': (p++[a]) ≠ []
-  simp
+  have neq': (p++[a]) ≠ [] := by
+    simp
   use neq'
   constructor
   apply isWalkExtendBack p a G walk neq mem
@@ -317,35 +315,35 @@ by
   rcases p with ⟨reach,mem⟩
   unfold canReach at reach
   rcases reach with ⟨p,nonempty, walk, get_a, get_b⟩
-  have cycle: isCycle (p++[a]) G
-  unfold isCycle
-  simp
-  cases p with
-  | nil =>
-    simp at nonempty
-  | cons hd tl =>
-    have h : ¬  List.length (hd :: tl) + 1 < 2
+  have cycle: isCycle (p++[a]) G := by
+    unfold isCycle
     simp
-    rw [← Nat.succ_eq_add_one]
-    simp_arith
-    simp only [h]
-    simp
-    constructor
-    rw [← List.cons_append]
-    apply isWalkExtendBack
-    apply walk
-    rw [← List.mem_toFinset]
-    apply mem
-    rw [get_b]
-    apply pred
-    simp
+    cases p with
+    | nil =>
+      simp at nonempty
+    | cons hd tl =>
+      have h : ¬  List.length (hd :: tl) + 1 < 2 := by
+        simp
+        rw [← Nat.succ_eq_add_one]
+        simp_arith
+      simp only [h]
+      simp
+      constructor
+      rw [← List.cons_append]
+      apply isWalkExtendBack
+      apply walk
+      rw [← List.mem_toFinset]
+      apply mem
+      rw [get_b]
+      apply pred
+      simp
 
-    rw [List.get_append_right]
-    simp
-    rw [List.get_eq_iff, List.get?_cons_zero, Option.some_inj] at get_a
-    apply get_a
-    simp
-    simp
+      rw [List.get_append_right]
+      simp
+      rw [List.get_eq_iff, List.get?_cons_zero, Option.some_inj] at get_a
+      apply get_a
+      simp
+      simp
 
 
   unfold isAcyclic at acyclic
@@ -367,8 +365,8 @@ by
   constructor
   unfold canReach
   use [a]
-  have neq: [a] ≠ []
-  simp
+  have neq: [a] ≠ [] := by
+    simp
   use neq
   constructor
   apply isWalkSingleton
@@ -466,9 +464,9 @@ lemma getSubListToMemberHasNotLengthZero (a: A) (l: List A) (mem: a ∈ l): List
 by
   cases h:(getSubListToMember l a mem) with
     | nil =>
-      have not_h: ¬  (getSubListToMember l a mem) = []
-      push_neg
-      apply getSubListToMemberNonEmpty
+      have not_h: ¬  (getSubListToMember l a mem) = [] := by
+        push_neg
+        apply getSubListToMemberNonEmpty
       exact absurd h not_h
     | cons hd tl =>
       simp
@@ -585,12 +583,12 @@ by
         specialize conn_ht (Nat.succ 0)
         simp at conn_ht
         simp at i_len
-        have g: Nat.succ 0 < List.length (hd :: tl)
-        simp
-        apply Nat.lt_of_lt_of_le
-        apply i_len
-        apply Nat.succ_le_succ
-        apply getSubListToMember_len_le_original
+        have g: Nat.succ 0 < List.length (hd :: tl) := by
+          simp
+          apply Nat.lt_of_lt_of_le
+          apply i_len
+          apply Nat.succ_le_succ
+          apply getSubListToMember_len_le_original
 
         specialize conn_ht g
         cases tl with
@@ -598,16 +596,17 @@ by
           simp at mem
         | cons hd' tl' =>
           simp at conn_ht
-          have isLt: Nat.zero < List.length (getSubListToMember (hd' :: tl') a mem)
-          rw [getSubListToMember_length]
-          apply Nat.zero_lt_succ
-          have get_result: List.get (getSubListToMember (hd' :: tl') a mem) { val := 0, isLt := isLt } = hd'
-          rw [List.get_eq_iff]
-          simp
-          unfold getSubListToMember
-          by_cases a_hd: a = hd'
-          simp [a_hd]
-          simp [a_hd]
+          have isLt: Nat.zero < List.length (getSubListToMember (hd' :: tl') a mem) := by
+            rw [getSubListToMember_length]
+            apply Nat.zero_lt_succ
+          have get_result: List.get (getSubListToMember (hd' :: tl') a mem) { val := 0, isLt := isLt } = hd' := by
+            rw [List.get_eq_iff]
+            simp
+            unfold getSubListToMember
+            by_cases a_hd: a = hd'
+            simp [a_hd]
+
+            simp [a_hd]
           simp [get_result]
           apply conn_ht
       | succ k =>
@@ -632,25 +631,25 @@ by
   unfold reachedFromCycle at reach
   rcases reach with ⟨c, cycle, b, b_c, reach_b_x⟩
   specialize h c cycle b b_c
-  have reach_b_a: canReach b a G
-  unfold canReach
-  unfold canReach at reach_b_x
-  rcases reach_b_x with ⟨p, neq, walk, get_b, get_x⟩
-  use p++[a]
-  have neq': p++[a] ≠ []
-  simp
-  use neq'
-  constructor
-  apply isWalkExtendBack p a G walk neq mem
-  rw [get_x]
-  apply x_pred
-  constructor
-  rw [List.get_append_left]
-  apply get_b
-  rw [List.get_append_right]
-  simp
-  simp
-  simp
+  have reach_b_a: canReach b a G := by
+    unfold canReach
+    unfold canReach at reach_b_x
+    rcases reach_b_x with ⟨p, neq, walk, get_b, get_x⟩
+    use p++[a]
+    have neq': p++[a] ≠ [] := by
+      simp
+    use neq'
+    constructor
+    apply isWalkExtendBack p a G walk neq mem
+    rw [get_x]
+    apply x_pred
+    constructor
+    rw [List.get_append_left]
+    apply get_b
+    rw [List.get_append_right]
+    simp
+    simp
+    simp
   exact absurd reach_b_a h
 
   --back direction
@@ -661,178 +660,178 @@ by
   unfold canReach at reach_b_a
   rcases reach_b_a with ⟨p, neq, walk, get_b, get_a⟩
   by_cases b_pred: b ∈ G.predecessors a
-  have reachCirc_b: reachedFromCycle b G
-  unfold reachedFromCycle
-  use c
-  constructor
-  apply cycle
-  use b
-  constructor
-  apply b_c
-  unfold canReach
-  use [b]
-  have neq': [b] ≠ []
-  simp
-  use neq'
-  constructor
-  apply isWalkSingleton
-  apply G.complete
-  apply mem
-  apply b_pred
-  simp
+  have reachCirc_b: reachedFromCycle b G := by
+    unfold reachedFromCycle
+    use c
+    constructor
+    apply cycle
+    use b
+    constructor
+    apply b_c
+    unfold canReach
+    use [b]
+    have neq': [b] ≠ [] := by
+      simp
+    use neq'
+    constructor
+    apply isWalkSingleton
+    apply G.complete
+    apply mem
+    apply b_pred
+    simp
 
   specialize h b b_pred
   exact absurd reachCirc_b h
 
   -- b not connected with a directly
   by_cases singletonWalk: p.length = 1
-  have a_b: a = b
-  simp [singletonWalk] at get_a
-  rw [← get_a, get_b]
+  have a_b: a = b := by
+    simp [singletonWalk] at get_a
+    rw [← get_a, get_b]
 
-  have pred_in_c: ∃ (d:A), d ∈ c ∧ d ∈ G.predecessors a
-  unfold isCycle at cycle
-  by_cases h : List.length c < 2
-  simp [h] at cycle
-  simp [h] at cycle
-  rcases cycle with ⟨walk, ends⟩
-  unfold isWalk at walk
-  rcases walk with ⟨subs,conn⟩
-  have isLt_zero_c: 0 < c.length
-  cases c with
-  | nil =>
-    simp at b_c
-  | cons hd tl =>
-    simp
-  rw [List.mem_iff_get?] at b_c
-  rcases b_c with ⟨n, get_c_b⟩
-  cases n with
-  | zero =>
-    specialize conn (Nat.pred c.length)
-    have conn_1: Nat.pred (List.length c) > 0
-    simp at h
-    cases c with
-    | nil =>
-      simp at h
-    | cons hd tl =>
-      cases tl with
+  have pred_in_c: ∃ (d:A), d ∈ c ∧ d ∈ G.predecessors a := by
+    unfold isCycle at cycle
+    by_cases h : List.length c < 2
+    simp [h] at cycle
+    simp [h] at cycle
+    rcases cycle with ⟨walk, ends⟩
+    unfold isWalk at walk
+    rcases walk with ⟨subs,conn⟩
+    have isLt_zero_c: 0 < c.length := by
+      cases c with
       | nil =>
-        simp at h
+        simp at b_c
       | cons hd tl =>
         simp
-    specialize conn conn_1
-    have g : Nat.pred (List.length c) < List.length c
-    apply Nat.pred_lt
-    cases c with
-    | nil =>
-      simp at h
-    | cons hd tl =>
-      simp
-    specialize conn g
-    have ha: List.get c (Fin.mk (Nat.pred (List.length c)) g) = b
-    rw [← ends, List.get_eq_iff]
-    simp
-    apply get_c_b
-    rw [ha, ← a_b] at conn
-    have isLt': Nat.pred (Nat.pred (List.length c)) < c.length
-    apply Nat.lt_of_le_of_lt (m:= Nat.pred c.length)
-    rw [Nat.pred_le_iff, Nat.succ_pred]
-    apply Nat.pred_le
-    cases c with
-    | nil =>
-      simp at h
-    | cons hd tl =>
-      simp
-    apply Nat.pred_lt
-    cases c with
-    | nil =>
-      simp at h
-    | cons hd tl =>
-      simp
-    use (List.get c (Fin.mk (Nat.pred (Nat.pred (List.length c))) isLt' ))
-    constructor
-    apply List.get_mem
-    apply conn
-  | succ m =>
-    specialize conn (Nat.succ m)
-    have conn1: Nat.succ m > 0
-    simp
-    specialize conn conn1
-    rw [List.get?_eq_some] at get_c_b
-    rcases get_c_b with ⟨g,c_get⟩
-    specialize conn g
-    have isLt: Nat.pred (Nat.succ m) < c.length
-    simp
-    apply Nat.lt_trans (m:= Nat.succ m)
-    apply Nat.lt_succ_self
-    apply g
-    use List.get c (Fin.mk (Nat.pred (Nat.succ m)) isLt)
-    constructor
-    apply List.get_mem
-    rw [c_get, ← a_b] at conn
-    apply conn
+    rw [List.mem_iff_get?] at b_c
+    rcases b_c with ⟨n, get_c_b⟩
+    cases n with
+    | zero =>
+      specialize conn (Nat.pred c.length)
+      have conn_1: Nat.pred (List.length c) > 0 := by
+        simp at h
+        cases c with
+        | nil =>
+          simp at h
+        | cons hd tl =>
+          cases tl with
+          | nil =>
+            simp at h
+          | cons hd tl =>
+            simp
+      specialize conn conn_1
+      have g : Nat.pred (List.length c) < List.length c := by
+        apply Nat.pred_lt
+        cases c with
+        | nil =>
+          simp at h
+        | cons hd tl =>
+          simp
+      specialize conn g
+      have ha: List.get c (Fin.mk (Nat.pred (List.length c)) g) = b := by
+        rw [← ends, List.get_eq_iff]
+        simp
+        apply get_c_b
+      rw [ha, ← a_b] at conn
+      have isLt': Nat.pred (Nat.pred (List.length c)) < c.length := by
+        apply Nat.lt_of_le_of_lt (m:= Nat.pred c.length)
+        rw [Nat.pred_le_iff, Nat.succ_pred]
+        apply Nat.pred_le
+        cases c with
+        | nil =>
+          simp at h
+        | cons hd tl =>
+          simp
+        apply Nat.pred_lt
+        cases c with
+        | nil =>
+          simp at h
+        | cons hd tl =>
+          simp
+      use (List.get c (Fin.mk (Nat.pred (Nat.pred (List.length c))) isLt' ))
+      constructor
+      apply List.get_mem
+      apply conn
+    | succ m =>
+      specialize conn (Nat.succ m)
+      have conn1: Nat.succ m > 0 := by
+        simp
+      specialize conn conn1
+      rw [List.get?_eq_some] at get_c_b
+      rcases get_c_b with ⟨g,c_get⟩
+      specialize conn g
+      have isLt: Nat.pred (Nat.succ m) < c.length := by
+        simp
+        apply Nat.lt_trans (m:= Nat.succ m)
+        apply Nat.lt_succ_self
+        apply g
+      use List.get c (Fin.mk (Nat.pred (Nat.succ m)) isLt)
+      constructor
+      apply List.get_mem
+      rw [c_get, ← a_b] at conn
+      apply conn
 
 
   rcases pred_in_c with ⟨d, d_c, d_pred⟩
   specialize h d d_pred
-  have reachCirc_d: reachedFromCycle d G
-  unfold reachedFromCycle
-  use c
-  constructor
-  apply cycle
-  use d
-  constructor
-  apply d_c
-  unfold canReach
-  use [d]
-  have neq': [d] ≠ []
-  simp
-  use neq'
-  simp
-  apply isWalkSingleton
-  apply isWalkImplSubset' (IsWalkOfisCycle c G cycle) d d_c
+  have reachCirc_d: reachedFromCycle d G := by
+    unfold reachedFromCycle
+    use c
+    constructor
+    apply cycle
+    use d
+    constructor
+    apply d_c
+    unfold canReach
+    use [d]
+    have neq': [d] ≠ [] := by
+      simp
+    use neq'
+    simp
+    apply isWalkSingleton
+    apply isWalkImplSubset' (IsWalkOfisCycle c G cycle) d d_c
   exact absurd reachCirc_d h
 
 
-  have isLt: Nat.pred (Nat.pred p.length) < p.length
-  cases p with
-  | nil =>
-    simp at neq
-  | cons hd tl =>
-    cases tl with
+  have isLt: Nat.pred (Nat.pred p.length) < p.length := by
+    cases p with
     | nil =>
-      simp
-    | cons hd' tl' =>
-      simp
-      apply Nat.lt_trans (m:= Nat.succ tl'.length)
-      apply Nat.lt_succ_self
-      apply Nat.lt_succ_self
+      simp at neq
+    | cons hd tl =>
+      cases tl with
+      | nil =>
+        simp
+      | cons hd' tl' =>
+        simp
+        apply Nat.lt_trans (m:= Nat.succ tl'.length)
+        apply Nat.lt_succ_self
+        apply Nat.lt_succ_self
 
-  have reachCirc: reachedFromCycle (p.get (Fin.mk (Nat.pred (Nat.pred p.length)) isLt)) G
-  unfold reachedFromCycle
-  use c
-  constructor
-  apply cycle
-  use b
-  constructor
-  apply b_c
-  unfold canReach
-  have mem_p: (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) ∈ p
-  apply List.get_mem
+  have reachCirc: reachedFromCycle (p.get (Fin.mk (Nat.pred (Nat.pred p.length)) isLt)) G := by
+    unfold reachedFromCycle
+    use c
+    constructor
+    apply cycle
+    use b
+    constructor
+    apply b_c
+    unfold canReach
+    have mem_p: (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) ∈ p := by
+      apply List.get_mem
 
-  use (getSubListToMember p (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) mem_p)
-  have neq': (getSubListToMember p (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) mem_p) ≠ []
-  apply getSubListToMemberNonEmpty
-  use neq'
-  constructor
-  apply getSubListToMemberPreservesWalk (walk:= walk)
-  constructor
-  rw [← get_b]
-  apply Eq.symm
-  apply getSubListToMemberPreservesFront'
-  rw [List.get_eq_iff]
-  simp
-  apply getSubListToMemberEndsWithElement
+    use (getSubListToMember p (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) mem_p)
+    have neq': (getSubListToMember p (List.get p (Fin.mk (Nat.pred (Nat.pred (List.length p))) isLt)) mem_p) ≠ [] := by
+      apply getSubListToMemberNonEmpty
+    use neq'
+    constructor
+    apply getSubListToMemberPreservesWalk (walk:= walk)
+    constructor
+    rw [← get_b]
+    apply Eq.symm
+    apply getSubListToMemberPreservesFront'
+    rw [List.get_eq_iff]
+    simp
+    apply getSubListToMemberEndsWithElement
 
 
   specialize h (List.get p { val := Nat.pred (Nat.pred (List.length p)), isLt := isLt })
@@ -840,26 +839,25 @@ by
   rcases walk with ⟨_, conn⟩
   specialize conn  (Nat.pred (List.length p))
 
-  have gt_zero:  Nat.pred (List.length p) > 0
-  cases p with
-  | nil =>
-    simp at neq
-  | cons hd tl =>
-    simp
-    cases tl with
+  have gt_zero:  Nat.pred (List.length p) > 0 := by
+    cases p with
     | nil =>
-      simp at singletonWalk
-    | cons hd' tl' =>
+      simp at neq
+    | cons hd tl =>
       simp
+      cases tl with
+      | nil =>
+        simp at singletonWalk
+      | cons hd' tl' =>
+        simp
 
-  have g : Nat.pred (List.length p) < List.length p
-  cases p with
-  | nil =>
-    simp at neq
-  | cons hd tl =>
-    simp
+  have g : Nat.pred (List.length p) < List.length p := by
+    cases p with
+    | nil =>
+      simp at neq
+    | cons hd tl =>
+      simp
   specialize conn gt_zero g
-
   rw [get_a] at conn
   specialize h conn
   exact absurd reachCirc h
@@ -885,21 +883,21 @@ by
   by_cases g:List.length c < 2
   simp [g] at cycle
   simp [g] at cycle
-  have isLt: 0 < List.length c
-  cases c with
-  | nil =>
-    simp at g
-  | cons hd tl =>
-    simp
+  have isLt: 0 < List.length c := by
+    cases c with
+    | nil =>
+      simp at g
+    | cons hd tl =>
+      simp
   specialize h (List.get c (Fin.mk 0 isLt))
   unfold reachedFromCycle at h
   simp at h
 
-  have get_c_mem: List.get c { val := 0, isLt := isLt } ∈ G.vertices
-  apply isWalkImplSubset'
-  rcases cycle with ⟨walk, _⟩
-  apply walk
-  apply List.get_mem
+  have get_c_mem: List.get c { val := 0, isLt := isLt } ∈ G.vertices := by
+    apply isWalkImplSubset'
+    rcases cycle with ⟨walk, _⟩
+    apply walk
+    apply List.get_mem
 
   specialize h get_c_mem c
   unfold isCycle at h
@@ -909,13 +907,13 @@ by
   unfold canReach at h
   simp at h
   specialize h ([List.get c (Fin.mk 0 isLt)])
-  have walk: isWalk [List.get c { val := 0, isLt := isLt }] G
-  apply isWalkSingleton
-  rcases cycle with ⟨walk_c,_⟩
-  unfold isWalk at walk_c
-  rcases walk_c with ⟨walk_c,_⟩
-  apply walk_c
-  apply List.get_mem
+  have walk: isWalk [List.get c { val := 0, isLt := isLt }] G := by
+    apply isWalkSingleton
+    rcases cycle with ⟨walk_c,_⟩
+    unfold isWalk at walk_c
+    rcases walk_c with ⟨walk_c,_⟩
+    apply walk_c
+    apply List.get_mem
 
   specialize h walk
   simp[cycle] at h
@@ -927,24 +925,24 @@ lemma frontRepetitionInWalkImpliesCycle (a:A) (G:Graph A) (visited: List A) (wal
 by
   unfold isCycle
   simp
-  have h : ¬ Nat.succ (List.length (getSubListToMember visited a mem)) < 2
-  push_neg
-  cases h':getSubListToMember visited a mem with
-  | nil =>
-    have p: getSubListToMember visited a mem ≠ []
-    apply getSubListToMemberNonEmpty
-    exact absurd h' p
-  | cons hd tl =>
-    simp
-    rw [Nat.two_le_iff]
-    simp
+  have h : ¬ Nat.succ (List.length (getSubListToMember visited a mem)) < 2 := by
+    push_neg
+    cases h':getSubListToMember visited a mem with
+    | nil =>
+      have p: getSubListToMember visited a mem ≠ [] := by
+        apply getSubListToMemberNonEmpty
+      exact absurd h' p
+    | cons hd tl =>
+      simp
+      rw [Nat.two_le_iff]
+      simp
 
   simp [h]
   constructor
   cases h':getSubListToMember visited a mem with
   | nil =>
-    have p: getSubListToMember visited a mem ≠ []
-    apply getSubListToMemberNonEmpty
+    have p: getSubListToMember visited a mem ≠ [] := by
+      apply getSubListToMemberNonEmpty
     exact absurd h' p
   | cons hd tl =>
     apply isWalk_extends_predecessors
@@ -954,25 +952,25 @@ by
     rcases walk with ⟨_, conn⟩
     specialize conn (Nat.succ 0)
     simp at conn
-    have g : Nat.succ 0 < List.length (a :: visited)
-    simp
-    apply Nat.succ_lt_succ
-    cases visited with
-    | nil =>
-      simp at mem
-    | cons hd' tl' =>
+    have g : Nat.succ 0 < List.length (a :: visited) := by
       simp
+      apply Nat.succ_lt_succ
+      cases visited with
+      | nil =>
+        simp at mem
+      | cons hd' tl' =>
+        simp
     specialize conn g
-    have isLt: 0 < List.length visited
-    apply Nat.lt_of_succ_lt_succ
-    apply g
-    have first_vis: List.get visited { val := 0, isLt := isLt} = hd
-    cases visited with
-    | nil =>
-      simp at mem
-    | cons hd' tl' =>
-      simp [List.get_cons_zero]
-      apply getSubListToMemberPreservesFront (result:=h')
+    have isLt: 0 < List.length visited := by
+      apply Nat.lt_of_succ_lt_succ
+      apply g
+    have first_vis: List.get visited { val := 0, isLt := isLt} = hd := by
+      cases visited with
+      | nil =>
+        simp at mem
+      | cons hd' tl' =>
+        simp [List.get_cons_zero]
+        apply getSubListToMemberPreservesFront (result:=h')
     simp [first_vis] at conn
     apply conn
 
@@ -1109,14 +1107,6 @@ by
   unfold mkHashSetImp
   unfold HashSetImp.contains
   simp
-  by_contra p
-  rw [List.contains_eq_any_beq, Bool.not_eq_false, List.any_eq_true] at p
-  simp at p
-  rw [Array.getElem_eq_data_get] at p
-  unfold mkArray at p
-  simp only at p
-  rw [List.get_replicate] at p
-  simp at p
 
 
 
@@ -1149,8 +1139,8 @@ by
     | ok S' =>
       simp [h'] at h
       apply HashSet.Subset.trans (S2:= S')
-      have hd_mem: hd ∈ hd::tl
-      simp
+      have hd_mem: hd ∈ hd::tl := by
+        simp
       apply subs init S' hd hd_mem h'
       apply ih S'
       intro T T' a' a_tl
@@ -1174,15 +1164,15 @@ by
       simp [f_hd] at get_T
       unfold List.map at b_mem
       simp at b_mem
-      have subs':  ∀ (S S' : HashSet B) (a : A), a ∈ tl → f a S = Except.ok S' → S ⊆ S'
-      intro S S' a a_tl f_a
-      apply subs S S' a
-      simp [a_tl]
-      apply f_a
+      have subs':  ∀ (S S' : HashSet B) (a : A), a ∈ tl → f a S = Except.ok S' → S ⊆ S' := by
+        intro S S' a a_tl f_a
+        apply subs S S' a
+        simp [a_tl]
+        apply f_a
       cases b_mem with
       | inl b_hd =>
-        have S_T: S ⊆ T
-        apply foldl_except_set_subset (subs:=subs') (get_S:=get_T)
+        have S_T: S ⊆ T := by
+          apply foldl_except_set_subset (subs:=subs') (get_S:=get_T)
         rw [HashSet.Subset.Iff] at S_T
         apply S_T
         rw [b_hd]
@@ -1246,8 +1236,8 @@ by
       cases h: f hd init with
       | ok S' =>
         specialize ih S'
-        have S'_prop: ∀ (b : B), S'.contains b → p b
-        apply f_prev hd init S' init_prop h
+        have S'_prop: ∀ (b : B), S'.contains b → p b := by
+          apply f_prev hd init S' init_prop h
         specialize ih S'_prop
         simp [h] at foldl
         rw [← f_ignore_B a S' init S'_prop init_prop]
@@ -1258,16 +1248,16 @@ by
         simp [h] at foldl
 
     intro h
-    have f_hd_result: ∃ (S: HashSet B), f hd init = Except.ok S
-    rw [except_is_ok_iff_exists]
-    apply h
-    simp
+    have f_hd_result: ∃ (S: HashSet B), f hd init = Except.ok S := by
+      rw [except_is_ok_iff_exists]
+      apply h
+      simp
     unfold foldl_except_set
     rcases f_hd_result with ⟨S', f_S'⟩
     simp [f_S']
     specialize ih S'
-    have S'_prop: ∀ (b:B), S'.contains b → p b
-    apply f_prev hd init S' init_prop f_S'
+    have S'_prop: ∀ (b:B), S'.contains b → p b  := by
+      apply f_prev hd init S' init_prop f_S'
     specialize ih S'_prop
     rw [ih]
     intro a a_mem
@@ -1322,8 +1312,8 @@ by
   unfold canReach at reach_c
   rcases reach_c with ⟨p, neq, walk, get_c, get_b⟩
   use p++[a]
-  have neq': p++[a] ≠ []
-  simp
+  have neq': p++[a] ≠ [] := by
+    simp
   use neq'
   constructor
   unfold isWalk
@@ -1393,17 +1383,17 @@ by
       apply And.right h
     | cons hd' tl' =>
       rcases h with ⟨left,_⟩
-      have isLt: Nat.pred (Nat.pred (hd::hd'::tl').length) < (hd::hd'::tl').length
-      simp
-      apply Nat.lt_trans (m:= Nat.succ tl'.length)
-      simp
-      simp
-      have pred: List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt) ∈ G.predecessors a
-      rw [← get_a]
-      unfold isWalk at walk
-      rcases walk with ⟨_,conn⟩
-      apply conn
-      simp
+      have isLt: Nat.pred (Nat.pred (hd::hd'::tl').length) < (hd::hd'::tl').length := by
+        simp
+        apply Nat.lt_trans (m:= Nat.succ tl'.length)
+        simp
+        simp
+      have pred: List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt) ∈ G.predecessors a := by
+        rw [← get_a]
+        unfold isWalk at walk
+        rcases walk with ⟨_,conn⟩
+        apply conn
+        simp
       specialize left (List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt)) pred
       apply left
       unfold canReach
@@ -1440,8 +1430,8 @@ lemma not_mem_of_empty_intersection {l1 l2: List A} (inter: l1 ∩ l2 = ∅): �
 by
   intro a a_l1
   by_contra a_l2
-  have h: a ∈ l1 ∧ a ∈ l2
-  apply And.intro a_l1 a_l2
+  have h: a ∈ l1 ∧ a ∈ l2 := by
+    apply And.intro a_l1 a_l2
   rw [← List.mem_inter_iff] at h
   rw [inter] at h
   simp at h
@@ -1460,7 +1450,7 @@ def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String
         dfs_step x G f (a::currWalk) (isWalk_extends_predecessors walk x _h) (not_mem_of_empty_intersection pred_walk x _h) S) (G.predecessors a).attach visited) a
       else
         Except.error "Cycle detected"
-termination_by dfs_step node G f currWalk walk not_mem visited => Finset.card (List.toFinset G.vertices \ List.toFinset currWalk)
+termination_by Finset.card (List.toFinset G.vertices \ List.toFinset currWalk)
 decreasing_by
   simp_wf
   apply Finset.card_lt_card
@@ -1480,8 +1470,8 @@ decreasing_by
   | inl h =>
     rw [h]
     constructor
-    have mem_walk: a ∈ a::currWalk
-    simp
+    have mem_walk: a ∈ a::currWalk := by
+      simp
     apply isWalkImplSubset' walk a mem_walk
     apply not_mem
   | inr h =>
@@ -1498,43 +1488,43 @@ by
   --base case: impossible as a is not in walk and yet everything must be in the walk
   rw[Finset.card_eq_zero, Finset.sdiff_eq_empty_iff_subset, Finset.subset_iff] at h
   simp at h
-  have a_G: a ∈ G.vertices
-  apply isWalkImplSubset' walk
-  simp
+  have a_G: a ∈ G.vertices := by
+    apply isWalkImplSubset' walk
+    simp
   specialize h a_G
   exact absurd h not_mem
 
   intro S get_S
-  have a_mem: a ∈ G.vertices
-  apply isWalkImplSubset' walk
-  simp
-  have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n
-  rw [Nat.succ_eq_add_one] at h
-  have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk))
-  rw [Finset.ext_iff]
-  simp
-  intro a'
-  by_cases a_a': a = a'
-  simp [a_a']
-  rw [← a_a']
-  constructor
-  apply a_mem
-  apply not_mem
-  constructor
-  intro ha
-  right
-  simp [ha]
-  apply Ne.symm a_a'
-  intro ha
-  cases ha with
-  | inl a_a =>
-    exact absurd (Eq.symm a_a) a_a'
-  | inr ha =>
-    rw [not_or] at ha
-    simp [ha]
-  rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
-  apply h
-  simp
+  have a_mem: a ∈ G.vertices := by
+    apply isWalkImplSubset' walk
+    simp
+  have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n := by
+    rw [Nat.succ_eq_add_one] at h
+    have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) := by
+      rw [Finset.ext_iff]
+      simp
+      intro a'
+      by_cases a_a': a = a'
+      simp [a_a']
+      rw [← a_a']
+      constructor
+      apply a_mem
+      apply not_mem
+      constructor
+      intro ha
+      right
+      simp [ha]
+      apply Ne.symm a_a'
+      intro ha
+      cases ha with
+      | inl a_a =>
+        exact absurd (Eq.symm a_a) a_a'
+      | inr ha =>
+        rw [not_or] at ha
+        simp [ha]
+    rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
+    apply h
+    simp
 
   unfold dfs_step at get_S
   by_cases a_vis: visited.contains a
@@ -1548,19 +1538,19 @@ by
     simp[f_a] at get_S
   | ok _ =>
     simp [f_a] at get_S
-    have int_walk_pred: Graph.predecessors G a ∩ (a :: currWalk) = []
-    by_contra p
-    simp [p] at get_S
+    have int_walk_pred: Graph.predecessors G a ∩ (a :: currWalk) = [] := by
+      by_contra p
+      simp [p] at get_S
     simp [int_walk_pred] at get_S
     rw [addElementIfOk_exists_ok'] at get_S
     rcases get_S with ⟨S', S_S', foldl_result⟩
     rw [S_S']
-    have visit_S': visited ⊆ S'
-    apply foldl_except_set_subset (l:=(G.predecessors a).attach) (get_S:= foldl_result)
-    simp
-    intro T T' x x_pred
-    apply ih
-    apply card
+    have visit_S': visited ⊆ S' := by
+      apply foldl_except_set_subset (l:=(G.predecessors a).attach) (get_S:= foldl_result)
+      simp
+      intro T T' x x_pred
+      apply ih
+      apply card
     -- end have visit_S'
     rw [HashSet.Subset.Iff]
     intro x x_vis
@@ -1601,43 +1591,43 @@ by
   --base case: impossible as a is not in walk and yet everything must be in the walk
   rw[Finset.card_eq_zero, Finset.sdiff_eq_empty_iff_subset, Finset.subset_iff] at h
   simp at h
-  have a_G: a ∈ G.vertices
-  apply isWalkImplSubset' walk
-  simp
+  have a_G: a ∈ G.vertices := by
+    apply isWalkImplSubset' walk
+    simp
   specialize h a_G
   exact absurd h not_mem
 
   --step
-  have a_mem: a ∈ G.vertices
-  apply isWalkImplSubset' walk
-  simp
-  have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n
-  rw [Nat.succ_eq_add_one] at h
-  have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk))
-  rw [Finset.ext_iff]
-  simp
-  intro a'
-  by_cases a_a': a = a'
-  simp [a_a']
-  rw [← a_a']
-  constructor
-  apply a_mem
-  apply not_mem
-  constructor
-  intro ha
-  right
-  simp [ha]
-  apply Ne.symm a_a'
-  intro ha
-  cases ha with
-  | inl a_a =>
-    exact absurd (Eq.symm a_a) a_a'
-  | inr ha =>
-    rw [not_or] at ha
-    simp [ha]
-  rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
-  apply h
-  simp
+  have a_mem: a ∈ G.vertices := by
+    apply isWalkImplSubset' walk
+    simp
+  have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n := by
+    rw [Nat.succ_eq_add_one] at h
+    have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) := by
+      rw [Finset.ext_iff]
+      simp
+      intro a'
+      by_cases a_a': a = a'
+      simp [a_a']
+      rw [← a_a']
+      constructor
+      apply a_mem
+      apply not_mem
+      constructor
+      intro ha
+      right
+      simp [ha]
+      apply Ne.symm a_a'
+      intro ha
+      cases ha with
+      | inl a_a =>
+        exact absurd (Eq.symm a_a) a_a'
+      | inr ha =>
+        rw [not_or] at ha
+        simp [ha]
+    rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
+    apply h
+    simp
 
   unfold dfs_step at get_S
   by_cases a_visit: visited.contains a
@@ -1651,19 +1641,18 @@ by
     simp [f_a] at get_S
   | ok _ =>
     simp [f_a] at get_S
-    have inter: Graph.predecessors G a ∩ (a :: currWalk) = []
-    by_contra p
-    simp [p] at get_S
+    have inter: Graph.predecessors G a ∩ (a :: currWalk) = [] := by
+      by_contra p
+      simp [p] at get_S
     simp [inter] at get_S
     rw [addElementIfOk_exists_ok'] at get_S
     rcases get_S with ⟨S', S_S', foldl_result⟩
-    have preserve_S': ∀ (a : A), S'.contains a → ¬reachedFromCycle a G ∧ ∀ (b : A), canReach b a G → f b (Graph.predecessors G b) = Except.ok ()
-    apply foldl_except_set_preserves_p (init_prop:=visited_prop) (h:= foldl_result)
-    simp
-    intro b b_pred T T' T_prop dfs_T'
-    specialize ih b (a::currWalk) (isWalk_extends_predecessors walk b b_pred) (not_mem_of_empty_intersection inter b b_pred) T T_prop T' dfs_T' card
-    apply ih
-    -- end preserve_S'
+    have preserve_S': ∀ (a : A), S'.contains a → ¬reachedFromCycle a G ∧ ∀ (b : A), canReach b a G → f b (Graph.predecessors G b) = Except.ok () := by
+      apply foldl_except_set_preserves_p (init_prop:=visited_prop) (h:= foldl_result)
+      simp
+      intro b b_pred T T' T_prop dfs_T'
+      specialize ih b (a::currWalk) (isWalk_extends_predecessors walk b b_pred) (not_mem_of_empty_intersection inter b b_pred) T T_prop T' dfs_T' card
+      apply ih
 
     --split cases
     intro b
@@ -1674,9 +1663,9 @@ by
     | inl b_S' =>
       apply preserve_S' b b_S'
     | inr b_a =>
-      have b_mem: b ∈ G.vertices
-      rw [← b_a]
-      apply a_mem
+      have b_mem: b ∈ G.vertices := by
+        rw [← b_a]
+        apply a_mem
       rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:=b_mem), canReachLemma (mem:=b_mem)]
       simp [← b_a, f_a]
       rw [← forall_and]
@@ -1705,43 +1694,43 @@ by
   --base case: impossible as a is not in walk and yet everything must be in the walk
   rw[Finset.card_eq_zero, Finset.sdiff_eq_empty_iff_subset, Finset.subset_iff] at h
   simp at h
-  have a_G: a ∈ G.vertices
-  apply isWalkImplSubset' walk
-  simp
+  have a_G: a ∈ G.vertices := by
+    apply isWalkImplSubset' walk
+    simp
   specialize h a_G
   exact absurd h not_mem
 
   --step
-  have a_mem: a ∈ G.vertices
-  apply isWalkImplSubset' walk
-  simp
-  have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n
-  rw [Nat.succ_eq_add_one] at h
-  have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk))
-  rw [Finset.ext_iff]
-  simp
-  intro a'
-  by_cases a_a': a = a'
-  simp [a_a']
-  rw [← a_a']
-  constructor
-  apply a_mem
-  apply not_mem
-  constructor
-  intro ha
-  right
-  simp [ha]
-  apply Ne.symm a_a'
-  intro ha
-  cases ha with
-  | inl a_a =>
-    exact absurd (Eq.symm a_a) a_a'
-  | inr ha =>
-    rw [not_or] at ha
-    simp [ha]
-  rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
-  apply h
-  simp
+  have a_mem: a ∈ G.vertices := by
+    apply isWalkImplSubset' walk
+    simp
+  have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n := by
+    rw [Nat.succ_eq_add_one] at h
+    have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) := by
+      rw [Finset.ext_iff]
+      simp
+      intro a'
+      by_cases a_a': a = a'
+      simp [a_a']
+      rw [← a_a']
+      constructor
+      apply a_mem
+      apply not_mem
+      constructor
+      intro ha
+      right
+      simp [ha]
+      apply Ne.symm a_a'
+      intro ha
+      cases ha with
+      | inl a_a =>
+        exact absurd (Eq.symm a_a) a_a'
+      | inr ha =>
+        rw [not_or] at ha
+        simp [ha]
+    rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
+    apply h
+    simp
 
   constructor
   intro h'
@@ -1759,47 +1748,47 @@ by
 
   simp[a_visit]
   rcases h' with ⟨reach_cycle, reach_f⟩
-  have f_a: f a (G.predecessors a) = Except.ok ()
-  apply reach_f
-  apply canReach_refl a G a_mem
+  have f_a: f a (G.predecessors a) = Except.ok () := by
+    apply reach_f
+    apply canReach_refl a G a_mem
   simp [f_a]
 
-  have pred_walk: Graph.predecessors G a ∩ (a :: currWalk) = []
-  cases inter: Graph.predecessors G a ∩ (a :: currWalk) with
-  | nil =>
-    simp
-  | cons hd tl =>
-    have hd_mem: hd ∈ G.predecessors a ∧ hd ∈ (a::currWalk)
-    rw [← List.mem_inter_iff, inter]
-    simp
-    rcases hd_mem with ⟨hd_pred, hd_a_currWalk⟩
+  have pred_walk: Graph.predecessors G a ∩ (a :: currWalk) = [] := by
+    cases inter: Graph.predecessors G a ∩ (a :: currWalk) with
+    | nil =>
+      simp
+    | cons hd tl =>
+      have hd_mem: hd ∈ G.predecessors a ∧ hd ∈ (a::currWalk) := by
+        rw [← List.mem_inter_iff, inter]
+        simp
+      rcases hd_mem with ⟨hd_pred, hd_a_currWalk⟩
 
-    have cycle_hd: isCycle (hd::(getSubListToMember (a::currWalk) hd hd_a_currWalk)) G
-    apply frontRepetitionInWalkImpliesCycle
-    apply isWalk_extends_predecessors walk hd hd_pred
+      have cycle_hd: isCycle (hd::(getSubListToMember (a::currWalk) hd hd_a_currWalk)) G := by
+        apply frontRepetitionInWalkImpliesCycle
+        apply isWalk_extends_predecessors walk hd hd_pred
 
-    have reachedFromCycleHd: reachedFromCycle hd G
-    unfold reachedFromCycle
-    use hd::(getSubListToMember (a::currWalk) hd hd_a_currWalk)
-    constructor
-    apply cycle_hd
-    use hd
-    simp
-    apply canReach_refl
-    apply G.complete
-    apply a_mem
-    apply hd_pred
+      have reachedFromCycleHd: reachedFromCycle hd G := by
+        unfold reachedFromCycle
+        use hd::(getSubListToMember (a::currWalk) hd hd_a_currWalk)
+        constructor
+        apply cycle_hd
+        use hd
+        simp
+        apply canReach_refl
+        apply G.complete
+        apply a_mem
+        apply hd_pred
 
-    rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
-    specialize reach_cycle hd hd_pred
-    exact absurd reachedFromCycleHd reach_cycle
+      rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
+      specialize reach_cycle hd hd_pred
+      exact absurd reachedFromCycleHd reach_cycle
 
   simp [pred_walk]
   rw [← except_is_ok_iff_exists, addElementIfOk_exists_ok,foldl_except_set_is_ok (init_prop:=visited_prop)]
   simp
   intro b b_pred
-  have b_mem: b ∈ G.vertices
-  apply G.complete a a_mem b b_pred
+  have b_mem: b ∈ G.vertices := by
+    apply G.complete a a_mem b b_pred
   specialize ih b (a::currWalk) (isWalk_extends_predecessors walk b b_pred) (not_mem_of_empty_intersection pred_walk b b_pred) visited visited_prop card
   rw [ih]
   constructor
@@ -1877,7 +1866,7 @@ by
 
 def extractTree {A: Type} [DecidableEq A] (a:A) (G: Graph A) (mem: a ∈ G.vertices) (acyclic: isAcyclic G): tree A :=
   tree.node a (List.map (fun ⟨x, _h⟩ => extractTree x G (G.complete a mem x _h) acyclic) (G.predecessors a).attach)
-termination_by extractTree a G mem acyclic => Finset.card (globalPredecessors a G)
+termination_by Finset.card (globalPredecessors a G)
 decreasing_by
   simp_wf
   apply Finset.card_lt_card
@@ -1968,8 +1957,8 @@ by
   induction' h:(globalPredecessors a G).card using Nat.strongInductionOn with n ih generalizing a
   unfold extractTree
   unfold isValid
-  have valid_a: locallyValid P d a G
-  apply valid a mem
+  have valid_a: locallyValid P d a G := by
+    apply valid a mem
   unfold locallyValid at valid_a
   cases valid_a with
   | inl ruleCase =>
@@ -1989,7 +1978,7 @@ by
     simp
     rw [rootOfExtractTree]
 
-    rw [List.all₂_iff_forall]
+    rw [List.forall_iff_forall_mem]
     simp
     intro t b b_mem extract_b
     specialize ih (globalPredecessors b G).card

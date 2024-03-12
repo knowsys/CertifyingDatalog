@@ -8,6 +8,7 @@ package «certifyingDatalog» where
 lean_lib «CertifyingDatalog» {
   -- add library configuration options here
 }
+require std from git "https://github.com/leanprover/std4" @ "main"
 
 
 require mathlib from git

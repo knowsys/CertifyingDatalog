@@ -174,11 +174,12 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
       constructor
       apply model
       rw [← mockDatabaseContainedInModelTrue]
-      have db: mockDatabaseContainedInModel (mockDatabase (parsingSignature helper)) (List.toSet (collectModel problem.trees)) = true
-      by_contra p
-      simp at p
-      specialize h p
-      apply h
+      have db: mockDatabaseContainedInModel (mockDatabase (parsingSignature helper)) (List.toSet (collectModel problem.trees)) = true := by
+        by_contra p
+        simp at p
+        rw [p] at h
+        simp at h
+
       apply db
       apply right
 
@@ -186,23 +187,23 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
   rcases h with ⟨sol_eq, valid_tree⟩
   unfold mainCheckMockDatabase
   simp
-  have p: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees = Except.ok ()
-  rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees]
-  constructor
-  rw [← collectModelToSetIsSetOfValidTreesElements]
-  rw [sol_eq]
-  apply valid_tree
+  have p: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees = Except.ok () := by
+    rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees]
+    constructor
+    rw [← collectModelToSetIsSetOfValidTreesElements]
+    rw [sol_eq]
+    apply valid_tree
 
   simp [p]
-  have model: model (List.toFinset problem.program) (mockDatabase (parsingSignature helper)) (List.toSet (collectModel problem.trees))
-  rw [sol_eq]
-  apply proofTheoreticSemanticsIsModel
+  have model: model (List.toFinset problem.program) (mockDatabase (parsingSignature helper)) (List.toSet (collectModel problem.trees)) := by
+    rw [sol_eq]
+    apply proofTheoreticSemanticsIsModel
   unfold model at model
   rcases model with ⟨model,_⟩
 
-  have q: modelChecker (collectModel problem.trees) problem.program safe = Except.ok ()
-  rw [modelCheckerUnitIffAllRulesTrue]
-  apply model
+  have q: modelChecker (collectModel problem.trees) problem.program safe = Except.ok () := by
+    rw [modelCheckerUnitIffAllRulesTrue]
+    apply model
 
   simp[q]
   unfold mockDatabaseContainedInModel
@@ -239,9 +240,9 @@ by
       simp [modelCheck] at h
     | ok _ =>
       simp only [modelCheck] at h
-      have db: mockDatabaseContainedInModel (mockDatabase (parsingSignature helper)) (List.toSet problem.graph.vertices) = true
-      by_contra p
-      simp [p] at h
+      have db: mockDatabaseContainedInModel (mockDatabase (parsingSignature helper)) (List.toSet problem.graph.vertices) = true := by
+        by_contra p
+        simp [p] at h
 
       rw [dfs_semantics] at dfs_result
       rcases dfs_result with ⟨acyclic,valid⟩
@@ -278,25 +279,25 @@ by
   rcases h with ⟨semantics, acyclic, valid⟩
   have dfs_result: dfs problem.graph (fun a l =>
       locallyValidityChecker (parseProgramToSymbolSequenceMap problem.program fun _ => [])
-        (mockDatabase (parsingSignature helper)) l a) = Except.ok ()
-  rw [dfs_semantics]
-  constructor
-  apply acyclic
-  intro a a_mem
-  rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
-  apply valid a a_mem
-  rfl
-  rfl
+        (mockDatabase (parsingSignature helper)) l a) = Except.ok () := by
+    rw [dfs_semantics]
+    constructor
+    apply acyclic
+    intro a a_mem
+    rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
+    apply valid a a_mem
+    rfl
+    rfl
   simp [dfs_result]
 
-  have modelChecker: modelChecker problem.graph.vertices problem.program safe = Except.ok ()
-  rw [modelCheckerUnitIffAllRulesTrue]
-  intro r rP
-  have ismodel: model problem.program.toFinset (mockDatabase (parsingSignature helper)) (List.toSet problem.graph.vertices)
-  rw [semantics]
-  apply proofTheoreticSemanticsIsModel
-  unfold model at ismodel
-  apply And.left ismodel r rP
+  have modelChecker: modelChecker problem.graph.vertices problem.program safe = Except.ok () := by
+    rw [modelCheckerUnitIffAllRulesTrue]
+    intro r rP
+    have ismodel: model problem.program.toFinset (mockDatabase (parsingSignature helper)) (List.toSet problem.graph.vertices) := by
+      rw [semantics]
+      apply proofTheoreticSemanticsIsModel
+    unfold model at ismodel
+    apply And.left ismodel r rP
   simp only [modelChecker]
 
   unfold mockDatabaseContainedInModel
