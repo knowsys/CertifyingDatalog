@@ -41,17 +41,21 @@ def parseTrees(json_object):
         trees.append({"node": {"label": normalizeQuotationmarks(atom), "children": []}})
 
     leafs = list(map(lambda t: set([t["node"]["label"]]), trees))
-    
 
-    for j in range(0, len(json_object["inferences"])):
-        inference = json_object["inferences"][j]
+    changed = True
 
-        for i in range(0, len(trees)):
-            if normalizeQuotationmarks(inference["conclusion"]) in leafs[i]:
-                trees[i] = expandTree(trees[i], getTree(inference))
-                leafs[i].remove(normalizeQuotationmarks(inference["conclusion"]))
-                for inf in inference["premises"]:
-                    leafs[i].add(normalizeQuotationmarks(inf))
+    while changed:
+        changed = False
+        for j in range(0, len(json_object["inferences"])):
+            inference = json_object["inferences"][j]
+
+            for i in range(0, len(trees)):
+                if normalizeQuotationmarks(inference["conclusion"]) in leafs[i]:
+                    changed = True
+                    trees[i] = expandTree(trees[i], getTree(inference))
+                    leafs[i].remove(normalizeQuotationmarks(inference["conclusion"]))
+                    for inf in inference["premises"]:
+                        leafs[i].add(normalizeQuotationmarks(inf))
     return trees
 
 def getModel():
@@ -69,12 +73,14 @@ def elementForCommandLine(s):
     result = re.match(r"(.+)\((.+)\)",s)
     newElements = []
     for element in result[2].split(","):
-        try: 
-            parse(element, rule='IRI')
-            newElements.append('<' + element + '>')
-        except ValueError:
+        if element[0] != '<' or element[-1] != '>':
             newElements.append('"' + element + '"')
-
+        else:
+            try: 
+                parse(element[1:-1], rule='IRI')
+                newElements.append(element)
+            except ValueError:
+                newElements.append('"' + element + '"')
 
     return result[1] + "(" + ",".join(newElements) +  ")"
 

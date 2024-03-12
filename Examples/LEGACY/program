@@ -1,0 +1,271 @@
+{
+    "trees": [
+        {
+            "node": {
+                "label": {
+                    "symbol": "c",
+                    "terms": [
+                        {
+                            "constant": "1"
+                        },
+                        {
+                            "constant": "2"
+                        }
+                    ]
+                },
+                "children": [
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "a",
+                                "terms": [
+                                    {
+                                        "constant": "1"
+                                    },
+                                    {
+                                        "constant": "2"
+                                    }
+                                ]
+                            },
+                            "children": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "node": {
+                "label": {
+                    "symbol": "b",
+                    "terms": [
+                        {
+                            "constant": "3"
+                        },
+                        {
+                            "constant": "4"
+                        }
+                    ]
+                },
+                "children": []
+            }
+        },
+        {
+            "node": {
+                "label": {
+                    "symbol": "d",
+                    "terms": [
+                        {
+                            "constant": "3"
+                        },
+                        {
+                            "constant": "4"
+                        }
+                    ]
+                },
+                "children": [
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "b",
+                                "terms": [
+                                    {
+                                        "constant": "3"
+                                    },
+                                    {
+                                        "constant": "4"
+                                    }
+                                ]
+                            },
+                            "children": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "node": {
+                "label": {
+                    "symbol": "e",
+                    "terms": [
+                        {
+                            "constant": "1"
+                        },
+                        {
+                            "constant": "4"
+                        }
+                    ]
+                },
+                "children": [
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "c",
+                                "terms": [
+                                    {
+                                        "constant": "1"
+                                    },
+                                    {
+                                        "constant": "2"
+                                    }
+                                ]
+                            },
+                            "children": []
+                        }
+                    },
+                    {
+                        "node": {
+                            "label": {
+                                "symbol": "d",
+                                "terms": [
+                                    {
+                                        "constant": "3"
+                                    },
+                                    {
+                                        "constant": "4"
+                                    }
+                                ]
+                            },
+                            "children": [
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "b",
+                                            "terms": [
+                                                {
+                                                    "constant": "3"
+                                                },
+                                                {
+                                                    "constant": "4"
+                                                }
+                                            ]
+                                        },
+                                        "children": []
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "program": [
+        {
+            "head": {
+                "symbol": "a",
+                "terms": [
+                    {
+                        "constant": "1"
+                    },
+                    {
+                        "constant": "2"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "b",
+                "terms": [
+                    {
+                        "constant": "3"
+                    },
+                    {
+                        "constant": "4"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "c",
+                "terms": [
+                    {
+                        "variable": "?x"
+                    },
+                    {
+                        "variable": "?y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "a",
+                    "terms": [
+                        {
+                            "variable": "?x"
+                        },
+                        {
+                            "variable": "?y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "d",
+                "terms": [
+                    {
+                        "variable": "?x"
+                    },
+                    {
+                        "variable": "?y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "b",
+                    "terms": [
+                        {
+                            "variable": "?x"
+                        },
+                        {
+                            "variable": "?y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "e",
+                "terms": [
+                    {
+                        "variable": "?x"
+                    },
+                    {
+                        "variable": "?y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "c",
+                    "terms": [
+                        {
+                            "variable": "?x"
+                        },
+                        {
+                            "variable": "?z"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "d",
+                    "terms": [
+                        {
+                            "variable": "?a"
+                        },
+                        {
+                            "variable": "?y"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

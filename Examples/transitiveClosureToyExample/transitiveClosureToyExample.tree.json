@@ -60,7 +60,24 @@
                                     }
                                 ]
                             },
-                            "children": []
+                            "children": [
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "R",
+                                            "terms": [
+                                                {
+                                                    "constant": "a"
+                                                },
+                                                {
+                                                    "constant": "b"
+                                                }
+                                            ]
+                                        },
+                                        "children": []
+                                    }
+                                }
+                            ]
                         }
                     },
                     {
@@ -76,7 +93,24 @@
                                     }
                                 ]
                             },
-                            "children": []
+                            "children": [
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "R",
+                                            "terms": [
+                                                {
+                                                    "constant": "b"
+                                                },
+                                                {
+                                                    "constant": "c"
+                                                }
+                                            ]
+                                        },
+                                        "children": []
+                                    }
+                                }
+                            ]
                         }
                     }
                 ]
@@ -109,7 +143,24 @@
                                     }
                                 ]
                             },
-                            "children": []
+                            "children": [
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "R",
+                                            "terms": [
+                                                {
+                                                    "constant": "a"
+                                                },
+                                                {
+                                                    "constant": "b"
+                                                }
+                                            ]
+                                        },
+                                        "children": []
+                                    }
+                                }
+                            ]
                         }
                     },
                     {
@@ -125,7 +176,74 @@
                                     }
                                 ]
                             },
-                            "children": []
+                            "children": [
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "T",
+                                            "terms": [
+                                                {
+                                                    "constant": "b"
+                                                },
+                                                {
+                                                    "constant": "c"
+                                                }
+                                            ]
+                                        },
+                                        "children": [
+                                            {
+                                                "node": {
+                                                    "label": {
+                                                        "symbol": "R",
+                                                        "terms": [
+                                                            {
+                                                                "constant": "b"
+                                                            },
+                                                            {
+                                                                "constant": "c"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "children": []
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "T",
+                                            "terms": [
+                                                {
+                                                    "constant": "c"
+                                                },
+                                                {
+                                                    "constant": "d"
+                                                }
+                                            ]
+                                        },
+                                        "children": [
+                                            {
+                                                "node": {
+                                                    "label": {
+                                                        "symbol": "R",
+                                                        "terms": [
+                                                            {
+                                                                "constant": "c"
+                                                            },
+                                                            {
+                                                                "constant": "d"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "children": []
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
                         }
                     }
                 ]
@@ -224,7 +342,24 @@
                                     }
                                 ]
                             },
-                            "children": []
+                            "children": [
+                                {
+                                    "node": {
+                                        "label": {
+                                            "symbol": "R",
+                                            "terms": [
+                                                {
+                                                    "constant": "c"
+                                                },
+                                                {
+                                                    "constant": "d"
+                                                }
+                                            ]
+                                        },
+                                        "children": []
+                                    }
+                                }
+                            ]
                         }
                     }
                 ]
