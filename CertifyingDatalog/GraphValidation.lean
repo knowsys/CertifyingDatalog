@@ -46,7 +46,8 @@ namespace PreGraph
   --     pg.insert v [u]
 
   def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A := 
-    vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) (pg.insert v vs)
+    let pg_with_added_predecessors := if pg.contains v then pg.insert v ((pg.predecessors v) ++ vs) else pg.insert v vs
+    vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) pg_with_added_predecessors
 
   -- Axioms 
   theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 

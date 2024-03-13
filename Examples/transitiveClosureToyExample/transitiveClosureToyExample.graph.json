@@ -1,74 +1,90 @@
 {
     "graph": {
-        "vertices": [
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "a"
-                    },
-                    {
-                        "constant": "b"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "a"
-                    },
-                    {
-                        "constant": "c"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "a"
-                    },
-                    {
-                        "constant": "d"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "b"
-                    },
-                    {
-                        "constant": "c"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "b"
-                    },
-                    {
-                        "constant": "d"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "c"
-                    },
-                    {
-                        "constant": "d"
-                    }
-                ]
-            }
-        ],
         "edges": [
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "c"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
             {
                 "vertex": {
                     "symbol": "T",

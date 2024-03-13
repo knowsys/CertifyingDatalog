@@ -265,7 +265,7 @@ deriving DecidableEq, Lean.FromJson, Lean.ToJson
 --#eval Lean.toJson (edge.mk (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]) (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]))
 
 structure mockGraph where
-  (vertices: List mockAtom)
+  -- (vertices: List mockAtom)
   (edges: List mockEdge)
 deriving Lean.FromJson, Lean.ToJson
 
@@ -274,8 +274,8 @@ structure graphInputProblem where
   (program: List mockRule)
 deriving Lean.FromJson, Lean.ToJson
 
-def unconnectedGroundAtomGraph (helper: parsingArityHelper) (l:List (groundAtom (parsingSignature helper))): Graph (groundAtom (parsingSignature helper)) := Graph.from_vertices l
-
+-- def unconnectedGroundAtomGraph (helper: parsingArityHelper) (l:List (groundAtom (parsingSignature helper))): Graph (groundAtom (parsingSignature helper)) := Graph.from_vertices l
+--
 -- def insertListHashSet {A: Type} [DecidableEq A] [Hashable A] (l1 l2: List A) (S: Lean.HashSet A): List A × Lean.HashSet A :=
 --   match l2 with
 --   | [] => (l1, S)
@@ -354,11 +354,8 @@ def getGraph.go (helper: parsingArityHelper) (l: List mockEdge) (currGraph: Grap
         getGraph.go helper tl currGraph'
 
 def getGraph (helper: parsingArityHelper) (g: mockGraph): Except String (Graph (groundAtom (parsingSignature helper))) :=
-  match List.map_except (transformMockAtomToGroundAtom helper) g.vertices with
-  | Except.error e => Except.error ("Error parsing vertices -- " ++ e)
-  | Except.ok v' =>
-    let graph := unconnectedGroundAtomGraph helper v'
-    getGraph.go helper g.edges graph
+  let graph := Graph.from_vertices []
+  getGraph.go helper g.edges graph
 
 structure graphVerificationProblem (helper: parsingArityHelper) where
   (graph: Graph (groundAtom (parsingSignature helper)))
