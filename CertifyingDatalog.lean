@@ -7,3 +7,4 @@ import «CertifyingDatalog».Unification
 import «CertifyingDatalog».Database
 import «CertifyingDatalog».ModelChecking
 import «CertifyingDatalog».GraphValidation
+import «CertifyingDatalog».HashSets
