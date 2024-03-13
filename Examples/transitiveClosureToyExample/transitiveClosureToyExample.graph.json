@@ -1,76 +1,118 @@
 {
     "graph": {
-        "vertices": [
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "a"
-                    },
-                    {
-                        "constant": "b"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "a"
-                    },
-                    {
-                        "constant": "c"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "a"
-                    },
-                    {
-                        "constant": "d"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "b"
-                    },
-                    {
-                        "constant": "c"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "b"
-                    },
-                    {
-                        "constant": "d"
-                    }
-                ]
-            },
-            {
-                "symbol": "T",
-                "terms": [
-                    {
-                        "constant": "c"
-                    },
-                    {
-                        "constant": "d"
-                    }
-                ]
-            }
-        ],
         "edges": [
             {
-                "start_node": {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "c"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "vertex": {
+                    "symbol": "T",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "predecessors": [
+                    {
+                        "symbol": "R",
+                        "terms": [
+                            {
+                                "constant": "a"
+                            },
+                            {
+                                "constant": "b"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "vertex": {
                     "symbol": "R",
                     "terms": [
                         {
@@ -81,20 +123,36 @@
                         }
                     ]
                 },
-                "end_node": {
+                "predecessors": []
+            },
+            {
+                "vertex": {
                     "symbol": "T",
                     "terms": [
                         {
-                            "constant": "a"
+                            "constant": "c"
                         },
                         {
-                            "constant": "b"
+                            "constant": "d"
                         }
                     ]
-                }
+                },
+                "predecessors": [
+                    {
+                        "symbol": "R",
+                        "terms": [
+                            {
+                                "constant": "c"
+                            },
+                            {
+                                "constant": "d"
+                            }
+                        ]
+                    }
+                ]
             },
             {
-                "start_node": {
+                "vertex": {
                     "symbol": "R",
                     "terms": [
                         {
@@ -105,20 +163,47 @@
                         }
                     ]
                 },
-                "end_node": {
+                "predecessors": []
+            },
+            {
+                "vertex": {
                     "symbol": "T",
                     "terms": [
                         {
-                            "constant": "c"
+                            "constant": "b"
                         },
                         {
                             "constant": "d"
                         }
                     ]
-                }
+                },
+                "predecessors": [
+                    {
+                        "symbol": "T",
+                        "terms": [
+                            {
+                                "constant": "b"
+                            },
+                            {
+                                "constant": "c"
+                            }
+                        ]
+                    },
+                    {
+                        "symbol": "T",
+                        "terms": [
+                            {
+                                "constant": "c"
+                            },
+                            {
+                                "constant": "d"
+                            }
+                        ]
+                    }
+                ]
             },
             {
-                "start_node": {
+                "vertex": {
                     "symbol": "T",
                     "terms": [
                         {
@@ -129,44 +214,22 @@
                         }
                     ]
                 },
-                "end_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                }
+                "predecessors": [
+                    {
+                        "symbol": "R",
+                        "terms": [
+                            {
+                                "constant": "b"
+                            },
+                            {
+                                "constant": "c"
+                            }
+                        ]
+                    }
+                ]
             },
             {
-                "start_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "c"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                },
-                "end_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                }
-            },
-            {
-                "start_node": {
+                "vertex": {
                     "symbol": "R",
                     "terms": [
                         {
@@ -177,31 +240,10 @@
                         }
                     ]
                 },
-                "end_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "c"
-                        }
-                    ]
-                }
+                "predecessors": []
             },
             {
-                "start_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "b"
-                        }
-                    ]
-                },
-                "end_node": {
+                "vertex": {
                     "symbol": "T",
                     "terms": [
                         {
@@ -211,45 +253,34 @@
                             "constant": "d"
                         }
                     ]
-                }
+                },
+                "predecessors": [
+                    {
+                        "symbol": "T",
+                        "terms": [
+                            {
+                                "constant": "a"
+                            },
+                            {
+                                "constant": "b"
+                            }
+                        ]
+                    },
+                    {
+                        "symbol": "T",
+                        "terms": [
+                            {
+                                "constant": "b"
+                            },
+                            {
+                                "constant": "d"
+                            }
+                        ]
+                    }
+                ]
             },
             {
-                "start_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                },
-                "end_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                }
-            },
-            {
-                "start_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "b"
-                        }
-                    ]
-                },
-                "end_node": {
+                "vertex": {
                     "symbol": "T",
                     "terms": [
                         {
@@ -259,31 +290,31 @@
                             "constant": "c"
                         }
                     ]
-                }
-            },
-            {
-                "start_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "c"
-                        }
-                    ]
                 },
-                "end_node": {
-                    "symbol": "T",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "c"
-                        }
-                    ]
-                }
+                "predecessors": [
+                    {
+                        "symbol": "T",
+                        "terms": [
+                            {
+                                "constant": "a"
+                            },
+                            {
+                                "constant": "b"
+                            }
+                        ]
+                    },
+                    {
+                        "symbol": "T",
+                        "terms": [
+                            {
+                                "constant": "b"
+                            },
+                            {
+                                "constant": "c"
+                            }
+                        ]
+                    }
+                ]
             }
         ]
     },

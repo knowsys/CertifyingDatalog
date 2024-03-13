@@ -199,16 +199,17 @@ def convertProofTreeToJson(tree):
     return {"node": {"label": label, "children": list(children)}}
 
 def parseGraph (json_object):
-    vertices = list(map(lambda x: convertNemoAtomToJson(tokenize(normalizeQuotationmarks(x))), json_object["finalConclusion"]))
-
     edges = []
+
+    for conclusion in json_object["finalConclusion"]:
+        atom = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(conclusion)))
+        edges.append({"vertex": atom, "predecessors": []})
+    
     for inf in json_object["inferences"]:
         end = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(inf["conclusion"])))
-        for prem in inf["premises"]:
-          start  = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(prem)))
-          edges.append({"start_node": start, "end_node": end})
+        edges.append({"vertex": end, "predecessors": list(map(lambda x: convertNemoAtomToJson(tokenize(normalizeQuotationmarks(x))), inf["premises"]))})
 
-    return {"vertices": vertices, "edges": edges}        
+    return {"edges": edges}        
 
 def main(*args):
     complete = False

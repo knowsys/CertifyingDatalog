@@ -42,7 +42,7 @@ def multiTry():
             
 
             start = time.time()
-            result = subprocess.run(["../../build/bin/certifyingDatalog", problemFile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+            result = subprocess.run(["../../.lake/build/bin/certifyingDatalog", problemFile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
 
             duration = time.time() - start
             
@@ -61,7 +61,7 @@ def multiTry():
             
 
             start = time.time()
-            result = subprocess.run(["../../build/bin/certifyingDatalog", "-g", problemFile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+            result = subprocess.run(["../../.lake/build/bin/certifyingDatalog", "-g", problemFile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
 
             duration = time.time() - start 
             
