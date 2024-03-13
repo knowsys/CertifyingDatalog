@@ -11,6 +11,10 @@ namespace Std.HashMap
   theorem toList_after_ofList_is_id (l : List (A × B)) : Std.HashMap.toList (@Std.HashMap.ofList _ _ inst_dec_eq inst_hash l) = l := by sorry
 
   theorem in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := sorry
+
+  theorem for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A B) (a : A) (a_in_hm : hm.contains a) : ∀ b, hm.insert a (hm.findD a b) = hm := by sorry
+
+  theorem findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Std.HashMap.ofList l).findD a b = ((l.find? (fun x => x.fst == a)).map Prod.snd).getD b := by sorry
 end Std.HashMap
 
 -- structure Graph (A: Type) where
@@ -52,15 +56,29 @@ namespace PreGraph
   -- Axioms 
   theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 
     induction vs with 
-    | nil => unfold vertices; unfold from_vertices; rw [Std.HashMap.toList_after_ofList_is_id]; simp [List.map]
+    | nil => unfold vertices; unfold from_vertices; rw [Std.HashMap.toList_after_ofList_is_id]; simp only [List.map]
     | cons v vs ih =>
-      sorry
+      unfold vertices at *
+      unfold from_vertices at *
+      rw [Std.HashMap.toList_after_ofList_is_id] at *
+      simp at *
+      apply ih
 
   theorem from_vertices_no_vertex_has_predecessors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
     induction vs with 
     | nil => intros; contradiction
     | cons v vs ih =>
-      sorry
+      unfold from_vertices at *
+      intro v v_in_list
+      rw [Std.HashMap.findD_ofList_is_list_find_getD] 
+      simp [List.find?]
+      split
+      case h_1 => simp
+      case h_2 _ _ v_not_first =>
+        have v_in_vs : v ∈ vs := by cases v_in_list; simp at v_not_first; assumption 
+        have ih_plugged_in := ih v v_in_vs
+        rw [Std.HashMap.findD_ofList_is_list_find_getD] at ih_plugged_in
+        apply ih_plugged_in
 
   theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
     let pg := PreGraph.from_vertices vs
@@ -76,7 +94,20 @@ namespace PreGraph
 
   -- theorem add_edge_and_add_vertex_still_complete (pg : PreGraph A) (u v : A) (comp : pg.complete) : ((pg.add_edge u v).add_vertex u).complete := by sorry
   
-  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (comp : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by sorry
+  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by 
+    induction vs with 
+    | nil => 
+      unfold add_vertex_with_predecessors
+      simp 
+      split 
+      case inl pg_contains_v => 
+        unfold predecessors
+        rw [Std.HashMap.for_keys_in_map_inserting_findD_does_not_change]
+        apply pg_is_complete
+        apply pg_contains_v
+      case inr pg_not_contains_v => 
+        sorry
+    | cons u us => sorry
 end PreGraph
 
 abbrev Graph (A: Type) [DecidableEq A] [Hashable A] := { pg : PreGraph A // pg.complete }
