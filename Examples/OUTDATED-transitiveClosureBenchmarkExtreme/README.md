@@ -10,8 +10,8 @@ Note: The `tc.tree.json` file is gzipped. `gunzip` it before usage.
 
 ### Running the already generated input file 
 
-- Build the Lean program in the root directory of this project using `lake build`. The binary is found here: `/build/bin/certifyingDatalog`
-- In this directory, run `../../build/bin/certifyingDatalog [-g] <file>.(tree|graph).json`
+- Build the Lean program in the root directory of this project using `lake build`. The binary is found here: `/.lake/build/bin/certifyingDatalog`
+- In this directory, run `../../.lake/build/bin/certifyingDatalog [-g] <file>.(tree|graph).json`
 
 ### Generate Input Facts for Datalog Program 
 
