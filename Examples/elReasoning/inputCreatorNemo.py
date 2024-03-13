@@ -204,9 +204,8 @@ def parseGraph (json_object):
     edges = []
     for inf in json_object["inferences"]:
         end = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(inf["conclusion"])))
-        for prem in inf["premises"]:
-          start  = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(prem)))
-          edges.append({"start_node": start, "end_node": end})
+
+        edges.append({"vertex": end, "predecessors": list(map(lambda x: convertNemoAtomToJson(tokenize(normalizeQuotationmarks(x))), inf["premises"]))})
 
     return {"vertices": vertices, "edges": edges}        
 
