@@ -5,20 +5,20 @@ import Mathlib.Data.List.Card
 import Mathlib.Data.Finset.Card
 
 -- Axioms for HashMap
-namespace Lean.HashMap 
+namespace Std.HashMap 
   variable {A: Type}[inst_dec_eq: BEq A][inst_hash: Hashable A]
 
-  theorem toList_after_ofList_is_id (l : List (A × B)) : Lean.HashMap.toList (@Lean.HashMap.ofList _ _ inst_dec_eq inst_hash l) = l := by sorry
+  theorem toList_after_ofList_is_id (l : List (A × B)) : Std.HashMap.toList (@Std.HashMap.ofList _ _ inst_dec_eq inst_hash l) = l := by sorry
 
   theorem in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := sorry
-end Lean.HashMap
+end Std.HashMap
 
 -- structure Graph (A: Type) where
 --   (vertices: List A)
 --   (predecessors: A → List A)
 --   (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ predecessors a → a' ∈ vertices)
 
-abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Lean.HashMap A (List A)
+abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Std.HashMap A (List A)
 
 namespace PreGraph
   variable {A: Type}[DecidableEq A][Hashable A]
@@ -28,10 +28,10 @@ namespace PreGraph
 
   def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.findD a []) → pg.contains a'
 
-  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Lean.HashMap.in_projection_of_toList_iff_contains
+  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Std.HashMap.in_projection_of_toList_iff_contains
   theorem in_predecessors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.findD a []) := by unfold predecessors; intros; rfl
 
-  def from_vertices (vs : List A) : PreGraph A := Lean.HashMap.ofList (vs.map (fun v => (v, [])))
+  def from_vertices (vs : List A) : PreGraph A := Std.HashMap.ofList (vs.map (fun v => (v, [])))
 
   def add_vertex (pg : PreGraph A) (v : A) : PreGraph A :=
     if pg.contains v then 
@@ -52,7 +52,7 @@ namespace PreGraph
   -- Axioms 
   theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 
     induction vs with 
-    | nil => unfold vertices; unfold from_vertices; rw [Lean.HashMap.toList_after_ofList_is_id]; simp [List.map]
+    | nil => unfold vertices; unfold from_vertices; rw [Std.HashMap.toList_after_ofList_is_id]; simp [List.map]
     | cons v vs ih =>
       sorry
 
