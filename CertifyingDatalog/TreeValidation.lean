@@ -110,10 +110,9 @@ by
       | inr r_tl =>
         apply r_tl
 
-lemma parseProgramToSymbolSequenceMap_semantics (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)) (h: m = parseProgramToSymbolSequenceMap P (fun _ => [])) (r: rule τ): ∀ (r': rule τ), r' ∈ m (symbolSequence r) ↔ r' ∈ P ∧ symbolSequence r' = symbolSequence r :=
+lemma parseProgramToSymbolSequenceMap_semantics (P: List (rule τ)) (r: rule τ): ∀ (r': rule τ), r' ∈ parseProgramToSymbolSequenceMap P (fun _ => []) (symbolSequence r) ↔ r' ∈ P ∧ symbolSequence r' = symbolSequence r :=
 by
   intro r'
-  rw [h]
   rw [parseProgramToSymbolSequenceMap_mem]
   simp
   rw [And.comm]
@@ -128,44 +127,35 @@ def checkRuleMatch (m: List τ.relationSymbols → List (rule τ)) (gr: groundRu
   then Except.ok ()
   else Except.error ("No match for " ++ ToString.toString gr)
 
-lemma checkRuleMatchOkIffExistsRuleForGroundRule (m: List τ.relationSymbols → List (rule τ)) (P: List (rule τ)) (gr: groundRule τ) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])): checkRuleMatch m gr = Except.ok () ↔ ∃ (r: rule τ) (g:grounding τ),r ∈ P ∧ ruleGrounding r g = gr :=
+lemma checkRuleMatchOkIffExistsRuleForGroundRule (P: List (rule τ)) (gr: groundRule τ): checkRuleMatch (parseProgramToSymbolSequenceMap P (fun _ => [])) gr = Except.ok () ↔ ∃ (r: rule τ) (g:grounding τ),r ∈ P ∧ ruleGrounding r g = gr :=
 by
   simp [groundingSubstitutionEquivalence]
   unfold checkRuleMatch
-  constructor
-  intro h
-  have h': (List.any (m (symbolSequence (groundRule.toRule gr))) fun x => Option.isSome (matchRule x gr)) = true := by
-    by_contra p
-    simp [p] at h
-  rw [List.any_eq_true] at h'
-  rcases h' with ⟨r,r_mem, match_r⟩
+  split
+  rename_i symbolSequenceMatch
+  simp
+  simp at symbolSequenceMatch
+  simp_rw [parseProgramToSymbolSequenceMap_semantics, matchRuleIsSomeIffSolution] at symbolSequenceMatch
+  rcases symbolSequenceMatch with ⟨r, h, s, applyS⟩
   use r
-  rw [parseProgramToSymbolSequenceMap_semantics P m ssm] at r_mem
-  constructor
-  simp [r_mem]
-  rw [matchRuleIsSomeIffSolution] at match_r
-  simp at match_r
-  apply match_r
-  rw [groundRuleToRuleBodyLengthEqBodyLength]
-  apply symbolSequenceEqImplSameLength
-  simp [r_mem]
+  simp [h]
+  use s
 
-  intro h
-  have h': List.any (m (symbolSequence (groundRule.toRule gr))) (fun x => Option.isSome (matchRule x gr)) = true := by
-    rw [List.any_eq_true]
-    rcases h with ⟨r,rP, match_r⟩
-    use r
-    constructor
-    rw [parseProgramToSymbolSequenceMap_semantics P m ssm]
-    constructor
-    apply rP
-    apply symbolSequenceOfMatchIsEqual r gr match_r
-    rw [matchRuleIsSomeIffSolution]
-    apply match_r
-    rw [groundRuleToRuleBodyLengthEqBodyLength]
-    apply symbolSequenceEqImplSameLength
-    apply symbolSequenceOfMatchIsEqual r gr match_r
-  simp [h']
+  rename_i symbolSequenceMatch
+  simp at *
+  simp_rw [parseProgramToSymbolSequenceMap_semantics] at symbolSequenceMatch
+  intro r rP
+  specialize symbolSequenceMatch r
+  by_cases ssm_r_gr: symbolSequence r = symbolSequence gr.toRule
+  simp [rP, ssm_r_gr] at symbolSequenceMatch
+  rw [← not_exists]
+  apply matchRuleNoneImplNoSolution
+  apply symbolSequenceMatch
+
+  apply symbolSequenceNotEq
+  apply ssm_r_gr
+
+
 
 
 def treeValidator (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (t: proofTree τ) : Except String Unit :=
@@ -189,7 +179,7 @@ decreasing_by
   apply List.sizeOf_lt_of_mem _h
   simp
 
-lemma treeValidatorOkIffIsValid (m: List τ.relationSymbols → List (rule τ)) (P: List (rule τ)) (d: database τ) (t: proofTree τ) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])): treeValidator m d t = Except.ok () ↔ isValid (List.toFinset P) d t :=
+lemma treeValidatorOkIffIsValid (P: List (rule τ)) (d: database τ) (t: proofTree τ): treeValidator (parseProgramToSymbolSequenceMap P (fun _ => [])) d t = Except.ok () ↔ isValid (List.toFinset P) d t :=
 by
   induction' h_t:(height t) using Nat.strongInductionOn with n ih generalizing t
   cases t with
@@ -208,110 +198,102 @@ by
     simp
     rw [if_neg contains_a]
 
+    split
+    simp
+    rename_i u checkRuleMatch
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch
+    left
+    rw [List.isEmpty_iff_eq_nil] at emptyL
+    rcases checkRuleMatch with ⟨r, g, rP, apply_g⟩
+    use r
+    constructor
+    apply rP
+    constructor
+    use g
+    rw [emptyL]
+    unfold List.Forall
+    simp
 
+    simp
+    rename_i checkRuleMatchResult
+    rw [List.isEmpty_iff_eq_nil] at emptyL
 
+    have checkRuleMatch': ¬ checkRuleMatch (parseProgramToSymbolSequenceMap P fun _ => []) { head := a, body := List.map root l } = Except.ok () := by
+      rw [checkRuleMatchResult]
+      simp
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
+    push_neg
+    simp at checkRuleMatch'
+    constructor
+    rw [emptyL]
+    simp
+    rw [emptyL] at checkRuleMatch'
+    apply checkRuleMatch'
+    simp[contains_a]
+
+    simp[emptyL]
+    split
+    rename_i checkRuleMatchResult
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatchResult
+    rcases checkRuleMatchResult with ⟨r,g,rP, rulegrounding⟩
+    rw [List.map_except_unitIsUnitIffAll]
     constructor
     intro h
-    have h': checkRuleMatch m { head := a, body := List.map root l } = Except.ok () := by
-      cases p: checkRuleMatch m { head := a, body := List.map root l } with
-      | ok u =>
-        simp
-      | error e =>
-        simp [p] at h
-    simp [h'] at h
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at h'
     left
-    simp [← and_assoc, exists_and_right]
+    use r
     constructor
-    simp at h'
-    apply h'
+    apply rP
+    constructor
+    use g
     rw [List.forall_iff_forall_mem]
     simp
-    intros a' a_l
+    intro t t_mem
+    specialize ih (height t)
+    have height_t: height t < n := by
+      rw [← h_t]
+      apply heightOfMemberIsSmaller
+      unfold member
+      simp [t_mem]
+    specialize ih height_t t
+    simp at ih
+    rw [← ih]
+    simp at h
+    specialize h t t_mem
+    apply h
+
+    --back direction
+    intro h
+    simp
+    intro t t_mem
+    specialize ih (height t)
+    have height_t: height t < n := by
+      rw [← h_t]
+      apply heightOfMemberIsSmaller
+      simp [member, t_mem]
+    specialize ih height_t t
+    simp at ih
+    rw [ih]
     rw [List.isEmpty_iff_eq_nil] at emptyL
-    rw [emptyL] at a_l
-    simp at a_l
+    simp [emptyL] at h
+    rcases h with ⟨_, _, h⟩
+    rcases h with ⟨_,h⟩
+    rw [List.forall_iff_forall_mem] at h
+    simp at h
+    specialize h t t_mem
+    apply h
 
-    intro h'
-    by_cases p: checkRuleMatch m { head := a, body := List.map root l } = Except.ok ()
-    simp [p]
-    exfalso
-    cases h' with
-    | inl h' =>
-      rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at p
-      rcases h' with ⟨r,g,r_P,r_ground,_⟩
-      push_neg at p
-      specialize p r g
-      rw [List.mem_toFinset] at r_P
-      specialize p r_P
-      unfold groundRuleFromAtoms at r_ground
-      simp at p
-      exact absurd r_ground p
-    | inr h' =>
-      rcases h' with ⟨_,right⟩
-      exact absurd right contains_a
-
-
-
-    rw [if_neg emptyL]
-    constructor
-    intro h
-    cases h': checkRuleMatch m { head := a, body := List.map root l } with
-    | error e =>
-      simp [h'] at h
-    | ok _ =>
-      simp [h'] at h
-      rw [List.map_except_unitIsUnitIffAll] at h
-      simp at h
-      rw [checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at h'
-      left
-      simp [← and_assoc, exists_and_right]
-      constructor
-      simp at h'
-      apply h'
-      rw [List.forall_iff_forall_mem]
+    rw [List.isEmpty_iff_eq_nil] at emptyL
+    simp [emptyL]
+    rename_i checkRuleMatchResult
+    have checkRuleMatch': ¬ checkRuleMatch (parseProgramToSymbolSequenceMap P fun _ => []) { head := a, body := List.map root l } = Except.ok () := by
+      rw [checkRuleMatchResult]
       simp
-      intros a' a_l
-      specialize ih (height a')
-      simp [← h_t] at ih
-      have height_case: height a' < height (tree.node a l) := by
-        apply heightOfMemberIsSmaller
-        unfold member
-        simp
-        apply a_l
-      specialize ih height_case a'
-      simp at ih
-      rw [← ih]
-      apply h a' a_l
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
+    simp at checkRuleMatch'
+    intro r rP g ground
+    specialize checkRuleMatch' r rP g
+    contradiction
 
-    intro h
-    cases h with
-    | inl h =>
-      simp only [← and_assoc, exists_and_right, List.mem_toFinset] at h
-      cases' h with left right
-      rw [← checkRuleMatchOkIffExistsRuleForGroundRule m P _ ssm] at left
-      simp only [groundRuleFromAtoms] at left
-      simp [left]
-      rw [List.map_except_unitIsUnitIffAll]
-      simp
-      intros t t_l
-      have height_t: (height t) < height (tree.node a l) := by
-        apply heightOfMemberIsSmaller
-        unfold member
-        simp
-        apply t_l
-      specialize ih (height t)
-      simp [← h_t] at ih
-      specialize ih height_t t
-      simp at ih
-      rw [ih]
-      rw [List.forall_iff_forall_mem] at right
-      simp at right
-      apply right t t_l
-
-    | inr h =>
-      rw [List.isEmpty_iff_eq_nil] at emptyL
-      simp [emptyL] at h
 
 
 def validateTreeList (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : Except String Unit :=
@@ -326,12 +308,10 @@ lemma validateTreeListUnitIffAllTreesValid (P: List (rule τ)) (d: database τ) 
   intro h t t_l
   rw [← treeValidatorOkIffIsValid]
   apply h t t_l
-  rfl
 
   intro h t t_l
   rw [treeValidatorOkIffIsValid]
   apply h t t_l
-  rfl
 
 
 lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () →  {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d := by

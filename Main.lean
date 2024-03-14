@@ -113,13 +113,11 @@ by
   rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at localValid
   apply localValid
   rfl
-  rfl
   apply verticesOfLocallyValidAcyclicGraphAreInProofTheoreticSemantics (acyclic:=acyc)
   intro a a_mem
   specialize localValid a a_mem
   rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at localValid
   apply localValid
-  rfl
   rfl
 
   intro h
@@ -129,7 +127,6 @@ by
   intro a a_mem
   rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
   apply valid a a_mem
-  rfl
   rfl
 
 
@@ -256,7 +253,6 @@ by
       rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at valid
       apply valid
       rfl
-      rfl
 
       rw [SemanticsEquivalence]
       apply leastModel
@@ -273,7 +269,6 @@ by
       rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at valid
       apply valid
       rfl
-      rfl
 
   intro h
   rcases h with ⟨semantics, acyclic, valid⟩
@@ -286,7 +281,6 @@ by
     intro a a_mem
     rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
     apply valid a a_mem
-    rfl
     rfl
   simp [dfs_result]
 

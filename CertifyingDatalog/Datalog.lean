@@ -543,8 +543,6 @@ by
 
 def ruleFromGroundAtoms (head: groundAtom τ) (body: List (groundAtom τ)): rule τ := {head := head.toAtom,body := List.map (groundAtom.toAtom) body}
 
-def groundRuleFromAtoms (head: groundAtom τ) (body: List (groundAtom τ)): groundRule τ := {head := head, body := body}
-
 def groundProgram (P: program τ) := {r: groundRule τ | ∃ (r': rule τ) (g: grounding τ), r' ∈ P ∧ r = ruleGrounding r' g}
 
 end grounding
@@ -1160,7 +1158,7 @@ by
 
 def isValid(P: program τ) (d: database τ) (t: proofTree τ): Prop :=
   match t with
-  | tree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms a (List.map root l) ∧ l.attach.Forall (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
+  | tree.node a l => ( ∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = {head:= a, body:= (List.map root l)} ∧ l.attach.Forall (fun ⟨x, _h⟩ => isValid P d x)) ∨ (l = [] ∧ d.contains a)
 termination_by sizeOf t
 decreasing_by
   simp_wf
@@ -1306,7 +1304,6 @@ by
   constructor
   apply rP
   constructor
-  unfold groundRuleFromAtoms
   rw [← g_r]
   rw [groundRuleEquality]
   simp
@@ -1408,15 +1405,12 @@ lemma proofTreeAtomsInEveryModel (P: program τ) (d: database τ) (a: groundAtom
       unfold root at root_t
       simp at root_t
       rw [← root_t, r_ground]
-      unfold groundRuleFromAtoms
-      simp
     rw [head_a] at r_true
     apply r_true
     rw [Set.subset_def]
     intros x x_body
     simp at x_body
     rw [r_ground, ← groundRuleBodySet_iff_groundRuleBody] at x_body
-    unfold groundRuleFromAtoms at x_body
     simp at x_body
     rcases x_body with ⟨t_x, t_x_l, t_x_root⟩
     rw [List.forall_iff_forall_mem] at all

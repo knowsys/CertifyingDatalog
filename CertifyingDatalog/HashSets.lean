@@ -10,7 +10,7 @@ namespace Std
 section HashMap
 variable {A:Type} [Hashable A] [DecidableEq A] {B: Type} [DecidableEq B]
 
-lemma Array.mem_if_exists (as: Array A) (a:A): a ∈ as ↔ ∃ (i: Fin as.size), a = as[i] :=
+lemma Array.mem_iff_exists (as: Array A) (a:A): a ∈ as ↔ ∃ (i: Fin as.size), a = as[i] :=
 by
   cases as with
   | mk l  =>
@@ -359,7 +359,7 @@ by
     constructor
     intro h
     rcases h with ⟨bkt, bkt_mem, ab_mem⟩
-    rw [Array.mem_if_exists] at bkt_mem
+    rw [Array.mem_iff_exists] at bkt_mem
     rcases bkt_mem with ⟨i, bkt_i⟩
     have i_eq: i = (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2) := by
       have hash_self: ∀ (i : Nat) (h : i < Array.size buckets.val), Std.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := by
@@ -466,8 +466,47 @@ by
     rw [← ab_a]
     apply ab_mem
 
+lemma splitArrayLemma (as: Array A) (f: A → List B) (i: ℕ) (h: i < as.size) (b:B): (∃ (a:A), a ∈ as ∧ b ∈ f a) ↔( b ∈ f as[i] ∨ ∃ (j: Fin as.size), j.1 ≠ i ∧ b ∈ f as[j]) := by
+  constructor
+  intro h
+  rcases h with ⟨a, a_mem, b_a⟩
+  rw [Array.mem_iff_exists] at a_mem
+  rcases a_mem with ⟨k, a_k⟩
+  by_cases k_i: k = i
+  left
+  simp [← k_i]
+  rw [a_k] at b_a
+  apply b_a
+
+  right
+  use k
+  constructor
+  apply k_i
+  rw [a_k] at b_a
+  apply b_a
+
+  --back
+  intro h
+  cases h with
+  | inl hi =>
+    use as[i]
+    constructor
+    apply Array.get_mem as (Fin.mk i h)
+    apply hi
+  | inr hj =>
+    rcases hj with ⟨j, _, b_j⟩
+    use as[j]
+    constructor
+    apply Array.get_mem
+    apply b_j
+
+
 lemma AssocList.toList_cons (hda: A) (hdb: B) (tl: AssocList A B): AssocList.toList (AssocList.cons hda hdb tl) = (hda, hdb)::AssocList.toList tl := by
-  sorry
+  unfold AssocList.toList
+  split
+  rfl
+  next n =>
+    simp
 
 lemma foldl_reinsertAux (source:(AssocList A B)) (target: HashMap.Imp.Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (List.foldl (fun d x => HashMap.Imp.reinsertAux d x.1 x.2) target (AssocList.toList source)).1 ∧ ab ∈ bkt.toList ) ↔ (∃ (bkt: AssocList A B),  bkt ∈ target.1 ∧ ab ∈ bkt.toList) ∨ ab ∈ source.toList := by
   induction source generalizing target with
@@ -482,12 +521,15 @@ lemma foldl_reinsertAux (source:(AssocList A B)) (target: HashMap.Imp.Buckets A 
     simp
     rw [HashMap.Imp.Buckets.mem_update, AssocList.toList_cons]
     simp
-    sorry
+
+    rw [or_assoc (a:= ab = (hda, hdb)), or_comm (a:= (ab = (hda, hdb))), or_assoc (c:= ab ∈ AssocList.toList tl), splitArrayLemma (b:= ab) (f:= AssocList.toList) (as:=target.1) (i:=USize.toNat (HashMap.Imp.mkIdx target.2 (UInt64.toUSize (hash hda)))) (h:= (HashMap.Imp.mkIdx target.2 (UInt64.toUSize (hash hda))).2)]
+    simp
 
 
 
-
-lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (target : Buckets A B) (bkt: AssocList A B): bkt ∈ (HashMap.Imp.expand.go i source target).1 ↔ bkt ∈ target.1 ∨ ∃ (j: Fin source.size), j.val ≥ i ∧ bkt = source[j] := by
+lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (target : Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (HashMap.Imp.expand.go i source target).1 ∧ ab ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B), (bkt ∈ target.1 ∨ ∃ (j: Fin source.size), j.val ≥ i ∧ bkt = source[j]) ∧ ab ∈ bkt.toList := by
+  sorry
+  /-
   induction' h:(source.size - i)  with n ih generalizing source i target
 
   rw [Nat.sub_eq_zero_iff_le] at h
@@ -496,6 +538,7 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
     apply Nat.not_lt_of_le
     apply h
   simp [if_cond]
+
   constructor
   intro g
   left
@@ -527,7 +570,7 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
   specialize ih h'
   rw [ih]
   sorry
-
+  -/
 
 
 
@@ -536,13 +579,17 @@ lemma HashMap.Imp.expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:
   unfold expand
   simp
   simp [HashMap.Imp.expand_go_mem]
+  unfold Buckets.mk
+  unfold mkArray
+
+
   constructor
   intro h
   rcases h with ⟨bkt, bkt_mem, ab_mem⟩
   use bkt
   constructor
   right
-  rw [Array.mem_if_exists] at bkt_mem
+  rw [Array.mem_iff_exists] at bkt_mem
   apply bkt_mem
   apply ab_mem
 
@@ -555,16 +602,15 @@ lemma HashMap.Imp.expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:
   | inl h =>
     unfold Buckets.mk at h
     simp at h
-    unfold mkArray at h
     rw [Array.mem_def] at h
     simp at h
     rw [List.mem_replicate] at h
     rcases h with ⟨_, empty⟩
     rw [empty] at ab_mem
     unfold AssocList.toList at ab_mem
-    simp at ab_mem
+    contradiction
   | inr h =>
-    rw [Array.mem_if_exists]
+    rw [Array.mem_iff_exists]
     apply h
 
   apply ab_mem
@@ -585,8 +631,13 @@ by
     simp
 
     split
+    rename_i mem
+    simp at mem
     simp
     rw [Buckets.mem_update]
+    rw [splitArrayLemma (i:= USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a)))) (h:= (mkIdx buckets.2 (UInt64.toUSize (hash a))).2)]
+    simp
+
     admit
 
 
@@ -596,11 +647,15 @@ by
     simp
     rw [HashMap.Imp.Buckets.mem_update]
     simp
+    rw [splitArrayLemma (i:= USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a)))) (h:= (mkIdx buckets.2 (UInt64.toUSize (hash a))).2)]
+    simp
+
     admit
 
 
     rw [← HashMap.Imp.expand_preserves_mem]
     rw [HashMap.Imp.Buckets.mem_update]
+    rw [splitArrayLemma (i:= USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a)))) (h:= (mkIdx buckets.2 (UInt64.toUSize (hash a))).2)]
     simp
     constructor
     intro h
@@ -610,21 +665,40 @@ by
       | inl h =>
         right
         simp [h]
-      | inr h=>
+      | inr h =>
         left
-        admit
+        constructor
+        left
+        apply h
+        by_contra p
+        specialize a_mem b'
+        rw [p] at a_mem
+        rw [p] at h
+        contradiction
     | inr h =>
+      left
+      constructor
+      right
+      apply h
+      by_contra p
       admit
 
     intro h
     cases h with
     | inl h =>
-      admit
+      rcases h with ⟨h,a_a'⟩
+      cases h with
+      | inl h =>
+        left
+        right
+        apply h
+      | inr h =>
+        right
+        apply h
     | inr h =>
       left
       left
       simp [h]
-
 
 
 def HashMap.keys' (m: HashMap A B): Finset A := m.val.keys'

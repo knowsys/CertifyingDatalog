@@ -5,7 +5,7 @@ import Mathlib.Data.List.Card
 import Mathlib.Data.Finset.Card
 
 -- Axioms for HashMap
-namespace Std.HashMap 
+namespace Std.HashMap
   variable {A: Type}[inst_dec_eq: BEq A][inst_hash: Hashable A]
 
   theorem toList_after_ofList_is_id (l : List (A × B)) : Std.HashMap.toList (@Std.HashMap.ofList _ _ inst_dec_eq inst_hash l) = l := by sorry
@@ -26,7 +26,7 @@ abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Std.HashMap A (List A)
 
 namespace PreGraph
   variable {A: Type}[DecidableEq A][Hashable A]
-  
+
   def vertices (g : PreGraph A) : List A := g.toList.map Prod.fst
   def predecessors (g : PreGraph A) (a : A) : List A := g.findD a []
 
@@ -38,24 +38,24 @@ namespace PreGraph
   def from_vertices (vs : List A) : PreGraph A := Std.HashMap.ofList (vs.map (fun v => (v, [])))
 
   def add_vertex (pg : PreGraph A) (v : A) : PreGraph A :=
-    if pg.contains v then 
-      pg 
-    else 
+    if pg.contains v then
+      pg
+    else
       pg.insert v []
 
-  -- def add_edge (pg : PreGraph A) (u v : A) : PreGraph A := 
-  --   if pg.contains v then 
+  -- def add_edge (pg : PreGraph A) (u v : A) : PreGraph A :=
+  --   if pg.contains v then
   --     pg.insert v ((pg.predecessors v) ++ [u])
-  --   else 
+  --   else
   --     pg.insert v [u]
 
-  def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A := 
+  def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
     let pg_with_added_predecessors := if pg.contains v then pg.insert v ((pg.predecessors v) ++ vs) else pg.insert v vs
     vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) pg_with_added_predecessors
 
-  -- Axioms 
-  theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 
-    induction vs with 
+  -- Axioms
+  theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by
+    induction vs with
     | nil => unfold vertices; unfold from_vertices; rw [Std.HashMap.toList_after_ofList_is_id]; simp only [List.map]
     | cons v vs ih =>
       unfold vertices at *
@@ -65,25 +65,25 @@ namespace PreGraph
       apply ih
 
   theorem from_vertices_no_vertex_has_predecessors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
-    induction vs with 
+    induction vs with
     | nil => intros; contradiction
     | cons v vs ih =>
       unfold from_vertices at *
       intro v v_in_list
-      rw [Std.HashMap.findD_ofList_is_list_find_getD] 
+      rw [Std.HashMap.findD_ofList_is_list_find_getD]
       simp [List.find?]
       split
       case h_1 => simp
       case h_2 _ _ v_not_first =>
-        have v_in_vs : v ∈ vs := by cases v_in_list; simp at v_not_first; assumption 
+        have v_in_vs : v ∈ vs := by cases v_in_list; simp at v_not_first; assumption
         have ih_plugged_in := ih v v_in_vs
         rw [Std.HashMap.findD_ofList_is_list_find_getD] at ih_plugged_in
         apply ih_plugged_in
 
   theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
     let pg := PreGraph.from_vertices vs
-    have : ∀ v, v ∈ pg.vertices -> (pg.findD v [] = []) := by 
-      intro v hv 
+    have : ∀ v, v ∈ pg.vertices -> (pg.findD v [] = []) := by
+      intro v hv
       apply from_vertices_no_vertex_has_predecessors
       rw [from_vertices_contains_exactly_the_passed_vertices] at hv
       exact hv
@@ -93,19 +93,19 @@ namespace PreGraph
     contradiction
 
   -- theorem add_edge_and_add_vertex_still_complete (pg : PreGraph A) (u v : A) (comp : pg.complete) : ((pg.add_edge u v).add_vertex u).complete := by sorry
-  
-  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by 
-    induction vs with 
-    | nil => 
+
+  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by
+    induction vs with
+    | nil =>
       unfold add_vertex_with_predecessors
-      simp 
-      split 
-      case inl pg_contains_v => 
+      simp
+      split
+      case inl pg_contains_v =>
         unfold predecessors
         rw [Std.HashMap.for_keys_in_map_inserting_findD_does_not_change]
         apply pg_is_complete
         apply pg_contains_v
-      case inr pg_not_contains_v => 
+      case inr pg_not_contains_v =>
         sorry
     | cons u us => sorry
 end PreGraph
@@ -118,18 +118,18 @@ namespace Graph
   def vertices (g : Graph A) : List A := g.val.vertices
   def predecessors (g : Graph A) (a : A) : List A := g.val.predecessors a
 
-  theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.predecessors a → a' ∈ g.vertices := by 
-    intro a ha b hb 
+  theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.predecessors a → a' ∈ g.vertices := by
+    intro a ha b hb
     unfold vertices
     rw [PreGraph.in_vertices_iff_contains]
     apply g.property
     . rw [← PreGraph.in_vertices_iff_contains]
       apply ha
     . rw [← PreGraph.in_predecessors_iff_found]
-      unfold predecessors at hb 
+      unfold predecessors at hb
       apply hb
 
-  def from_vertices (vs : List A) : Graph A := 
+  def from_vertices (vs : List A) : Graph A :=
     {
       val := PreGraph.from_vertices vs
       property := by apply PreGraph.from_vertices_is_complete
@@ -141,7 +141,7 @@ namespace Graph
   --     property := by apply PreGraph.add_edge_and_add_vertex_still_complete; apply G.property
   --   }
 
-  def add_vertex_with_predecessors (g : Graph A) (v : A) (vs : List A) : Graph A := 
+  def add_vertex_with_predecessors (g : Graph A) (v : A) (vs : List A) : Graph A :=
     {
       val := g.val.add_vertex_with_predecessors v vs
       property := by apply PreGraph.add_vertex_with_predecessors_still_complete; apply g.property
@@ -2023,7 +2023,7 @@ by
 variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
- (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = groundRuleFromAtoms v (G.predecessors v) ) ∨ ((G.predecessors v) = [] ∧ d.contains v)
+ (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = {head:= v, body:= (G.predecessors v) }) ∨ ((G.predecessors v) = [] ∧ d.contains v)
 
 def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
   if l.isEmpty
@@ -2034,7 +2034,7 @@ def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: d
   else
     checkRuleMatch m (groundRule.mk a l)
 
-lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.predecessors a) (ssm: m = parseProgramToSymbolSequenceMap P (fun _ => [])):  locallyValidityChecker m d l a = Except.ok () ↔ locallyValid P.toFinset d a G :=
+lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.predecessors a) :  locallyValidityChecker (parseProgramToSymbolSequenceMap P (fun _ => [])) d l a = Except.ok () ↔ locallyValid P.toFinset d a G :=
 by
   unfold locallyValid
   unfold locallyValidityChecker
@@ -2053,13 +2053,13 @@ by
   apply db
   simp at db
   specialize h db
-  rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P) (ssm:= ssm)] at h
+  rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P) ] at h
   left
   simp at h
   apply h
 
   simp [empty] at h
-  rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P) (ssm:= ssm)] at h
+  rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P)] at h
   left
   simp at h
   apply h
@@ -2072,7 +2072,7 @@ by
   simp [db]
   cases h with
   | inl ruleCase =>
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P) (ssm:= ssm)]
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P)]
     simp
     apply ruleCase
   | inr dbCase =>
@@ -2081,7 +2081,7 @@ by
   simp [empty]
   cases h with
   | inl ruleCase =>
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P) (ssm:= ssm)]
+    rw [checkRuleMatchOkIffExistsRuleForGroundRule (P:= P)]
     simp
     apply ruleCase
   | inr dbCase =>
@@ -2108,7 +2108,6 @@ by
     apply rP
     constructor
     rw [ground_r, groundRuleEquality]
-    unfold groundRuleFromAtoms
     simp
     apply List.ext_get
     rw [List.length_map, List.length_attach]
