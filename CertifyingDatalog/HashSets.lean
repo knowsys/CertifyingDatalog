@@ -1,14 +1,19 @@
 import Std.Data.HashMap
 import Std.Data.AssocList
+import Std.Classes.BEq
 import Mathlib.Data.List.Defs
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Bool.AllAny
 
 
-
 namespace Std
 section HashMap
 variable {A:Type} [Hashable A] [DecidableEq A] {B: Type} [DecidableEq B]
+
+instance: Std.HashMap.LawfulHashable A := {hash_eq := by simp}
+
+instance: PartialEquivBEq A := {symm:= by simp, trans:= by simp}
+
 
 lemma Array.mem_iff_exists (as: Array A) (a:A): a ∈ as ↔ ∃ (i: Fin as.size), a = as[i] :=
 by
@@ -170,6 +175,64 @@ lemma List.mem_set (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a 
           simp [hj]
 
 
+lemma List.replaceF_distinct_mem (l: List (A × B)) (dist: List.Pairwise (fun x y => ¬ x.1 = y.1) l) (a: A) (ab ab': A × B) (mem: ∃ (c: A × B), c ∈ l ∧ c.1 = a): ab ∈  List.replaceF (fun x => if x.1 == a then some ab' else none) l ↔ (ab ∈ l ∧ ab.1 ≠ a) ∨ ab = ab' := by
+  induction l with
+  | nil =>
+    simp at mem
+  | cons hd tl ih =>
+    unfold List.replaceF
+    simp
+    by_cases hd_a: hd.1 = a
+    simp [hd_a]
+    by_cases ab_a: ab.1 = a
+    have ab_tl: ¬ ab ∈ tl := by
+      simp at dist
+      rcases dist with ⟨dist, _⟩
+      specialize dist ab.1 ab.2
+      simp at dist
+      by_contra ab_tl
+      specialize dist ab_tl
+      rw [← ab_a] at hd_a
+      contradiction
+    simp [ab_a, ab_tl]
+
+    simp[ab_a]
+    have ab_hd: ¬ ab = hd := by
+      by_contra h
+      rw [h] at ab_a
+      contradiction
+    simp [ab_hd]
+    tauto
+
+    simp [hd_a]
+    rw [List.pairwise_cons] at dist
+    rcases dist with ⟨_, tl_dist⟩
+    specialize ih tl_dist
+    have mem': (∃ c ∈ tl, c.1 = a) := by
+      rcases mem with ⟨c, c_mem, c_a⟩
+      simp at c_mem
+      have c_hd: ¬ c = hd := by
+        by_contra p
+        rw [p] at c_a
+        contradiction
+      simp [c_hd] at c_mem
+      use c
+    specialize ih mem'
+    simp at ih
+    rw [ih]
+
+    rw [← or_assoc, or_and_left]
+    have h: (ab = hd ∨ ¬ab.1 = a) ↔ ¬ ab.1 = a := by
+      constructor
+      intro h
+      cases h with
+      | inl h =>
+        rw [h]
+        apply hd_a
+      | inr h =>
+        apply h
+      tauto
+    rw [h]
 
 
 lemma Array.mem_set (as: Array A) (i: Fin as.size) (a d: A): a ∈ as.set i d ↔ a = d ∨ ∃ (j: Fin as.size), j ≠ i ∧ a = as[j] :=
@@ -392,6 +455,13 @@ by
 
 def HashMap.Imp.Buckets.keys' (buckets: HashMap.Imp.Buckets A B): Finset A := Array.foldl (fun x y => x ∪ (y.toList.map Prod.fst).toFinset) ∅ buckets.val
 
+lemma HashMap.Imp.Buckets.keys'_iff_kv (buckets: HashMap.Imp.Buckets A B) (a:A): a ∈ buckets.keys' ↔ ∃ (b:B), (a,b) ∈ buckets.kv:= by
+  unfold keys'
+  unfold kv
+  simp_rw [Array.foldl_union]
+  simp
+  tauto
+
 
 
 lemma HashMap.Imp.Buckets.keys'_mem_iff (buckets: HashMap.Imp.Buckets A B) (a:A): a ∈ buckets.keys' ↔ ∃ (l: AssocList A B), l ∈ buckets.val ∧ l.contains a:=
@@ -404,7 +474,13 @@ def HashMap.Imp.keys' (m: HashMap.Imp A B): Finset A :=
   match m with
   | ⟨_, buckets⟩ => buckets.keys'
 
-
+lemma HashMap.Imp.keys'_iff_kv (m: HashMap.Imp A B) (a:A): a ∈ m.keys' ↔ ∃ (b:B), (a,b) ∈ m.kv:= by
+  unfold keys'
+  unfold kv
+  cases m with
+  | mk size buckets =>
+    simp
+    rw [HashMap.Imp.Buckets.keys'_iff_kv]
 
 
 lemma HashMap.Imp.contains_iff (m: HashMap.Imp A B) (wf: HashMap.Imp.WF m): m.contains a ↔ a ∈ m.keys' :=
@@ -541,13 +617,18 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
 
   constructor
   intro g
+  rcases g with ⟨bkt, bkt_mem, ab_mem⟩
+  use bkt
+  constructor
   left
-  apply g
+  apply bkt_mem
+  apply ab_mem
 
   intro g
+  rcases g with ⟨bkt, g, ab_mem⟩
   cases g with
   | inl g =>
-    apply g
+    use bkt
   | inr g =>
     rcases g with ⟨j, i_le_j, _⟩
     have lt_self: Array.size source < Array.size source := by
@@ -558,6 +639,7 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
       apply j.isLt
     simp at lt_self
 
+  --step
   unfold expand.go
   have h_i: i < source.size := by
     apply Nat.lt_of_sub_eq_succ h
@@ -569,9 +651,94 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
     simp
   specialize ih h'
   rw [ih]
-  sorry
-  -/
 
+  simp_rw [or_and_right, exists_or]
+  constructor
+  intro g
+  cases g with
+  | inl g =>
+    rw [foldl_reinsertAux] at g
+    cases g with
+    | inl g =>
+      left
+      apply g
+    | inr g =>
+      right
+      use source.get (Fin.mk i h_i)
+      constructor
+      use (Fin.mk i h_i)
+      simp
+      apply g
+  | inr g =>
+    rcases g with ⟨bkt,g,ab_mem⟩
+    right
+    use bkt
+    rcases g with ⟨j, j_i, bkt_set⟩
+    constructor
+    rw [Array.get_set] at bkt_set
+    simp at bkt_set
+    have j_isLt: j.val < Array.size source := by
+      have h: j.val < Array.size (Array.set source {val:=i, isLt := h_i} AssocList.nil) := by
+        apply j.isLt
+      simp at h
+      exact h
+    use Fin.mk j j_isLt
+    simp
+    constructor
+    apply Nat.le_trans (m:= i+1)
+    simp
+    apply j_i
+    rw [bkt_set]
+    split
+    rename_i i_j
+    rw [← i_j] at j_i
+    simp at j_i
+    simp
+    apply ab_mem
+
+  intro g
+  rw [foldl_reinsertAux]
+  cases g with
+  | inl g =>
+    left
+    left
+    apply g
+  | inr g =>
+    rcases g with ⟨bkt, g, ab_mem⟩
+    rcases g with ⟨j,i_j, bkt_j⟩
+    by_cases j_i: i = j.val
+    left
+    right
+    have source_eq: source[i] = source[j.val] := by
+      congr
+    rw [source_eq, ← bkt_j]
+    apply ab_mem
+
+    right
+    use bkt
+    have h_k: ∃ (k: Fin (Array.size (Array.set source { val := i, isLt := h_i } AssocList.nil))), k.val = j.val := by
+      have k': j.val < (Array.size (Array.set source { val := i, isLt := h_i } AssocList.nil)) := by
+        rw [Array.size_set]
+        apply j.isLt
+      use Fin.mk j.val k'
+    rcases h_k with ⟨k, k_j⟩
+    constructor
+    use k
+    constructor
+    rw [k_j, ← Nat.succ_eq_add_one, Nat.succ_le_iff]
+    apply Nat.lt_of_le_of_ne
+    apply i_j
+    apply j_i
+    rw [Array.get_set]
+    simp
+    split
+    rename_i i_k
+    rw [i_k] at j_i
+    contradiction
+
+    rw [bkt_j]
+    congr
+  -/
 
 
 
@@ -615,12 +782,39 @@ lemma HashMap.Imp.expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:
 
   apply ab_mem
 
+lemma HashMap.Imp.Buckets.distinct_elements (buckets: HashMap.Imp.Buckets A B) (wf: HashMap.Imp.Buckets.WF buckets) (l: AssocList A B) (mem: l ∈ buckets.1): List.Pairwise (fun x y => ¬x.1 = y.1) l.toList := by
+  have dist: ∀ (bucket : Std.AssocList A B),
+  bucket ∈ buckets.val.data →
+    List.Pairwise (fun (a b : A × B) => ¬(a.fst == b.fst) = true) (Std.AssocList.toList bucket) := by
+      apply wf.distinct
+  simp at dist
+  apply dist
+  rw [← Array.mem_def]
+  apply mem
+
+lemma HashMap.Imp.Buckets.element_member_in_hash_bucket (a: A ) (b: B) (buckets: HashMap.Imp.Buckets A B) (wf: HashMap.Imp.Buckets.WF buckets) (i: Fin (buckets.1.size)): (a,b) ∈ buckets.1[↑i].toList →  i.val = USize.toNat (mkIdx buckets.2 (UInt64.toUSize (hash a))) := by
+  have hash_self: ∀ (i : Nat) (h : i < Array.size buckets.val),
+  Std.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := by
+    apply wf.hash_self
+  specialize hash_self i.val i.isLt
+  unfold AssocList.All at hash_self
+  simp at hash_self
+  unfold mkIdx
+  simp
+  intro h
+  apply Eq.symm
+  apply hash_self
+  apply h
+
 
 lemma HashMap.Imp.insert_semantics (m: HashMap.Imp A B) (wf: HashMap.Imp.WF m) (a a': A) (b b':B): (m.insert a b).kv_member a' b' ↔ (m.kv_member a' b' ∧ a ≠ a') ∨ (a, b) = (a', b') :=
 by
   rw [← Imp.kv_member_iff_in_kv (wf:=wf), ← Imp.kv_member_iff_in_kv (wf:= Imp.WF.insert wf)]
   cases m with
   | mk size buckets =>
+    rw [Std.HashMap.Imp.WF_iff] at wf
+    simp at wf
+    rcases wf with ⟨_, wf⟩
     unfold insert
     simp
     rw [cond_eq_if]
@@ -637,8 +831,63 @@ by
     rw [Buckets.mem_update]
     rw [splitArrayLemma (i:= USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a)))) (h:= (mkIdx buckets.2 (UInt64.toUSize (hash a))).2)]
     simp
+    simp_rw [cond_eq_if]
+    rcases mem with ⟨b_,mem⟩
+    rw [List.replaceF_distinct_mem]
+    simp
+    constructor
+    intro h
+    cases h with
+    | inl h =>
+      cases h with
+      | inl h =>
+        left
+        rcases h with ⟨h, a_a'⟩
+        constructor
+        left
+        apply h
+        apply Ne.symm
+        apply a_a'
+      | inr h =>
+        right
+        simp [h]
+    | inr h =>
+      left
+      constructor
+      right
+      apply h
+      rcases h with ⟨j, j_hash, ab'_mem⟩
+      by_contra a_a'
+      have j_hash': j = USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a))) := by
+        apply HashMap.Imp.Buckets.element_member_in_hash_bucket
+        apply wf
+        rw [a_a']
+        apply ab'_mem
+      contradiction
+    intro h
+    cases h with
+    | inl h =>
+      rcases h with ⟨h, a_a'⟩
+      cases h with
+      | inl h =>
+        left
+        left
+        constructor
+        apply h
+        apply Ne.symm
+        apply a_a'
+      | inr h =>
+        right
+        apply h
+    | inr h =>
+      left
+      right
+      simp [h]
+    apply HashMap.Imp.Buckets.distinct_elements
+    apply wf
+    apply Array.get_mem (as:=buckets.1) (i:= Fin.mk (USize.toNat (mkIdx buckets.2 (UInt64.toUSize (hash a)))) (mkIdx buckets.2 (UInt64.toUSize (hash a))).2)
+    use (a,b_)
 
-    admit
 
 
     rename_i a_mem
@@ -649,8 +898,50 @@ by
     simp
     rw [splitArrayLemma (i:= USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a)))) (h:= (mkIdx buckets.2 (UInt64.toUSize (hash a))).2)]
     simp
-
-    admit
+    constructor
+    intro h
+    cases h with
+    | inl h =>
+      cases h with
+      | inl h =>
+        right
+        simp [h]
+      | inr h =>
+        left;
+        constructor
+        left
+        apply h
+        by_contra p
+        specialize a_mem b'
+        rw [← p] at h
+        contradiction
+    | inr h =>
+      left
+      constructor
+      right
+      apply h
+      by_contra a_a'
+      rcases h with ⟨j, j_idx, ab'_mem⟩
+      have j_idx': ↑j = USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a))) := by
+        apply  HashMap.Imp.Buckets.element_member_in_hash_bucket a b'
+        apply wf
+        rw [a_a']
+        apply ab'_mem
+      contradiction
+    intro h
+    cases h with
+    | inl h =>
+      rcases h with ⟨h, _⟩
+      cases h with
+      | inl h =>
+        left;right;
+        apply h
+      | inr h =>
+        right
+        apply h
+    | inr h =>
+      left;left
+      simp [h]
 
 
     rw [← HashMap.Imp.expand_preserves_mem]
@@ -681,12 +972,18 @@ by
       right
       apply h
       by_contra p
-      admit
+      rcases h with ⟨j, j_mdIx, ab'_mem⟩
+      rw [← p] at ab'_mem
+      have j_idx': j = USize.toNat ↑(mkIdx buckets.2 (UInt64.toUSize (hash a))) := by
+        apply HashMap.Imp.Buckets.element_member_in_hash_bucket a b'
+        apply wf
+        apply ab'_mem
+      contradiction
 
     intro h
     cases h with
     | inl h =>
-      rcases h with ⟨h,a_a'⟩
+      rcases h with ⟨h,_⟩
       cases h with
       | inl h =>
         left
@@ -703,7 +1000,7 @@ by
 
 def HashMap.keys' (m: HashMap A B): Finset A := m.val.keys'
 
-lemma HashMap.contains_iff (m: HashMap A B): m.contains a ↔ a ∈ m.keys' :=
+lemma HashMap.contains_iff (m: HashMap A B) (a: A): m.contains a ↔ a ∈ m.keys' :=
 by
   unfold contains
   unfold keys'
@@ -711,6 +1008,15 @@ by
   apply m.2
 
 def HashMap.kv_member (m: HashMap A B) (a: A) (b:B): Bool := m.1.kv_member a b
+
+lemma HashMap.keys'_iff_kv (m: HashMap A B) (a:A): a ∈ m.keys' ↔ ∃ (b:B), m.kv_member a b:= by
+  cases m with
+  | mk m wf =>
+    unfold keys'
+    unfold kv_member
+    simp
+    rw [HashMap.Imp.keys'_iff_kv]
+    simp_rw [HashMap.Imp.kv_member_iff_in_kv (wf:=wf)]
 
 
 lemma HashMap.insert_semantics (m: HashMap A B) (a a': A) (b b':B): (m.insert a b).kv_member a' b' ↔ (m.kv_member a' b' ∧ a' ≠ a) ∨ (a, b) = (a', b') :=
@@ -722,14 +1028,93 @@ by
 
 end HashMap
 
-abbrev HashSet (A:Type) [Hashable A] [BEq A] := HashMap A Unit
+abbrev HashSet (A:Type) [Hashable A] [DecidableEq A] := HashMap A Unit
 
 section HashSet
-variable {A:Type} [Hashable A] [BEq A][LawfulBEq A]
+variable {A:Type} [Hashable A] [DecidableEq A][LawfulBEq A]
+
+def HashSet.empty: HashSet A := HashMap.empty
 
 def HashSet.contains (S: HashSet A) (a:A): Bool := HashMap.contains S a
 
 def HashSet.insert (S: HashSet A) (a:A): HashSet A := HashMap.insert S a ()
+
+lemma HashSet.contains_insert {S: HashSet A} (a:A ): ∀ (a':A), (S.insert a).contains a' ↔ S.contains a' ∨ a = a' := by
+  intro a'
+  unfold insert
+  unfold contains
+  simp [HashMap.contains_iff, HashMap.keys'_iff_kv]
+  constructor
+  intro h
+  rcases h with ⟨b, h⟩
+  rw [HashMap.insert_semantics] at h
+  simp at h
+  cases h with
+  | inl h =>
+    left
+    use b
+    simp[h]
+  | inr h =>
+    right
+    apply h
+
+  intro h
+  use ()
+  rw [HashMap.insert_semantics]
+  simp
+  by_cases a_a': a = a'
+  simp [a_a']
+
+  simp [a_a']
+  simp [a_a'] at h
+  constructor
+  rcases h with ⟨_, h⟩
+  apply h
+  apply Ne.symm
+  apply a_a'
+
+
+lemma HashSet.empty_contains: ∀ (a:A), ¬ HashSet.empty.contains a :=
+by
+  intro a
+  unfold contains
+  unfold empty
+  unfold HashMap.empty
+  unfold mkHashMap
+  unfold HashMap.Imp.empty
+  unfold HashMap.contains
+  simp
+  unfold HashMap.Imp.empty'
+  unfold HashMap.Imp.contains
+  simp
+  unfold HashMap.Imp.Buckets.mk
+  simp
+
+  def HashSet.Subset (S S': HashSet A): Prop := ∀ (b:A), S.contains b → S'.contains b
+
+instance : HasSubset (HashSet A) := ⟨HashSet.Subset⟩
+
+lemma HashSet.Subset.refl {S: HashSet A} : S ⊆ S :=
+by
+  unfold_projs at *
+  unfold Subset at *
+  simp
+
+
+lemma HashSet.Subset.trans {S1 S2 S3: HashSet A} (h1: S1 ⊆ S2) (h2: S2 ⊆ S3): S1 ⊆ S3 :=
+by
+  unfold_projs at *
+  unfold Subset at *
+  intro b S1_b
+  apply h2
+  apply h1
+  apply S1_b
+
+lemma HashSet.Subset.Iff  {S1 S2: HashSet A} : S1 ⊆ S2 ↔ (∀ (a:A), S1.contains a → S2.contains a) :=
+by
+  unfold_projs
+  unfold HashSet.Subset
+  simp
 
 
 end HashSet

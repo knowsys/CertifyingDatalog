@@ -1,6 +1,7 @@
 import CertifyingDatalog.Basic
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.TreeValidation
+import CertifyingDatalog.HashSets
 import Mathlib.Data.List.Card
 import Mathlib.Data.Finset.Card
 
@@ -149,9 +150,8 @@ namespace Graph
 end Graph
 
 section dfs
-variable {A: Type}[DecidableEq A][Hashable A] {B: Type} [DecidableEq B]
-open Lean
-
+variable {A: Type}[DecidableEq A][Hashable A] {B: Type} [DecidableEq B] [Hashable B] [DecidableEq B]
+open Std
 
 lemma pred_lt (n m: ℕ) (h:n < m ): n.pred < m :=
 by
@@ -1142,113 +1142,9 @@ by
   simp
 
 
-def Lean.HashSet.Subset [Hashable B] (S S': HashSet B): Prop := ∀ (b:B), S.contains b → S'.contains b
-
-instance [Hashable B]: HasSubset (HashSet B) := ⟨Lean.HashSet.Subset⟩
-
-lemma Lean.HashSet.Subset.refl [Hashable B] {S1: HashSet B} : S1 ⊆ S1 :=
-by
-  unfold_projs at *
-  unfold Subset at *
-  simp
 
 
-lemma Lean.HashSet.Subset.trans [Hashable B] {S1 S2 S3: HashSet B} (h1: S1 ⊆ S2) (h2: S2 ⊆ S3): S1 ⊆ S3 :=
-by
-  unfold_projs at *
-  unfold Subset at *
-  intro b S1_b
-  apply h2
-  apply h1
-  apply S1_b
-
-lemma Lean.HashSet.Subset.Iff [Hashable B] {S1 S2: HashSet B} : S1 ⊆ S2 ↔ ∀ (b:B), S1.contains b → S2.contains b :=
-by
-  unfold_projs
-  unfold HashSet.Subset
-  simp
-
-
-
-lemma List.set_self (l:List A) (n:ℕ) (hn: n < l.length): l.set n l[n] = l :=
-by
-  induction l with
-  | nil =>
-    simp at hn
-  | cons hd tl ih =>
-    cases n with
-    | zero =>
-      unfold set
-      simp
-    | succ m =>
-      unfold set
-      rw [List.cons_getElem_succ]
-      sorry
-
-
-lemma Array.set_self (a:Array A) (n:ℕ) (hn: n < a.size): a.data.set n a[n] = a.data :=
-by
-  apply List.set_self
-
-lemma Lean.HashSetImp.contains_insert [Hashable B] {S1: HashSetImp B} (b b':B): (S1.insert b).contains b' ↔ S1.contains b' ∨ b == b' :=
-by
-  unfold insert
-  cases S1 with
-  | mk size buckets =>
-    simp only
-    split
-    rename_i h
-    unfold HashSetBucket.update
-    unfold Array.uset
-    unfold Array.set
-    simp [Array.set_self]
-    by_cases b_b': b = b'
-    simp [b_b']
-    rw [b_b'] at h
-    sorry
-
-    simp [b_b']
-    unfold contains
-    simp
-
-
-    sorry
-    sorry
-
-
-
-lemma HashSet.contains_insert [Hashable B] {S1: HashSet B} (b:B ): ∀ (b':B), (S1.insert b).contains b' ↔ S1.contains b' ∨ b = b' :=
-by
-  intro b'
-  unfold Lean.HashSet.insert
-  cases S1 with
-  | mk val prop =>
-    simp
-    unfold HashSetImp.insert
-    cases val with
-    | mk n buckets =>
-      simp only
-      unfold HashSet.contains
-      simp only
-      sorry
-
-
-
-lemma Lean.HashSet.empty_contains [Hashable B]: ∀ (b:B), ¬ HashSet.empty.contains b :=
-by
-  intro b
-  simp
-  unfold contains
-  unfold empty
-  unfold mkHashSet
-  simp
-  unfold mkHashSetImp
-  unfold HashSetImp.contains
-  simp
-
-
-
-def foldl_except_set [Hashable B] (f: A → HashSet B → (Except String (HashSet B))) (l: List A) (init: HashSet B): Except String (HashSet B) :=
+def foldl_except_set (f: A → HashSet B → (Except String (HashSet B))) (l: List A) (init: HashSet B): Except String (HashSet B) :=
   match l with
   | [] => Except.ok init
   | hd::tl =>
@@ -1286,7 +1182,7 @@ by
       simp [a_tl]
       apply h
 
-lemma foldl_except_set_contains_list_map [Hashable B] (f: A → HashSet B → (Except String (HashSet B))) (l: List A) (init: HashSet B) (subs: ∀ (S S':HashSet B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(map: A → B) (map_prop: ∀ (a:A) (S S':HashSet B ), f a S  = Except.ok S' →  S'.contains (map a) ) (T: HashSet B) (get_T: foldl_except_set f l init = Except.ok T) : ∀ (b:B), b ∈  (List.map map l) → T.contains b :=
+lemma foldl_except_set_contains_list_map [Hashable B] [DecidableEq B] (f: A → HashSet B → (Except String (HashSet B))) (l: List A) (init: HashSet B) (subs: ∀ (S S':HashSet B ) (a:A), a ∈ l →  f a S = Except.ok S' → S ⊆ S')(map: A → B) (map_prop: ∀ (a:A) (S S':HashSet B ), f a S  = Except.ok S' →  S'.contains (map a) ) (T: HashSet B) (get_T: foldl_except_set f l init = Except.ok T) : ∀ (b:B), b ∈  (List.map map l) → T.contains b :=
 by
   revert T
   induction l generalizing init with
