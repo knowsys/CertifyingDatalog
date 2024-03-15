@@ -7,11 +7,11 @@ import Mathlib.Data.Finset.Card
 
 -- Axioms for HashMap
 namespace Std.HashMap
-  variable {A: Type}[inst_dec_eq: BEq A][inst_hash: Hashable A]
-
-  theorem toList_after_ofList_is_id (l : List (A × B)) : Std.HashMap.toList (@Std.HashMap.ofList _ _ inst_dec_eq inst_hash l) = l := by sorry
+  variable {A B: Type}[inst_dec_eq: BEq A][inst_hash: Hashable A]
 
   theorem in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := sorry
+
+  theorem ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Std.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := sorry
 
   theorem for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A B) (a : A) (a_in_hm : hm.contains a) : ∀ b, hm.insert a (hm.findD a b) = hm := by sorry
 
@@ -58,15 +58,11 @@ namespace PreGraph
     let pg_with_added_successors := if pg.contains v then pg.insert v ((pg.successors v) ++ vs) else pg.insert v vs
     vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) pg_with_added_successors
 
-  theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 
-    induction vs with 
-    | nil => unfold vertices; unfold from_vertices; rw [Std.HashMap.toList_after_ofList_is_id]; simp only [List.map]
-    | cons v vs ih =>
-      unfold vertices at *
-      unfold from_vertices at *
-      rw [Std.HashMap.toList_after_ofList_is_id] at *
-      simp at *
-      apply ih
+  theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : ∀ v, v ∈ (PreGraph.from_vertices vs).vertices ↔ v ∈ vs := by 
+    unfold vertices
+    unfold from_vertices
+    intro v
+    rw [Std.HashMap.in_projection_of_toList_iff_contains, Std.HashMap.ofList_mapped_to_pair_contains_iff_list_elem]
 
   theorem from_vertices_no_vertex_has_successors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
     induction vs with
