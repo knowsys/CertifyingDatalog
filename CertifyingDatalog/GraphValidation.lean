@@ -24,8 +24,8 @@ end Std.HashMap
 
 -- structure Graph (A: Type) where
 --   (vertices: List A)
---   (predecessors: A → List A)
---   (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ predecessors a → a' ∈ vertices)
+--   (successors: A → List A)
+--   (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ successors a → a' ∈ vertices)
 
 abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Std.HashMap A (List A)
 
@@ -33,12 +33,12 @@ namespace PreGraph
   variable {A: Type}[DecidableEq A][Hashable A]
 
   def vertices (g : PreGraph A) : List A := g.toList.map Prod.fst
-  def predecessors (g : PreGraph A) (a : A) : List A := g.findD a []
+  def successors (g : PreGraph A) (a : A) : List A := g.findD a []
 
   def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.findD a []) → pg.contains a'
 
   theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Std.HashMap.in_projection_of_toList_iff_contains
-  theorem in_predecessors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.findD a []) := by unfold predecessors; intros; rfl
+  theorem in_successors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.successors a ↔ b ∈ (pg.findD a []) := by unfold successors; intros; rfl
 
   def from_vertices (vs : List A) : PreGraph A := Std.HashMap.ofList (vs.map (fun v => (v, [])))
 
@@ -50,13 +50,13 @@ namespace PreGraph
 
   -- def add_edge (pg : PreGraph A) (u v : A) : PreGraph A :=
   --   if pg.contains v then
-  --     pg.insert v ((pg.predecessors v) ++ [u])
+  --     pg.insert v ((pg.successors v) ++ [u])
   --   else
   --     pg.insert v [u]
 
-  def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
-    let pg_with_added_predecessors := if pg.contains v then pg.insert v ((pg.predecessors v) ++ vs) else pg.insert v vs
-    vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) pg_with_added_predecessors
+  def add_vertex_with_successors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
+    let pg_with_added_successors := if pg.contains v then pg.insert v ((pg.successors v) ++ vs) else pg.insert v vs
+    vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) pg_with_added_successors
 
   theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 
     induction vs with 
@@ -68,7 +68,7 @@ namespace PreGraph
       simp at *
       apply ih
 
-  theorem from_vertices_no_vertex_has_predecessors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
+  theorem from_vertices_no_vertex_has_successors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
     induction vs with
     | nil => intros; contradiction
     | cons v vs ih =>
@@ -88,7 +88,7 @@ namespace PreGraph
     let pg := PreGraph.from_vertices vs
     have : ∀ v, v ∈ pg.vertices -> (pg.findD v [] = []) := by
       intro v hv
-      apply from_vertices_no_vertex_has_predecessors
+      apply from_vertices_no_vertex_has_successors
       rw [from_vertices_contains_exactly_the_passed_vertices] at hv
       exact hv
     intro a ha b hb
@@ -100,10 +100,10 @@ namespace PreGraph
   
   -- Axioms 
 
-  theorem add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_predecessors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by 
+  theorem add_vertex_with_successors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_successors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by 
     induction vs with 
     | nil => 
-      unfold add_vertex_with_predecessors
+      unfold add_vertex_with_successors
       simp
       intro a
       split
@@ -154,36 +154,36 @@ namespace PreGraph
         | inl hll => apply Or.inl; exact hll.left
         | inr hlr => apply Or.inr; rw [hlr.right]; simp      
     | cons u us ih => 
-      unfold add_vertex_with_predecessors at *
+      unfold add_vertex_with_successors at *
       simp at *
       intro a
       sorry
 
-  theorem add_vertex_with_predecessors_findD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = (pg.predecessors v) ++ vs := by sorry
+  theorem add_vertex_with_successors_findD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = (pg.successors v) ++ vs := by sorry
 
-  theorem add_vertex_with_predecessors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = (pg.predecessors a) := by sorry
+  theorem add_vertex_with_successors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = (pg.successors a) := by sorry
 
-  -- theorem add_vertex_with_predecessors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD v b = vs := by sorry
+  -- theorem add_vertex_with_successors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_successors v vs).findD v b = vs := by sorry
 
-  theorem add_vertex_with_predecessors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = vs := by sorry
+  theorem add_vertex_with_successors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = vs := by sorry
 
-  theorem add_vertex_with_predecessors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = [] := by sorry
+  theorem add_vertex_with_successors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = [] := by sorry
 
-  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by 
+  theorem add_vertex_with_successors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_successors v vs).complete := by 
     unfold complete 
     intro a ha 
-    rw [add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices] at ha
+    rw [add_vertex_with_successors_contains_iff_contains_or_in_new_vertices] at ha
     intro a' ha' 
-    rw [add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices]
+    rw [add_vertex_with_successors_contains_iff_contains_or_in_new_vertices]
     cases ha with 
     | inl contains_and_eq => 
-      rw [add_vertex_with_predecessors_findD_semantics_1 pg v a _ contains_and_eq] at ha'
+      rw [add_vertex_with_successors_findD_semantics_1 pg v a _ contains_and_eq] at ha'
       rw [List.mem_append_eq] at ha'
       cases ha' with 
       | inl ha' =>
         cases Decidable.em (a' = v) with 
-        | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_predecessors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hl
-        | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_predecessors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hr
+        | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_successors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hl
+        | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_successors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hr
       | inr ha' => 
         cases Decidable.em (a' = v) with 
         | inl hl =>
@@ -196,13 +196,13 @@ namespace PreGraph
           | inr hrr => apply Or.inr; apply Or.inr; apply Or.inr; constructor; exact hrr; constructor; exact hr; exact ha'
     | inr rest => cases rest with 
     | inl contains_and_neq => 
-      rw [add_vertex_with_predecessors_findD_semantics_2 pg v a _ contains_and_neq] at ha'
+      rw [add_vertex_with_successors_findD_semantics_2 pg v a _ contains_and_neq] at ha'
       cases Decidable.em (a' = v) with 
-      | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_predecessors_iff_found]; apply ha'; exact hl
-      | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_predecessors_iff_found]; apply ha'; exact hr
+      | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_successors_iff_found]; apply ha'; exact hl
+      | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_successors_iff_found]; apply ha'; exact hr
     | inr rest => cases rest with 
     | inl not_contains_and_eq => 
-      rw [add_vertex_with_predecessors_findD_semantics_3 pg v a _ not_contains_and_eq] at ha'
+      rw [add_vertex_with_successors_findD_semantics_3 pg v a _ not_contains_and_eq] at ha'
       cases Decidable.em (a' = v) with 
       | inl hl =>
         cases Decidable.em (pg.contains a') with 
@@ -213,7 +213,7 @@ namespace PreGraph
         | inl hrl => apply Or.inr; apply Or.inl; constructor; exact hrl; exact hr
         | inr hrr => apply Or.inr; apply Or.inr; apply Or.inr; constructor; exact hrr; constructor; exact hr; exact ha'
     | inr not_contains_and_neq => 
-      rw [add_vertex_with_predecessors_findD_semantics_4 pg v a _ not_contains_and_neq] at ha'
+      rw [add_vertex_with_successors_findD_semantics_4 pg v a _ not_contains_and_neq] at ha'
       contradiction
 end PreGraph
 
@@ -223,17 +223,17 @@ namespace Graph
   variable {A: Type}[DecidableEq A][Hashable A]
 
   def vertices (g : Graph A) : List A := g.val.vertices
-  def predecessors (g : Graph A) (a : A) : List A := g.val.predecessors a
+  def successors (g : Graph A) (a : A) : List A := g.val.successors a
 
-  theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.predecessors a → a' ∈ g.vertices := by
+  theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.successors a → a' ∈ g.vertices := by
     intro a ha b hb
     unfold vertices
     rw [PreGraph.in_vertices_iff_contains]
     apply g.property
     . rw [← PreGraph.in_vertices_iff_contains]
       apply ha
-    . rw [← PreGraph.in_predecessors_iff_found]
-      unfold predecessors at hb
+    . rw [← PreGraph.in_successors_iff_found]
+      unfold successors at hb
       apply hb
 
   def from_vertices (vs : List A) : Graph A :=
@@ -248,10 +248,10 @@ namespace Graph
   --     property := by apply PreGraph.add_edge_and_add_vertex_still_complete; apply G.property
   --   }
 
-  def add_vertex_with_predecessors (g : Graph A) (v : A) (vs : List A) : Graph A :=
+  def add_vertex_with_successors (g : Graph A) (v : A) (vs : List A) : Graph A :=
     {
-      val := g.val.add_vertex_with_predecessors v vs
-      property := by apply PreGraph.add_vertex_with_predecessors_still_complete; apply g.property
+      val := g.val.add_vertex_with_successors v vs
+      property := by apply PreGraph.add_vertex_with_successors_still_complete; apply g.property
     }
 end Graph
 
@@ -287,7 +287,7 @@ by
 
 
 def isWalk (l: List A) (G: Graph A): Prop :=
- ( ∀ (a:A), a ∈ l → a ∈ G.vertices ) ∧ ∀ (i: ℕ), i > 0 → ∀ (g: i < l.length), l.get (Fin.mk i.pred (pred_lt i l.length g)) ∈ G.predecessors (l.get (Fin.mk i g) )
+ ( ∀ (a:A), a ∈ l → a ∈ G.vertices ) ∧ ∀ (i: ℕ), i > 0 → ∀ (g: i < l.length), l.get (Fin.mk i.pred (pred_lt i l.length g)) ∈ G.successors (l.get (Fin.mk i g) )
 
  lemma isWalkSingleton (G: Graph A) (a:A) (mem: a ∈ G.vertices): isWalk [a] G :=
 by
@@ -340,7 +340,7 @@ def isAcyclic (G: Graph A) := ∀ (l: List A), ¬ isCycle l G
 
 
 
-lemma isWalk_extends_predecessors {a: A} {l: List A} {G: Graph A} (walk: isWalk (a::l) G): ∀ (b:A), b ∈ (G.predecessors a) → isWalk (b::a::l) G :=
+lemma isWalk_extends_successors {a: A} {l: List A} {G: Graph A} (walk: isWalk (a::l) G): ∀ (b:A), b ∈ (G.successors a) → isWalk (b::a::l) G :=
 by
   intro b b_mem
   unfold isWalk
@@ -474,10 +474,10 @@ by
   simp [Finset.mem_filter]
   rw [And.comm]
 
-noncomputable def globalPredecessors (b:A) (G: Graph A): Finset A := Finset.filter_nc (fun a => canReach a b G) G.vertices.toFinset
+noncomputable def globalSuccessors (b:A) (G: Graph A): Finset A := Finset.filter_nc (fun a => canReach a b G) G.vertices.toFinset
 
 
-lemma isWalkExtendBack (p: List A) (a: A) (G: Graph A) (walk: isWalk p G) (nonempty_p: p ≠ []) (mem: a ∈ G.vertices) (backExtend: p.get (Fin.mk p.length.pred (getLastForNonequal_isLt p nonempty_p)) ∈ G.predecessors a): isWalk (p++[a]) G :=
+lemma isWalkExtendBack (p: List A) (a: A) (G: Graph A) (walk: isWalk p G) (nonempty_p: p ≠ []) (mem: a ∈ G.vertices) (backExtend: p.get (Fin.mk p.length.pred (getLastForNonequal_isLt p nonempty_p)) ∈ G.successors a): isWalk (p++[a]) G :=
 by
   unfold isWalk at *
   simp at *
@@ -519,14 +519,14 @@ by
     rw [← not_lt] at h
     exact absurd i_len h
 
-lemma globalPredecessorsSubsetWhenPredecessor (a b:A) (G: Graph A) (mem: a ∈ G.vertices) (pred: b ∈ G.predecessors a): globalPredecessors b G ⊆ globalPredecessors a G:=
+lemma globalSuccessorsSubsetWhenSuccessor (a b:A) (G: Graph A) (mem: a ∈ G.vertices) (pred: b ∈ G.successors a): globalSuccessors b G ⊆ globalSuccessors a G:=
 by
   rw [Finset.subset_iff]
   intro x
-  rw [globalPredecessors, Finset.mem_filter_nc]
+  rw [globalSuccessors, Finset.mem_filter_nc]
   intro h
   rcases h with ⟨reach, mem'⟩
-  rw [globalPredecessors, Finset.mem_filter_nc]
+  rw [globalSuccessors, Finset.mem_filter_nc]
   constructor
   unfold canReach at *
   rcases reach with ⟨p, neq, walk, get_x, get_b⟩
@@ -551,10 +551,10 @@ by
 
 
 
-lemma nodeNotInGlobalPredecessorOfPredecessorInAcyclic (a b:A) (G: Graph A) (acyclic: isAcyclic G) (pred: b ∈ G.predecessors a): ¬  a ∈ globalPredecessors b G :=
+lemma nodeNotInGlobalSuccessorOfSuccessorInAcyclic (a b:A) (G: Graph A) (acyclic: isAcyclic G) (pred: b ∈ G.successors a): ¬  a ∈ globalSuccessors b G :=
 by
   by_contra p
-  unfold globalPredecessors at p
+  unfold globalSuccessors at p
   rw [Finset.mem_filter_nc] at p
   rcases p with ⟨reach,mem⟩
   unfold canReach at reach
@@ -594,17 +594,17 @@ by
   specialize acyclic (p++[a])
   exact absurd cycle acyclic
 
-lemma globalPredecessorsSSubsetWhenAcyclicAndPredecessor (G: Graph A) (a b: A) (acyclic: isAcyclic G) (pred: b ∈ G.predecessors a) (mem_a: a ∈ G.vertices): globalPredecessors b G  ⊂ globalPredecessors a G :=
+lemma globalSuccessorsSSubsetWhenAcyclicAndSuccessor (G: Graph A) (a b: A) (acyclic: isAcyclic G) (pred: b ∈ G.successors a) (mem_a: a ∈ G.vertices): globalSuccessors b G  ⊂ globalSuccessors a G :=
 by
   rw [Finset.ssubset_def]
   constructor
-  apply globalPredecessorsSubsetWhenPredecessor a b G mem_a pred
+  apply globalSuccessorsSubsetWhenSuccessor a b G mem_a pred
 
   rw [Finset.subset_iff]
   simp
   use a
   constructor
-  unfold globalPredecessors
+  unfold globalSuccessors
   rw [Finset.mem_filter_nc]
   constructor
   unfold canReach
@@ -621,7 +621,7 @@ by
   rw [List.mem_toFinset]
   apply mem_a
 
-  apply nodeNotInGlobalPredecessorOfPredecessorInAcyclic
+  apply nodeNotInGlobalSuccessorOfSuccessorInAcyclic
   apply acyclic
   apply pred
 
@@ -863,7 +863,7 @@ by
 
 def reachedFromCycle (a:A) (G: Graph A):= ∃ (c: List A), isCycle c G ∧ ∃ (b: A), b ∈ c ∧ canReach b a G
 
-lemma NotreachedFromCycleIffPredecessorsNotReachedFromCycle (a: A) (G: Graph A) (mem: a ∈ G.vertices): ¬ reachedFromCycle a G ↔ ∀ (b:A), b ∈ G.predecessors a → ¬ reachedFromCycle b G :=
+lemma NotreachedFromCycleIffSuccessorsNotReachedFromCycle (a: A) (G: Graph A) (mem: a ∈ G.vertices): ¬ reachedFromCycle a G ↔ ∀ (b:A), b ∈ G.successors a → ¬ reachedFromCycle b G :=
 by
   constructor
   intro h
@@ -903,7 +903,7 @@ by
   rcases p with ⟨c, cycle, b, b_c, reach_b_a⟩
   unfold canReach at reach_b_a
   rcases reach_b_a with ⟨p, neq, walk, get_b, get_a⟩
-  by_cases b_pred: b ∈ G.predecessors a
+  by_cases b_pred: b ∈ G.successors a
   have reachCirc_b: reachedFromCycle b G := by
     unfold reachedFromCycle
     use c
@@ -933,7 +933,7 @@ by
     simp [singletonWalk] at get_a
     rw [← get_a, get_b]
 
-  have pred_in_c: ∃ (d:A), d ∈ c ∧ d ∈ G.predecessors a := by
+  have pred_in_c: ∃ (d:A), d ∈ c ∧ d ∈ G.successors a := by
     unfold isCycle at cycle
     by_cases h : List.length c < 2
     simp [h] at cycle
@@ -1189,7 +1189,7 @@ by
       apply getSubListToMemberNonEmpty
     exact absurd h' p
   | cons hd tl =>
-    apply isWalk_extends_predecessors
+    apply isWalk_extends_successors
     rw [← h']
     apply getSubListToMemberPreservesWalk (walk:= isWalk_of_cons walk)
     unfold isWalk at walk
@@ -1439,7 +1439,7 @@ by
     simp [eq_comm]
 
 
-lemma canReachLemma (a:A) (G: Graph A) (mem: a ∈ G.vertices) (f: A → List A → Except String Unit): (∀ (b : A), canReach b a G → f b (Graph.predecessors G b) = Except.ok ()) ↔ (∀ (b: A), b ∈ G.predecessors a → (∀ (c : A), canReach c b G → f c (Graph.predecessors G c) = Except.ok ())) ∧ f a (G.predecessors a) = Except.ok () :=
+lemma canReachLemma (a:A) (G: Graph A) (mem: a ∈ G.vertices) (f: A → List A → Except String Unit): (∀ (b : A), canReach b a G → f b (Graph.successors G b) = Except.ok ()) ↔ (∀ (b: A), b ∈ G.successors a → (∀ (c : A), canReach c b G → f c (Graph.successors G c) = Except.ok ())) ∧ f a (G.successors a) = Except.ok () :=
 by
 
   constructor
@@ -1528,7 +1528,7 @@ by
         apply Nat.lt_trans (m:= Nat.succ tl'.length)
         simp
         simp
-      have pred: List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt) ∈ G.predecessors a := by
+      have pred: List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt) ∈ G.successors a := by
         rw [← get_a]
         unfold isWalk at walk
         rcases walk with ⟨_,conn⟩
@@ -1550,7 +1550,7 @@ by
       rw [List.get_eq_iff]
       apply getSubListToMemberEndsWithElement
 
-lemma allTrueIfAllCanReachTrue (f: A → List A → Except String Unit) (G: Graph A): (∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok ()) ↔ ∀ (a:A), a ∈ G.vertices → ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
+lemma allTrueIfAllCanReachTrue (f: A → List A → Except String Unit) (G: Graph A): (∀ (a:A), a ∈ G.vertices → f a (G.successors a) = Except.ok ()) ↔ ∀ (a:A), a ∈ G.vertices → ∀ (b:A), canReach b a G → f b (G.successors b) = Except.ok () :=
 by
   constructor
   intro h a _ b reach
@@ -1580,14 +1580,14 @@ def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String
   if visited.contains a
   then Except.ok visited
   else
-    match f a (G.predecessors a) with
+    match f a (G.successors a) with
     | Except.error msg => Except.error msg
     | Except.ok _ =>
-      if pred_walk: (G.predecessors a) ∩ (a::currWalk) = []
+      if pred_walk: (G.successors a) ∩ (a::currWalk) = []
       then
 
       addElementIfOk (foldl_except_set (fun ⟨x, _h⟩ S =>
-        dfs_step x G f (a::currWalk) (isWalk_extends_predecessors walk x _h) (not_mem_of_empty_intersection pred_walk x _h) S) (G.predecessors a).attach visited) a
+        dfs_step x G f (a::currWalk) (isWalk_extends_successors walk x _h) (not_mem_of_empty_intersection pred_walk x _h) S) (G.successors a).attach visited) a
       else
         Except.error "Cycle detected"
 termination_by Finset.card (List.toFinset G.vertices \ List.toFinset currWalk)
@@ -1673,12 +1673,12 @@ by
   apply HashSet.Subset.refl
 
   simp [a_vis] at get_S
-  cases f_a: f a (Graph.predecessors G a) with
+  cases f_a: f a (Graph.successors G a) with
   | error e=>
     simp[f_a] at get_S
   | ok _ =>
     simp [f_a] at get_S
-    have int_walk_pred: Graph.predecessors G a ∩ (a :: currWalk) = [] := by
+    have int_walk_pred: Graph.successors G a ∩ (a :: currWalk) = [] := by
       by_contra p
       simp [p] at get_S
     simp [int_walk_pred] at get_S
@@ -1686,7 +1686,7 @@ by
     rcases get_S with ⟨S', S_S', foldl_result⟩
     rw [S_S']
     have visit_S': visited ⊆ S' := by
-      apply foldl_except_set_subset (l:=(G.predecessors a).attach) (get_S:= foldl_result)
+      apply foldl_except_set_subset (l:=(G.successors a).attach) (get_S:= foldl_result)
       simp
       intro T T' x x_pred
       apply ih
@@ -1708,12 +1708,12 @@ by
   apply a_visit
 
   simp [a_visit] at get_S
-  cases f_a: f a (Graph.predecessors G a) with
+  cases f_a: f a (Graph.successors G a) with
   | error e=>
     simp[f_a] at get_S
   | ok _ =>
     simp[f_a] at get_S
-    by_cases h : Graph.predecessors G a ∩ (a :: currWalk) = []
+    by_cases h : Graph.successors G a ∩ (a :: currWalk) = []
     simp [h] at get_S
     rw [addElementIfOk_exists_ok'] at get_S
     rcases get_S with ⟨S', S_S',_⟩
@@ -1724,7 +1724,7 @@ by
 
     simp [h] at get_S
 
-lemma dfs_step_preserves_notReachedFromCycleAndCounterExample [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (not_mem: ¬ a ∈ currWalk) (visited: HashSet A) (visited_prop: ∀ (a:A), visited.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) (S: HashSet A) (get_S: dfs_step a G f currWalk walk not_mem visited = Except.ok S): ∀ (a:A),  S.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok () :=
+lemma dfs_step_preserves_notReachedFromCycleAndCounterExample [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (not_mem: ¬ a ∈ currWalk) (visited: HashSet A) (visited_prop: ∀ (a:A), visited.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.successors b) = Except.ok ()) (S: HashSet A) (get_S: dfs_step a G f currWalk walk not_mem visited = Except.ok S): ∀ (a:A),  S.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.successors b) = Except.ok () :=
 by
   induction' h:Finset.card (List.toFinset G.vertices \ List.toFinset currWalk)  with n ih generalizing a currWalk visited S
 
@@ -1776,22 +1776,22 @@ by
   apply visited_prop
 
   simp [a_visit] at get_S
-  cases f_a: f a (Graph.predecessors G a) with
+  cases f_a: f a (Graph.successors G a) with
   | error e =>
     simp [f_a] at get_S
   | ok _ =>
     simp [f_a] at get_S
-    have inter: Graph.predecessors G a ∩ (a :: currWalk) = [] := by
+    have inter: Graph.successors G a ∩ (a :: currWalk) = [] := by
       by_contra p
       simp [p] at get_S
     simp [inter] at get_S
     rw [addElementIfOk_exists_ok'] at get_S
     rcases get_S with ⟨S', S_S', foldl_result⟩
-    have preserve_S': ∀ (a : A), S'.contains a → ¬reachedFromCycle a G ∧ ∀ (b : A), canReach b a G → f b (Graph.predecessors G b) = Except.ok () := by
+    have preserve_S': ∀ (a : A), S'.contains a → ¬reachedFromCycle a G ∧ ∀ (b : A), canReach b a G → f b (Graph.successors G b) = Except.ok () := by
       apply foldl_except_set_preserves_p (init_prop:=visited_prop) (h:= foldl_result)
       simp
       intro b b_pred T T' T_prop dfs_T'
-      specialize ih b (a::currWalk) (isWalk_extends_predecessors walk b b_pred) (not_mem_of_empty_intersection inter b b_pred) T T_prop T' dfs_T' card
+      specialize ih b (a::currWalk) (isWalk_extends_successors walk b b_pred) (not_mem_of_empty_intersection inter b b_pred) T T_prop T' dfs_T' card
       apply ih
 
     --split cases
@@ -1806,7 +1806,7 @@ by
       have b_mem: b ∈ G.vertices := by
         rw [← b_a]
         apply a_mem
-      rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:=b_mem), canReachLemma (mem:=b_mem)]
+      rw [NotreachedFromCycleIffSuccessorsNotReachedFromCycle (mem:=b_mem), canReachLemma (mem:=b_mem)]
       simp [← b_a, f_a]
       rw [← forall_and]
       intro a'
@@ -1827,7 +1827,7 @@ by
 
 
 
-lemma dfs_step_sematics [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (not_mem: ¬ a ∈ currWalk) (visited: HashSet A) (visited_prop: ∀ (a:A), visited.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()):  Except.isOk (dfs_step a G f currWalk walk not_mem visited) ↔  ¬ reachedFromCycle a G ∧ (∀ (b:A), canReach b a G → f b (G.predecessors b) = Except.ok ()) :=
+lemma dfs_step_sematics [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (not_mem: ¬ a ∈ currWalk) (visited: HashSet A) (visited_prop: ∀ (a:A), visited.contains a → ¬ reachedFromCycle a G ∧ ∀ (b:A), canReach b a G → f b (G.successors b) = Except.ok ()):  Except.isOk (dfs_step a G f currWalk walk not_mem visited) ↔  ¬ reachedFromCycle a G ∧ (∀ (b:A), canReach b a G → f b (G.successors b) = Except.ok ()) :=
 by
   induction' h:Finset.card (List.toFinset G.vertices \ List.toFinset currWalk)  with n ih generalizing a currWalk visited
 
@@ -1888,24 +1888,24 @@ by
 
   simp[a_visit]
   rcases h' with ⟨reach_cycle, reach_f⟩
-  have f_a: f a (G.predecessors a) = Except.ok () := by
+  have f_a: f a (G.successors a) = Except.ok () := by
     apply reach_f
     apply canReach_refl a G a_mem
   simp [f_a]
 
-  have pred_walk: Graph.predecessors G a ∩ (a :: currWalk) = [] := by
-    cases inter: Graph.predecessors G a ∩ (a :: currWalk) with
+  have pred_walk: Graph.successors G a ∩ (a :: currWalk) = [] := by
+    cases inter: Graph.successors G a ∩ (a :: currWalk) with
     | nil =>
       simp
     | cons hd tl =>
-      have hd_mem: hd ∈ G.predecessors a ∧ hd ∈ (a::currWalk) := by
+      have hd_mem: hd ∈ G.successors a ∧ hd ∈ (a::currWalk) := by
         rw [← List.mem_inter_iff, inter]
         simp
       rcases hd_mem with ⟨hd_pred, hd_a_currWalk⟩
 
       have cycle_hd: isCycle (hd::(getSubListToMember (a::currWalk) hd hd_a_currWalk)) G := by
         apply frontRepetitionInWalkImpliesCycle
-        apply isWalk_extends_predecessors walk hd hd_pred
+        apply isWalk_extends_successors walk hd hd_pred
 
       have reachedFromCycleHd: reachedFromCycle hd G := by
         unfold reachedFromCycle
@@ -1919,7 +1919,7 @@ by
         apply a_mem
         apply hd_pred
 
-      rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
+      rw [NotreachedFromCycleIffSuccessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
       specialize reach_cycle hd hd_pred
       exact absurd reachedFromCycleHd reach_cycle
 
@@ -1929,10 +1929,10 @@ by
   intro b b_pred
   have b_mem: b ∈ G.vertices := by
     apply G.complete a a_mem b b_pred
-  specialize ih b (a::currWalk) (isWalk_extends_predecessors walk b b_pred) (not_mem_of_empty_intersection pred_walk b b_pred) visited visited_prop card
+  specialize ih b (a::currWalk) (isWalk_extends_successors walk b b_pred) (not_mem_of_empty_intersection pred_walk b b_pred) visited visited_prop card
   rw [ih]
   constructor
-  rw [NotreachedFromCycleIffPredecessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
+  rw [NotreachedFromCycleIffSuccessorsNotReachedFromCycle (mem:= a_mem)] at reach_cycle
   apply reach_cycle b b_pred
   rw [canReachLemma (mem:=a_mem)] at reach_f
   apply And.left (reach_f )
@@ -1968,7 +1968,7 @@ by
 def dfs (G: Graph A) (f: A → List A → Except String Unit) : Except String Unit :=
   isOkOrMessage (foldl_except_set (fun ⟨x,_h⟩ S => dfs_step x G f [] (isWalkSingleton G x _h) (List.not_mem_nil x) S) G.vertices.attach HashSet.empty )
 
-lemma dfs_semantics (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.predecessors a) = Except.ok () :=
+lemma dfs_semantics (G: Graph A) (f: A → List A → Except String Unit): dfs G f = Except.ok () ↔ isAcyclic G ∧ ∀ (a:A), a ∈ G.vertices → f a (G.successors a) = Except.ok () :=
 by
   unfold dfs
   rw [isOkOrMessageOkIffExceptionIsOk, acyclicIffAllNotReachedFromCycle, allTrueIfAllCanReachTrue]
@@ -1991,7 +1991,7 @@ by
   apply HashSet.empty_contains a a_mem
 
 
-  use (fun x => ¬reachedFromCycle x G ∧ ∀ (b : A), canReach b x G → f b (Graph.predecessors G b) = Except.ok ())
+  use (fun x => ¬reachedFromCycle x G ∧ ∀ (b : A), canReach b x G → f b (Graph.successors G b) = Except.ok ())
   simp [HashSet.empty_contains]
 
   simp
@@ -2005,12 +2005,12 @@ by
 
 
 def extractTree (a: A) (G: Graph A) (mem: a ∈ G.vertices) (acyclic: isAcyclic G): tree A :=
-  tree.node a (List.map (fun ⟨x, _h⟩ => extractTree x G (G.complete a mem x _h) acyclic) (G.predecessors a).attach)
-termination_by Finset.card (globalPredecessors a G)
+  tree.node a (List.map (fun ⟨x, _h⟩ => extractTree x G (G.complete a mem x _h) acyclic) (G.successors a).attach)
+termination_by Finset.card (globalSuccessors a G)
 decreasing_by
   simp_wf
   apply Finset.card_lt_card
-  apply globalPredecessorsSSubsetWhenAcyclicAndPredecessor
+  apply globalSuccessorsSSubsetWhenAcyclicAndSuccessor
   apply acyclic
   apply _h
   apply mem
@@ -2025,7 +2025,7 @@ by
 variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
- (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = {head:= v, body:= (G.predecessors v) }) ∨ ((G.predecessors v) = [] ∧ d.contains v)
+ (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = {head:= v, body:= (G.successors v) }) ∨ ((G.successors v) = [] ∧ d.contains v)
 
 def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
   if l.isEmpty
@@ -2036,7 +2036,7 @@ def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: d
   else
     checkRuleMatch m (groundRule.mk a l)
 
-lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.predecessors a) :  locallyValidityChecker (parseProgramToSymbolSequenceMap P (fun _ => [])) d l a = Except.ok () ↔ locallyValid P.toFinset d a G :=
+lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.successors a) :  locallyValidityChecker (parseProgramToSymbolSequenceMap P (fun _ => [])) d l a = Except.ok () ↔ locallyValid P.toFinset d a G :=
 by
   unfold locallyValid
   unfold locallyValidityChecker
@@ -2045,7 +2045,7 @@ by
   constructor
 
   intro h
-  by_cases empty: List.isEmpty (G.predecessors a) = true
+  by_cases empty: List.isEmpty (G.successors a) = true
   simp [empty] at h
   by_cases db: d.contains a
   right
@@ -2067,7 +2067,7 @@ by
   apply h
 
   intro h
-  by_cases empty: List.isEmpty (Graph.predecessors G a)
+  by_cases empty: List.isEmpty (Graph.successors G a)
   rw [if_pos empty]
   by_cases db: d.contains a
   simp [db]
@@ -2094,7 +2094,7 @@ by
 
 lemma extractTreeStepValidProofTreeIffAllLocallyValidAndAcyclic (P: program τ) (d: database τ) (a: groundAtom τ) (G: Graph (groundAtom τ)) (acyclic: isAcyclic G) (mem: a ∈ G.vertices) (valid: ∀ (a: groundAtom τ), a ∈ G.vertices → locallyValid P d a G): isValid P d (extractTree a G mem acyclic) :=
 by
-  induction' h:(globalPredecessors a G).card using Nat.strongInductionOn with n ih generalizing a
+  induction' h:(globalSuccessors a G).card using Nat.strongInductionOn with n ih generalizing a
   unfold extractTree
   unfold isValid
   have valid_a: locallyValid P d a G := by
@@ -2120,12 +2120,12 @@ by
     rw [List.forall_iff_forall_mem]
     simp
     intro t b b_mem extract_b
-    specialize ih (globalPredecessors b G).card
+    specialize ih (globalSuccessors b G).card
     rw [← h] at ih
     rw [← extract_b]
     apply ih
     apply Finset.card_lt_card
-    apply globalPredecessorsSSubsetWhenAcyclicAndPredecessor _ _ _ acyclic b_mem mem
+    apply globalSuccessorsSSubsetWhenAcyclicAndSuccessor _ _ _ acyclic b_mem mem
     rfl
   | inr dbCase =>
     right

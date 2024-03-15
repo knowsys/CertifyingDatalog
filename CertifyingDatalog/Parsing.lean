@@ -259,7 +259,7 @@ def convertProblemInputToVerificationProblem (input: problemInput): Except Strin
 -- graph validation
 structure mockEdge where
   (vertex: mockAtom)
-  (predecessors: List (mockAtom))
+  (successors: List (mockAtom))
 deriving DecidableEq, Lean.FromJson, Lean.ToJson
 
 --#eval Lean.toJson (edge.mk (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]) (mockAtom.mk "R" [mockTerm.constant "c", mockTerm.variable "v"]))
@@ -296,11 +296,11 @@ deriving Lean.FromJson, Lean.ToJson
 -- lemma mem_insertHashSet_preserves_original {A: Type} [DecidableEq A] [Hashable A] (l1 l2: List A) (S : Lean.HashSet A) (h_mem: ∀ (a:A), a ∈ l1 ↔ S.contains a): ∀ (a:A), a ∈ l1 → a ∈ (insertListHashSet l1 l2 S).fst :=
 --   sorry
 --
--- def completeGraph {helper: parsingArityHelper} (G: Graph (groundAtom (parsingSignature helper))) (vertex:groundAtom (parsingSignature helper) )(predecessors: List (groundAtom (parsingSignature helper))) (vertices: Lean.HashSet (groundAtom (parsingSignature helper))) (h_v: ∀ (ga: (groundAtom (parsingSignature helper))), ga ∈ G.vertices ↔ vertices.contains ga): Graph (groundAtom (parsingSignature helper)) × Lean.HashSet (groundAtom (parsingSignature helper)):=
---   let vertices' := insertListHashSet G.vertices (vertex::predecessors) vertices
+-- def completeGraph {helper: parsingArityHelper} (G: Graph (groundAtom (parsingSignature helper))) (vertex:groundAtom (parsingSignature helper) )(successors: List (groundAtom (parsingSignature helper))) (vertices: Lean.HashSet (groundAtom (parsingSignature helper))) (h_v: ∀ (ga: (groundAtom (parsingSignature helper))), ga ∈ G.vertices ↔ vertices.contains ga): Graph (groundAtom (parsingSignature helper)) × Lean.HashSet (groundAtom (parsingSignature helper)):=
+--   let vertices' := insertListHashSet G.vertices (vertex::successors) vertices
 --   ({
 --     vertices := Prod.fst vertices',
---     predecessors := fun x => if x = vertex then predecessors else G.predecessors x,
+--     successors := fun x => if x = vertex then successors else G.successors x,
 --     complete :=by
 --       sorry
 --   },
@@ -312,10 +312,10 @@ deriving Lean.FromJson, Lean.ToJson
 --   | Except.error msg =>
 --       Except.error msg
 --   | Except.ok vertex =>
---     match List.map_except (transformMockAtomToGroundAtom helper) e.predecessors with
+--     match List.map_except (transformMockAtomToGroundAtom helper) e.successors with
 --     | Except.error msg =>
 --         Except.error msg
---     | Except.ok predecessors => Except.ok (completeGraph G vertex predecessors vertices h_v )
+--     | Except.ok successors => Except.ok (completeGraph G vertex successors vertices h_v )
 --
 --
 -- def HashSetFromList.go {A: Type} [DecidableEq A] [Hashable A] (l: List A) (S: Lean.HashSet A):=
@@ -334,11 +334,11 @@ deriving Lean.FromJson, Lean.ToJson
 --     match transformMockAtomToGroundAtom helper hd.vertex with
 --     | Except.error msg => Except.error msg
 --     | Except.ok v =>
---       match List.map_except (transformMockAtomToGroundAtom helper) hd.predecessors with
+--       match List.map_except (transformMockAtomToGroundAtom helper) hd.successors with
 --       | Except.error msg => Except.error msg
---       | Except.ok predecessors =>
---         let currGraph' := completeGraph currGraph v predecessors vertices h_v
---         getGraph.go helper tl currGraph'.snd currGraph'.fst (mem_insertHashSet currGraph.vertices (v::predecessors) vertices h_v)
+--       | Except.ok successors =>
+--         let currGraph' := completeGraph currGraph v successors vertices h_v
+--         getGraph.go helper tl currGraph'.snd currGraph'.fst (mem_insertHashSet currGraph.vertices (v::successors) vertices h_v)
 
 def getGraph.go (helper: parsingArityHelper) (l: List mockEdge) (currGraph: Graph (groundAtom (parsingSignature helper))) : Except String (Graph (groundAtom (parsingSignature helper))) :=
   match l with
@@ -347,10 +347,10 @@ def getGraph.go (helper: parsingArityHelper) (l: List mockEdge) (currGraph: Grap
     match transformMockAtomToGroundAtom helper hd.vertex with
     | Except.error msg => Except.error msg
     | Except.ok v =>
-      match List.map_except (transformMockAtomToGroundAtom helper) hd.predecessors with
+      match List.map_except (transformMockAtomToGroundAtom helper) hd.successors with
       | Except.error msg => Except.error msg
-      | Except.ok predecessors =>
-        let currGraph' := currGraph.add_vertex_with_predecessors v predecessors
+      | Except.ok successors =>
+        let currGraph' := currGraph.add_vertex_with_successors v successors
         getGraph.go helper tl currGraph'
 
 def getGraph (helper: parsingArityHelper) (g: mockGraph): Except String (Graph (groundAtom (parsingSignature helper))) :=
