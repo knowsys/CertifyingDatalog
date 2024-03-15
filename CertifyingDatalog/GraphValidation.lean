@@ -9,9 +9,11 @@ import Mathlib.Data.Finset.Card
 namespace Std.HashMap
   variable {A B: Type}[inst_dec_eq: BEq A][inst_hash: Hashable A]
 
-  theorem in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := sorry
+  theorem findD_is_default_when_not_contains (hm : HashMap A B) (a : A) (h : ¬ hm.contains a) : ∀ b, hm.findD a b = b := by sorry
 
-  theorem ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Std.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := sorry
+  theorem in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := by sorry
+
+  theorem ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Std.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by sorry
 
   theorem for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A B) (a : A) (a_in_hm : hm.contains a) : ∀ b, hm.insert a (hm.findD a b) = hm := by sorry
 
@@ -20,6 +22,7 @@ namespace Std.HashMap
   theorem contains_insert (hm : HashMap A B) (a : A) : ∀ a' b, (hm.insert a b).contains a' ↔ hm.contains a' ∨ a == a' := by sorry
   theorem findD_insert (hm : HashMap A B) (a a' : A) : ∀ b, (hm.insert a b).findD a' b = hm.findD a' b := by sorry
   theorem findD_insert' (hm : HashMap A B) (a : A) (b : B) : ∀ b', (hm.insert a b).findD a b' = b := by sorry
+  theorem findD_insert'' (hm : HashMap A B) (a a' : A) (h : a ≠ a') : ∀ b b', (hm.insert a b).findD a' b' = hm.findD a' b' := by sorry
 end Std.HashMap
 
 -- structure Graph (A: Type) where
@@ -127,6 +130,19 @@ namespace PreGraph
           assumption
           exact v_in_us
 
+  theorem add_vertices_findD_semantics (pg : PreGraph A) (vs : List A) (a : A): (pg.add_vertices vs).findD a [] = pg.findD a [] := by
+    induction vs generalizing pg with 
+    | nil => simp [add_vertices]
+    | cons u us ih =>
+      simp [add_vertices]
+      have ih_plugged_in := ih (pg.add_vertex u)
+      unfold add_vertices at ih_plugged_in
+      rw [ih_plugged_in]
+      unfold add_vertex
+      split
+      rfl
+      rw [Std.HashMap.findD_insert]
+
   def add_vertex_with_successors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
     let pg_with_added_successors := if pg.contains v then pg.insert v ((pg.successors v) ++ vs) else pg.insert v vs
     PreGraph.add_vertices pg_with_added_successors vs
@@ -164,10 +180,6 @@ namespace PreGraph
     rw [← in_vertices_iff_contains] at ha
     rw [this a ha] at hb
     contradiction
-
-  -- theorem add_edge_and_add_vertex_still_complete (pg : PreGraph A) (u v : A) (comp : pg.complete) : ((pg.add_edge u v).add_vertex u).complete := by sorry
-  
-  -- Axioms 
 
   theorem add_vertex_with_successors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_successors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by 
     unfold add_vertex_with_successors
@@ -325,15 +337,61 @@ namespace PreGraph
         contradiction
       exact hlr.right.right
 
-  theorem add_vertex_with_successors_findD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = (pg.successors v) ++ vs := by sorry
+  theorem add_vertex_with_successors_findD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : (pg.add_vertex_with_successors v vs).findD a [] = (pg.successors v) ++ vs := by 
+    unfold add_vertex_with_successors
+    simp
+    rw [add_vertices_findD_semantics]
+    rw [← h.right]
+    simp [h.left]
+    rw [Std.HashMap.findD_insert']
 
-  theorem add_vertex_with_successors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = (pg.successors a) := by sorry
+  theorem add_vertex_with_successors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : (pg.add_vertex_with_successors v vs).findD a [] = (pg.successors a) := by 
+    unfold add_vertex_with_successors
+    simp
+    rw [add_vertices_findD_semantics]
+    split
+    rw [Std.HashMap.findD_insert'']
+    unfold successors
+    rfl
+    have contra := h.right
+    intro contra'
+    rw [contra'] at contra
+    contradiction
+    rw [Std.HashMap.findD_insert'']
+    unfold successors
+    rfl
+    have contra := h.right
+    intro contra'
+    rw [contra'] at contra
+    contradiction
 
-  -- theorem add_vertex_with_successors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_successors v vs).findD v b = vs := by sorry
+  theorem add_vertex_with_successors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : (pg.add_vertex_with_successors v vs).findD a [] = vs := by 
+    unfold add_vertex_with_successors
+    simp
+    rw [add_vertices_findD_semantics]
+    rw [← h.right]
+    simp [h.left]
+    rw [Std.HashMap.findD_insert']
 
-  theorem add_vertex_with_successors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = vs := by sorry
-
-  theorem add_vertex_with_successors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) : ∀ b, (pg.add_vertex_with_successors v vs).findD a b = [] := by sorry
+  theorem add_vertex_with_successors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v) : (pg.add_vertex_with_successors v vs).findD a [] = [] := by 
+    unfold add_vertex_with_successors
+    simp
+    rw [add_vertices_findD_semantics]
+    split
+    rw [Std.HashMap.findD_insert'']
+    rw [Std.HashMap.findD_is_default_when_not_contains]
+    exact h.left
+    have contra := h.right
+    intro contra'
+    rw [contra'] at contra
+    contradiction
+    rw [Std.HashMap.findD_insert'']
+    rw [Std.HashMap.findD_is_default_when_not_contains]
+    exact h.left
+    have contra := h.right
+    intro contra'
+    rw [contra'] at contra
+    contradiction
 
   theorem add_vertex_with_successors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_successors v vs).complete := by 
     unfold complete 
@@ -379,7 +437,7 @@ namespace PreGraph
         | inl hrl => apply Or.inr; apply Or.inl; constructor; exact hrl; exact hr
         | inr hrr => apply Or.inr; apply Or.inr; apply Or.inr; constructor; exact hrr; constructor; exact hr; exact ha'
     | inr not_contains_and_neq => 
-      rw [add_vertex_with_successors_findD_semantics_4 pg v a _ not_contains_and_neq] at ha'
+      rw [add_vertex_with_successors_findD_semantics_4 pg v a _ (⟨not_contains_and_neq.left, not_contains_and_neq.right.left⟩)] at ha'
       contradiction
 end PreGraph
 
