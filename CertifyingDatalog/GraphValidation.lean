@@ -16,6 +16,10 @@ namespace Std.HashMap
   theorem for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A B) (a : A) (a_in_hm : hm.contains a) : ∀ b, hm.insert a (hm.findD a b) = hm := by sorry
 
   theorem findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Std.HashMap.ofList l).findD a b = ((l.find? (fun x => x.fst == a)).map Prod.snd).getD b := by sorry
+
+  theorem contains_insert (hm : HashMap A B) (a : A) : ∀ a' b, (hm.insert a b).contains a' ↔ hm.contains a' ∨ a == a' := by sorry
+  theorem findD_insert (hm : HashMap A B) (a a' : A) : ∀ b, (hm.insert a b).findD a' b = hm.findD a' b := by sorry
+  theorem findD_insert' (hm : HashMap A B) (a : A) (b : B) : ∀ b', (hm.insert a b).findD a b' = b := by sorry
 end Std.HashMap
 
 -- structure Graph (A: Type) where
@@ -54,9 +58,8 @@ namespace PreGraph
     let pg_with_added_predecessors := if pg.contains v then pg.insert v ((pg.predecessors v) ++ vs) else pg.insert v vs
     vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) pg_with_added_predecessors
 
-  -- Axioms
-  theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by
-    induction vs with
+  theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : (PreGraph.from_vertices vs).vertices = vs := by 
+    induction vs with 
     | nil => unfold vertices; unfold from_vertices; rw [Std.HashMap.toList_after_ofList_is_id]; simp only [List.map]
     | cons v vs ih =>
       unfold vertices at *
@@ -94,10 +97,27 @@ namespace PreGraph
     contradiction
 
   -- theorem add_edge_and_add_vertex_still_complete (pg : PreGraph A) (u v : A) (comp : pg.complete) : ((pg.add_edge u v).add_vertex u).complete := by sorry
+  
+  -- Axioms 
 
-  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by
-    induction vs with
-    | nil =>
+  theorem add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_predecessors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by 
+    induction vs with 
+    | nil => sorry
+    | cons u us ih => sorry
+
+  theorem add_vertex_with_predecessors_findD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = (pg.predecessors v) ++ vs := by sorry
+
+  theorem add_vertex_with_predecessors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = (pg.predecessors a) := by sorry
+
+  -- theorem add_vertex_with_predecessors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD v b = vs := by sorry
+
+  theorem add_vertex_with_predecessors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = vs := by sorry
+
+  theorem add_vertex_with_predecessors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) : ∀ b, (pg.add_vertex_with_predecessors v vs).findD a b = [] := by sorry
+
+  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by 
+    induction vs with 
+    | nil => 
       unfold add_vertex_with_predecessors
       simp
       split
@@ -106,9 +126,70 @@ namespace PreGraph
         rw [Std.HashMap.for_keys_in_map_inserting_findD_does_not_change]
         apply pg_is_complete
         apply pg_contains_v
-      case inr pg_not_contains_v =>
+      case inr pg_not_contains_v => 
+        unfold complete
+        intro a a_is_key
+        rw [Std.HashMap.contains_insert] at a_is_key
+        cases a_is_key with 
+        | inl a_in_before_insert => 
+          intro a' a'_is_pred
+          rw [Std.HashMap.contains_insert]
+          apply Or.inl 
+          apply pg_is_complete
+          apply a_in_before_insert
+          rw [Std.HashMap.findD_insert] at a'_is_pred
+          apply a'_is_pred
+        | inr a_is_v =>
+          intro a' a'_is_pred
+          rw [Std.HashMap.contains_insert]
+          have : v = a := LawfulBEq.eq_of_beq a_is_v
+          rw [this] at a'_is_pred
+          rw [Std.HashMap.findD_insert'] at a'_is_pred
+          contradiction
+    | cons u us ih =>
+      unfold complete 
+      intro a ha 
+      rw [add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices] at ha
+      intro a' ha' 
+      rw [add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices]
+      cases ha with 
+      | inl contains_and_eq => 
+        rw [add_vertex_with_predecessors_findD_semantics_1 pg v a _ contains_and_eq] at ha'
+        rw [List.mem_append_eq] at ha'
+        cases ha' with 
+        | inl ha' =>
+          cases Decidable.em (a' = v) with 
+          | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_predecessors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hl
+          | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_predecessors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hr
+        | inr ha' => 
+          cases Decidable.em (a' = v) with 
+          | inl hl =>
+            sorry
+          | inr hr =>
+            sorry
+          -- simp at ha'
+          -- cases ha' with 
+          -- | inl a'_is_u => sorry
+          -- | inr a'_in_us => 
+          --   have : pg.contains a' := by unfold complete at ih; apply ih; sorry
+          --   sorry
+      | inr rest => cases rest with 
+      | inl contains_and_neq => 
+        rw [add_vertex_with_predecessors_findD_semantics_2 pg v a _ contains_and_neq] at ha'
+        cases Decidable.em (a' = v) with 
+        | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_predecessors_iff_found]; apply ha'; exact hl
+        | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_predecessors_iff_found]; apply ha'; exact hr
+      | inr rest => cases rest with 
+      | inl not_contains_and_eq => 
+        rw [add_vertex_with_predecessors_findD_semantics_3 pg v a _ not_contains_and_eq] at ha'
         sorry
-    | cons u us => sorry
+      | inr not_contains_and_neq => 
+        rw [add_vertex_with_predecessors_findD_semantics_4 pg v a _ not_contains_and_neq] at ha'
+        sorry 
+
+      -- unfold add_vertex_with_predecessors at *
+      -- simp at *
+      -- unfold complete
 end PreGraph
 
 abbrev Graph (A: Type) [DecidableEq A] [Hashable A] := { pg : PreGraph A // pg.complete }
