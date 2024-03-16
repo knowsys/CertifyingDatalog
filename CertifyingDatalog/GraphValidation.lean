@@ -5,40 +5,6 @@ import CertifyingDatalog.HashSets
 import Mathlib.Data.List.Card
 import Mathlib.Data.Finset.Card
 
--- Axioms for HashMap
-namespace Std.HashMap
-  variable {A B: Type}[inst_dec_eq: DecidableEq A][inst_hash: Hashable A]
-
-  theorem findD_is_default_when_not_contains (hm : HashMap A B) (a : A) (h : ¬ hm.contains a) : ∀ b, hm.findD a b = b := by sorry
-
-  theorem in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := by
-    rw [List.mem_map]
-    simp
-    unfold toList
-    unfold fold
-    unfold Imp.fold
-    unfold Id.run
-    unfold Imp.foldM
-    rw [Array.foldlM_eq_foldlM_data, List.foldlM_eq_foldl]
-    simp
-    sorry
-
-  theorem ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Std.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by sorry
-
-  theorem for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A B) (a : A) (a_in_hm : hm.contains a) : ∀ b, hm.insert a (hm.findD a b) = hm := by sorry
-
-  theorem findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Std.HashMap.ofList l).findD a b = ((l.find? (fun x => x.fst == a)).map Prod.snd).getD b := by sorry
-
-  theorem findD_insert (hm : HashMap A B) (a a' : A) : ∀ b, (hm.insert a b).findD a' b = hm.findD a' b := by sorry
-  theorem findD_insert' (hm : HashMap A B) (a : A) (b : B) : ∀ b', (hm.insert a b).findD a b' = b := by sorry
-  theorem findD_insert'' (hm : HashMap A B) (a a' : A) (h : a ≠ a') : ∀ b b', (hm.insert a b).findD a' b' = hm.findD a' b' := by sorry
-end Std.HashMap
-
--- structure Graph (A: Type) where
---   (vertices: List A)
---   (successors: A → List A)
---   (complete: ∀ (a:A), a ∈ vertices →  ∀ (a':A), a' ∈ successors a → a' ∈ vertices)
-
 abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Std.HashMap A (List A)
 
 namespace PreGraph
@@ -1809,7 +1775,7 @@ by
   rw [inter] at h
   simp at h
 
-def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (not_mem: ¬ (a ∈ currWalk))(visited: HashSet A) : Except String (HashSet A) :=
+def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (not_mem: ¬ (a ∈ currWalk)) (visited: HashSet A) : Except String (HashSet A) :=
   if visited.contains a
   then Except.ok visited
   else
