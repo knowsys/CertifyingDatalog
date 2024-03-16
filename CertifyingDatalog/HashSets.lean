@@ -1026,6 +1026,36 @@ by
   simp [HashMap.Imp.insert_semantics m.1 m.2 a a' b b']
   tauto
 
+lemma HashMap.contains_insert (m : HashMap A B) (a a': A) (b:B): (m.insert a b).contains a' ↔ m.contains a' ∨ a == a' := by
+  simp_rw [HashMap.contains_iff, HashMap.keys'_iff_kv]
+  constructor
+  intro h
+  rcases h with ⟨b',h⟩
+  rw [HashMap.insert_semantics] at h
+  by_cases a_a': a = a'
+  simp [a_a']
+
+  simp [a_a'] at *
+  use b'
+  simp [h]
+
+  intro h'
+  by_cases a_a': a = a'
+  use b
+  rw [insert_semantics]
+  right
+  rw [a_a']
+
+  simp[a_a'] at h'
+  rcases h' with ⟨b', h⟩
+  use b'
+  rw [insert_semantics]
+  left
+  simp [h, a_a']
+  aesop
+
+
+
 end HashMap
 
 abbrev HashSet (A:Type) [Hashable A] [DecidableEq A] := HashMap A Unit
