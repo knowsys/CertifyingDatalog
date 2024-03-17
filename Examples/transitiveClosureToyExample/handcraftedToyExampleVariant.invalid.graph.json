@@ -3,7 +3,7 @@
         "edges": [
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "a"
@@ -13,11 +13,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "a"
@@ -27,11 +27,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "a"
@@ -41,11 +41,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "b"
@@ -55,11 +55,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "b"
@@ -69,11 +69,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "c"
@@ -83,11 +83,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "a"
@@ -97,9 +97,9 @@
                         }
                     ]
                 },
-                "predecessors": [
+                "successors": [
                     {
-                        "symbol": "R",
+                        "symbol": "edge",
                         "terms": [
                             {
                                 "constant": "a"
@@ -113,7 +113,7 @@
             },
             {
                 "vertex": {
-                    "symbol": "R",
+                    "symbol": "edge",
                     "terms": [
                         {
                             "constant": "a"
@@ -123,11 +123,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "c"
@@ -137,9 +137,9 @@
                         }
                     ]
                 },
-                "predecessors": [
+                "successors": [
                     {
-                        "symbol": "R",
+                        "symbol": "edge",
                         "terms": [
                             {
                                 "constant": "c"
@@ -153,7 +153,7 @@
             },
             {
                 "vertex": {
-                    "symbol": "R",
+                    "symbol": "edge",
                     "terms": [
                         {
                             "constant": "c"
@@ -163,11 +163,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "b"
@@ -177,9 +177,9 @@
                         }
                     ]
                 },
-                "predecessors": [
+                "successors": [
                     {
-                        "symbol": "T",
+                        "symbol": "trans",
                         "terms": [
                             {
                                 "constant": "b"
@@ -190,7 +190,7 @@
                         ]
                     },
                     {
-                        "symbol": "T",
+                        "symbol": "trans",
                         "terms": [
                             {
                                 "constant": "c"
@@ -204,7 +204,7 @@
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "b"
@@ -214,9 +214,9 @@
                         }
                     ]
                 },
-                "predecessors": [
+                "successors": [
                     {
-                        "symbol": "R",
+                        "symbol": "edge",
                         "terms": [
                             {
                                 "constant": "b"
@@ -230,7 +230,7 @@
             },
             {
                 "vertex": {
-                    "symbol": "R",
+                    "symbol": "edge",
                     "terms": [
                         {
                             "constant": "b"
@@ -240,11 +240,11 @@
                         }
                     ]
                 },
-                "predecessors": []
+                "successors": []
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "a"
@@ -254,9 +254,9 @@
                         }
                     ]
                 },
-                "predecessors": [
+                "successors": [
                     {
-                        "symbol": "T",
+                        "symbol": "trans",
                         "terms": [
                             {
                                 "constant": "a"
@@ -267,7 +267,7 @@
                         ]
                     },
                     {
-                        "symbol": "T",
+                        "symbol": "trans",
                         "terms": [
                             {
                                 "constant": "b"
@@ -278,7 +278,7 @@
                         ]
                     },
                     {
-                        "symbol": "T",
+                        "symbol": "trans",
                         "terms": [
                             {
                                 "constant": "a"
@@ -292,7 +292,7 @@
             },
             {
                 "vertex": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "a"
@@ -302,9 +302,9 @@
                         }
                     ]
                 },
-                "predecessors": [
+                "successors": [
                     {
-                        "symbol": "T",
+                        "symbol": "trans",
                         "terms": [
                             {
                                 "constant": "a"
@@ -315,7 +315,7 @@
                         ]
                     },
                     {
-                        "symbol": "T",
+                        "symbol": "trans",
                         "terms": [
                             {
                                 "constant": "b"
@@ -332,7 +332,7 @@
     "program": [
         {
             "head": {
-                "symbol": "R",
+                "symbol": "edge",
                 "terms": [
                     {
                         "constant": "a"
@@ -346,7 +346,7 @@
         },
         {
             "head": {
-                "symbol": "R",
+                "symbol": "edge",
                 "terms": [
                     {
                         "constant": "b"
@@ -360,7 +360,7 @@
         },
         {
             "head": {
-                "symbol": "R",
+                "symbol": "edge",
                 "terms": [
                     {
                         "constant": "c"
@@ -374,7 +374,7 @@
         },
         {
             "head": {
-                "symbol": "T",
+                "symbol": "trans",
                 "terms": [
                     {
                         "variable": "?X"
@@ -386,7 +386,7 @@
             },
             "body": [
                 {
-                    "symbol": "R",
+                    "symbol": "edge",
                     "terms": [
                         {
                             "variable": "?X"
@@ -400,7 +400,7 @@
         },
         {
             "head": {
-                "symbol": "T",
+                "symbol": "trans",
                 "terms": [
                     {
                         "variable": "?X"
@@ -412,7 +412,7 @@
             },
             "body": [
                 {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "variable": "?X"
@@ -423,7 +423,7 @@
                     ]
                 },
                 {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "variable": "?Y"

@@ -1,7 +1,7 @@
-R("a","b").
-R("b","c").
-R("c","d").
+edge("a","b").
+edge("b","c").
+edge("c","d").
 
-T(?X,?Y) :- R(?X,?Y).
-T(?X,?Z) :- T(?X,?Y), T(?Y,?Z).
+trans(?X,?Y) :- edge(?X,?Y).
+trans(?X,?Z) :- trans(?X,?Y), trans(?Y,?Z).
 
