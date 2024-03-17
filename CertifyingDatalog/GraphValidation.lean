@@ -793,11 +793,11 @@ by
   specialize acyclic (p++[a])
   exact absurd cycle acyclic
 
-lemma globalSuccessorsSSubsetWhenAcyclicAndSuccessor (G: Graph A) (a b: A) (acyclic: isAcyclic G) (pred: b ∈ G.successors a) (mem_a: a ∈ G.vertices): globalSuccessors b G  ⊂ globalSuccessors a G :=
+lemma globalSuccessorsSSubsetWhenAcyclicAndSuccessor (G: Graph A) (a b: A) (acyclic: isAcyclic G) (succ: b ∈ G.successors a) (mem_a: a ∈ G.vertices): globalSuccessors b G  ⊂ globalSuccessors a G :=
 by
   rw [Finset.ssubset_def]
   constructor
-  apply globalSuccessorsSubsetWhenSuccessor a b G mem_a pred
+  apply globalSuccessorsSubsetWhenSuccessor a b G mem_a succ
 
   rw [Finset.subset_iff]
   simp
@@ -822,7 +822,7 @@ by
 
   apply nodeNotInGlobalSuccessorOfSuccessorInAcyclic
   apply acyclic
-  apply pred
+  apply succ
 
 
 
@@ -1102,7 +1102,7 @@ by
   rcases p with ⟨c, cycle, b, b_c, reach_b_a⟩
   unfold canReach at reach_b_a
   rcases reach_b_a with ⟨p, neq, walk, get_b, get_a⟩
-  by_cases b_pred: b ∈ G.successors a
+  by_cases b_succ: b ∈ G.successors a
   have reachCirc_b: reachesCycle b G := by
     unfold reachesCycle
     use c
@@ -1120,10 +1120,10 @@ by
     apply isWalkSingleton
     apply G.complete
     apply mem
-    apply b_pred
+    apply b_succ
     simp
 
-  specialize h b b_pred
+  specialize h b b_succ
   exact absurd reachCirc_b h
 
   -- b not connected with a directly
@@ -1132,7 +1132,7 @@ by
     simp [singletonWalk] at get_a
     rw [← get_a, get_b]
 
-  have pred_in_c: ∃ (d:A), d ∈ c ∧ d ∈ G.successors a := by
+  have succ_in_c: ∃ (d:A), d ∈ c ∧ d ∈ G.successors a := by
     unfold isCycle at cycle
     by_cases h : List.length c < 2
     simp [h] at cycle
@@ -1215,8 +1215,8 @@ by
       apply conn
 
 
-  rcases pred_in_c with ⟨d, d_c, d_pred⟩
-  specialize h d d_pred
+  rcases succ_in_c with ⟨d, d_c, d_succ⟩
+  specialize h d d_succ
   have reachCirc_d: reachesCycle d G := by
     unfold reachesCycle
     use c
@@ -1644,7 +1644,7 @@ by
   constructor
   intro h
   constructor
-  intro b b_pred
+  intro b b_succ
   intro c reach_c
   apply h
   unfold canReach
@@ -1678,7 +1678,7 @@ by
     simp [i_p]
     rw [List.get_append_left, List.get_append_right]
     simp[get_b]
-    apply b_pred
+    apply b_succ
     simp
     simp
     cases p with
@@ -1727,13 +1727,13 @@ by
         apply Nat.lt_trans (m:= Nat.succ tl'.length)
         simp
         simp
-      have pred: List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt) ∈ G.successors a := by
+      have succ: List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt) ∈ G.successors a := by
         rw [← get_a]
         unfold isWalk at walk
         rcases walk with ⟨_,conn⟩
         apply conn
         simp
-      specialize left (List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt)) pred
+      specialize left (List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt)) succ
       apply left
       unfold canReach
       use (getSubListToMember (hd::hd'::tl') (List.get (hd::hd'::tl') (Fin.mk (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt)) (List.get_mem (hd::hd'::tl') (Nat.pred (Nat.pred (hd::hd'::tl').length)) isLt))
@@ -1782,11 +1782,11 @@ def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String
     match f a (G.successors a) with
     | Except.error msg => Except.error msg
     | Except.ok _ =>
-      if pred_walk: (G.successors a) ∩ (a::currWalk) = []
+      if succ_walk: (G.successors a) ∩ (a::currWalk) = []
       then
 
       addElementIfOk (foldl_except_set (fun ⟨x, _h⟩ S =>
-        dfs_step x G f (a::currWalk) (isWalk_extends_successors walk x _h) (not_mem_of_empty_intersection pred_walk x _h) S) (G.successors a).attach visited) a
+        dfs_step x G f (a::currWalk) (isWalk_extends_successors walk x _h) (not_mem_of_empty_intersection succ_walk x _h) S) (G.successors a).attach visited) a
       else
         Except.error "Cycle detected"
 termination_by Finset.card (List.toFinset G.vertices \ List.toFinset currWalk)
@@ -1877,17 +1877,17 @@ by
     simp[f_a] at get_S
   | ok _ =>
     simp [f_a] at get_S
-    have int_walk_pred: Graph.successors G a ∩ (a :: currWalk) = [] := by
+    have int_walk_succ: Graph.successors G a ∩ (a :: currWalk) = [] := by
       by_contra p
       simp [p] at get_S
-    simp [int_walk_pred] at get_S
+    simp [int_walk_succ] at get_S
     rw [addElementIfOk_exists_ok'] at get_S
     rcases get_S with ⟨S', S_S', foldl_result⟩
     rw [S_S']
     have visit_S': visited ⊆ S' := by
       apply foldl_except_set_subset (l:=(G.successors a).attach) (get_S:= foldl_result)
       simp
-      intro T T' x x_pred
+      intro T T' x x_succ
       apply ih
       apply card
     -- end have visit_S'
@@ -1989,8 +1989,8 @@ by
     have preserve_S': ∀ (a : A), S'.contains a → ¬reachesCycle a G ∧ ∀ (b : A), canReach a b G → f b (Graph.successors G b) = Except.ok () := by
       apply foldl_except_set_preserves_p (init_prop:=visited_prop) (h:= foldl_result)
       simp
-      intro b b_pred T T' T_prop dfs_T'
-      specialize ih b (a::currWalk) (isWalk_extends_successors walk b b_pred) (not_mem_of_empty_intersection inter b b_pred) T T_prop T' dfs_T' card
+      intro b b_succ T T' T_prop dfs_T'
+      specialize ih b (a::currWalk) (isWalk_extends_successors walk b b_succ) (not_mem_of_empty_intersection inter b b_succ) T T_prop T' dfs_T' card
       apply ih
 
     --split cases
@@ -2010,19 +2010,19 @@ by
       rw [← forall_and]
       intro a'
       rw [← imp_and]
-      intro a'_pred
+      intro a'_succ
       apply preserve_S'
       apply foldl_except_set_contains_list_map (get_T:=foldl_result) (map:= fun ⟨x,_h⟩ => x)
       simp
-      intro T T' x x_pred
+      intro T T' x x_succ
       apply dfs_step_subset
 
       simp
-      intro x x_pred
+      intro x x_succ
       apply dfs_step_returns_root_element
 
       simp
-      apply a'_pred
+      apply a'_succ
 
 
 
@@ -2092,7 +2092,7 @@ by
     apply canReach_refl a G a_mem
   simp [f_a]
 
-  have pred_walk: Graph.successors G a ∩ (a :: currWalk) = [] := by
+  have succ_walk: Graph.successors G a ∩ (a :: currWalk) = [] := by
     cases inter: Graph.successors G a ∩ (a :: currWalk) with
     | nil =>
       simp
@@ -2100,11 +2100,11 @@ by
       have hd_mem: hd ∈ G.successors a ∧ hd ∈ (a::currWalk) := by
         rw [← List.mem_inter_iff, inter]
         simp
-      rcases hd_mem with ⟨hd_pred, hd_a_currWalk⟩
+      rcases hd_mem with ⟨hd_succ, hd_a_currWalk⟩
 
       have cycle_hd: isCycle (hd::(getSubListToMember (a::currWalk) hd hd_a_currWalk)) G := by
         apply frontRepetitionInWalkImpliesCycle
-        apply isWalk_extends_successors walk hd hd_pred
+        apply isWalk_extends_successors walk hd hd_succ
 
       have reachesCycleHd: reachesCycle hd G := by
         unfold reachesCycle
@@ -2116,29 +2116,29 @@ by
         apply canReach_refl
         apply G.complete
         apply a_mem
-        apply hd_pred
+        apply hd_succ
 
       rw [NotreachesCycleIffSuccessorsNotReachCycle (mem:= a_mem)] at reach_cycle
-      specialize reach_cycle hd hd_pred
+      specialize reach_cycle hd hd_succ
       exact absurd reachesCycleHd reach_cycle
 
-  simp [pred_walk]
+  simp [succ_walk]
   rw [← except_is_ok_iff_exists, addElementIfOk_exists_ok,foldl_except_set_is_ok (init_prop:=visited_prop)]
   simp
-  intro b b_pred
+  intro b b_succ
   have b_mem: b ∈ G.vertices := by
-    apply G.complete a a_mem b b_pred
-  specialize ih b (a::currWalk) (isWalk_extends_successors walk b b_pred) (not_mem_of_empty_intersection pred_walk b b_pred) visited visited_prop card
+    apply G.complete a a_mem b b_succ
+  specialize ih b (a::currWalk) (isWalk_extends_successors walk b b_succ) (not_mem_of_empty_intersection succ_walk b b_succ) visited visited_prop card
   rw [ih]
   constructor
   rw [NotreachesCycleIffSuccessorsNotReachCycle (mem:= a_mem)] at reach_cycle
-  apply reach_cycle b b_pred
+  apply reach_cycle b b_succ
   rw [canReachLemma (mem:=a_mem)] at reach_f
   apply And.left (reach_f )
-  apply b_pred
+  apply b_succ
 
   simp
-  intro b b_pred S S' S_prop S'_prop
+  intro b b_succ S S' S_prop S'_prop
   rw [ih, ih]
   apply S'_prop
   apply card
@@ -2146,7 +2146,7 @@ by
   apply card
 
   simp
-  intro b b_pred S S' S_prop
+  intro b b_succ S S' S_prop
   apply dfs_step_preserves_notReachesCycleAndCounterExample
   apply S_prop
 
@@ -2198,7 +2198,7 @@ by
   rw [dfs_step_sematics (visited_prop:=S_prop), dfs_step_sematics (visited_prop:=S'_prop)]
 
   simp
-  intro a _pred S S' S_prop get_S'
+  intro a _succ S S' S_prop get_S'
   apply dfs_step_preserves_notReachesCycleAndCounterExample (visited_prop:=S_prop)
   apply get_S'
 
