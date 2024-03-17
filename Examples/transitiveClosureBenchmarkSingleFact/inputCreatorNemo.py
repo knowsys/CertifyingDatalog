@@ -206,11 +206,11 @@ def parseGraph (json_object):
 
     for conclusion in json_object["finalConclusion"]:
         atom = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(conclusion)))
-        edges.append({"vertex": atom, "predecessors": []})
+        edges.append({"vertex": atom, "successors": []})
     
     for inf in json_object["inferences"]:
         end = convertNemoAtomToJson(tokenize(normalizeQuotationmarks(inf["conclusion"])))
-        edges.append({"vertex": end, "predecessors": list(map(lambda x: convertNemoAtomToJson(tokenize(normalizeQuotationmarks(x))), inf["premises"]))})
+        edges.append({"vertex": end, "successors": list(map(lambda x: convertNemoAtomToJson(tokenize(normalizeQuotationmarks(x))), inf["premises"]))})
 
     return {"edges": edges}        
 
@@ -304,6 +304,6 @@ def main(*args):
 if __name__ == "__main__":
     import sys
     #main(*sys.argv[1:])
-    main("./", "tc.rls", "-t", "T(0,1000)")
-    main("./", "tc.rls", "-g", "T(0,1000)")
+    main("./", "tc.rls", "-t", "trans(0,1000)")
+    main("./", "tc.rls", "-g", "trans(0,1000)")
 
