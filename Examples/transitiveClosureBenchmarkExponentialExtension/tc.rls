@@ -1,0 +1,9 @@
+@source edge[2]: load-csv("sources/edge.csv").
+
+trans(?X,?Y) :- edge(?X,?Y).
+t(?X,?Y) :- trans(?X,?Y).
+u(?X,?Y) :- trans(?X,?Y).
+trans(?X,?Z) :- t(?X,?Y), u(?X,?Y), edge(?Y,?Z).
+
+@output trans.
+

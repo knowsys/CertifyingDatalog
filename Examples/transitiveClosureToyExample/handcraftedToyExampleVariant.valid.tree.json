@@ -3,7 +3,7 @@
         {
             "node": {
                 "label": {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "constant": "a"
@@ -17,7 +17,7 @@
                     {
                         "node": {
                             "label": {
-                                "symbol": "T",
+                                "symbol": "trans",
                                 "terms": [
                                     {
                                         "constant": "a"
@@ -31,7 +31,7 @@
                                 {
                                     "node": {
                                         "label": {
-                                            "symbol": "R",
+                                            "symbol": "edge",
                                             "terms": [
                                                 {
                                                     "constant": "a"
@@ -50,7 +50,7 @@
                     {
                         "node": {
                             "label": {
-                                "symbol": "T",
+                                "symbol": "trans",
                                 "terms": [
                                     {
                                         "constant": "b"
@@ -64,7 +64,7 @@
                                 {
                                     "node": {
                                         "label": {
-                                            "symbol": "R",
+                                            "symbol": "edge",
                                             "terms": [
                                                 {
                                                     "constant": "b"
@@ -87,7 +87,7 @@
     "program": [
         {
             "head": {
-                "symbol": "R",
+                "symbol": "edge",
                 "terms": [
                     {
                         "constant": "a"
@@ -101,7 +101,7 @@
         },
         {
             "head": {
-                "symbol": "R",
+                "symbol": "edge",
                 "terms": [
                     {
                         "constant": "b"
@@ -115,7 +115,7 @@
         },
         {
             "head": {
-                "symbol": "R",
+                "symbol": "edge",
                 "terms": [
                     {
                         "constant": "c"
@@ -129,7 +129,7 @@
         },
         {
             "head": {
-                "symbol": "T",
+                "symbol": "trans",
                 "terms": [
                     {
                         "variable": "?X"
@@ -141,7 +141,7 @@
             },
             "body": [
                 {
-                    "symbol": "R",
+                    "symbol": "edge",
                     "terms": [
                         {
                             "variable": "?X"
@@ -155,7 +155,7 @@
         },
         {
             "head": {
-                "symbol": "T",
+                "symbol": "trans",
                 "terms": [
                     {
                         "variable": "?X"
@@ -167,7 +167,7 @@
             },
             "body": [
                 {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "variable": "?X"
@@ -178,7 +178,7 @@
                     ]
                 },
                 {
-                    "symbol": "T",
+                    "symbol": "trans",
                     "terms": [
                         {
                             "variable": "?Y"

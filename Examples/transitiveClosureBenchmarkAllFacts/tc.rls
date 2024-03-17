@@ -1,5 +1,5 @@
-@source R[2]: load-csv("sources/R.csv").
+@source edge[2]: load-csv("sources/edge.csv").
 
-T(?X,?Y) :- R(?X,?Y).
-T(?X,?Z) :- T(?X,?Y), T(?Y,?Z).
+trans(?X,?Y) :- edge(?X,?Y).
+trans(?X,?Z) :- trans(?X,?Y), trans(?Y,?Z).
 
