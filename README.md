@@ -1,7 +1,8 @@
 # Certifying Datalog
 
 This repo contains a checker for Datalog proof trees and proofs encoded as directed acyclic graphs.
-The checker is implemented and formally verified in [Lean4](https://github.com/leanprover/lean4).
+The checker is implemented and formally verified in [Lean4](https://github.com/leanprover/lean4).  
+For more details on the usage, take a look into the (subdirectories of the) `Examples` directory.
 
 ## Notes on Setup:
 
@@ -15,6 +16,5 @@ To prevent building mathlib yourself, you can run the following to fetch precomp
 lake exe cache get
 ```
 
-The resulting executable is found here: `.lake/build/bin/certifyingDatalog`  
-For more details on the usage, take a look into the (subdirectories of the) `Examples` directory.
+The resulting executable is found here: `.lake/build/bin/certifyingDatalog`
 
