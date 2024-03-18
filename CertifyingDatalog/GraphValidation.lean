@@ -2226,7 +2226,7 @@ variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [Decid
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
  (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = {head:= v, body:= (G.successors v) }) ∨ ((G.successors v) = [] ∧ d.contains v)
 
-def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
+def localValidityCheck (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
   if l.isEmpty
   then
     if d.contains a
@@ -2235,10 +2235,10 @@ def locallyValidityChecker (m: List τ.relationSymbols → List (rule τ)) (d: d
   else
     checkRuleMatch m (groundRule.mk a l)
 
-lemma locallyValidityCheckerUnitIffLocallyValid (P: List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.successors a) :  locallyValidityChecker (parseProgramToSymbolSequenceMap P (fun _ => [])) d l a = Except.ok () ↔ locallyValid P.toFinset d a G :=
+lemma localValidityCheckUnitIffLocallyValid (P: List (rule τ)) (d: database τ) (G: Graph (groundAtom τ)) (a: groundAtom τ) (l: List (groundAtom τ)) (l_prop: l = G.successors a) :  localValidityCheck (parseProgramToSymbolSequenceMap P (fun _ => [])) d l a = Except.ok () ↔ locallyValid P.toFinset d a G :=
 by
   unfold locallyValid
-  unfold locallyValidityChecker
+  unfold localValidityCheck
   rw [l_prop]
   simp
   constructor

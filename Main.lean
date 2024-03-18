@@ -96,7 +96,7 @@ by
 def checkValidnessGraphMockDatabase {helper: parsingArityHelper} (problem: graphVerificationProblem helper):  Except String Unit :=
   let m:= parseProgramToSymbolSequenceMap problem.program (fun _ => [])
   let d:= mockDatabase (parsingSignature helper)
-  dfs problem.graph (fun a l => locallyValidityChecker m d l a)
+  dfs problem.graph (fun a l => localValidityCheck m d l a)
 
 lemma checkValidnessGraphMockDatabaseIffAllValid {helper: parsingArityHelper}  (problem: graphVerificationProblem helper): checkValidnessGraphMockDatabase problem = Except.ok () ↔ isAcyclic problem.graph ∧ (∀ (a:groundAtom (parsingSignature helper) ), a ∈ problem.graph.vertices → locallyValid problem.program.toFinset (mockDatabase (parsingSignature helper)) a problem.graph) ∧ problem.graph.vertices.toSet ⊆ proofTheoreticSemantics problem.program.toFinset (mockDatabase (parsingSignature helper)) :=
 by
@@ -110,13 +110,13 @@ by
   constructor
   intro a a_mem
   specialize localValid a a_mem
-  rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at localValid
+  rw [localValidityCheckUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at localValid
   apply localValid
   rfl
   apply verticesOfLocallyValidAcyclicGraphAreInProofTheoreticSemantics (acyclic:=acyc)
   intro a a_mem
   specialize localValid a a_mem
-  rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at localValid
+  rw [localValidityCheckUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at localValid
   apply localValid
   rfl
 
@@ -125,7 +125,7 @@ by
   constructor
   apply acyclic
   intro a a_mem
-  rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
+  rw [localValidityCheckUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
   apply valid a a_mem
   rfl
 
@@ -210,7 +210,7 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
 def mainCheckGraphMockDatabase {helper: parsingArityHelper} (problem: graphVerificationProblem helper) (safe: ∀ (r: rule (parsingSignature helper) ), r ∈ problem.program → r.isSafe): Except String Unit :=
   let m:= parseProgramToSymbolSequenceMap problem.program (fun _ => [])
   let d:= mockDatabase (parsingSignature helper)
-  match dfs problem.graph (fun a l => locallyValidityChecker m d l a)   with
+  match dfs problem.graph (fun a l => localValidityCheck m d l a)   with
   | Except.error e => Except.error e
   | Except.ok _ =>
     match modelChecker problem.graph.vertices problem.program safe with
@@ -227,7 +227,7 @@ by
   constructor
   intro h
   simp at h
-  cases dfs_result: dfs problem.graph (fun a l => locallyValidityChecker (parseProgramToSymbolSequenceMap problem.program (fun _ => [])) (mockDatabase (parsingSignature helper)) l a) with
+  cases dfs_result: dfs problem.graph (fun a l => localValidityCheck (parseProgramToSymbolSequenceMap problem.program (fun _ => [])) (mockDatabase (parsingSignature helper)) l a) with
   | error e =>
     simp[dfs_result] at h
   | ok _ =>
@@ -250,7 +250,7 @@ by
       apply verticesOfLocallyValidAcyclicGraphAreInProofTheoreticSemantics _ _ _ acyclic
       intro a a_mem
       specialize valid a a_mem
-      rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at valid
+      rw [localValidityCheckUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at valid
       apply valid
       rfl
 
@@ -266,20 +266,20 @@ by
       apply acyclic
       intro a a_mem
       specialize valid a a_mem
-      rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at valid
+      rw [localValidityCheckUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)] at valid
       apply valid
       rfl
 
   intro h
   rcases h with ⟨semantics, acyclic, valid⟩
   have dfs_result: dfs problem.graph (fun a l =>
-      locallyValidityChecker (parseProgramToSymbolSequenceMap problem.program fun _ => [])
+      localValidityCheck (parseProgramToSymbolSequenceMap problem.program fun _ => [])
         (mockDatabase (parsingSignature helper)) l a) = Except.ok () := by
     rw [dfs_semantics]
     constructor
     apply acyclic
     intro a a_mem
-    rw [locallyValidityCheckerUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
+    rw [localValidityCheckUnitIffLocallyValid (P:=problem.program) (G:=problem.graph)]
     apply valid a a_mem
     rfl
   simp [dfs_result]
