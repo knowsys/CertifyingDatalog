@@ -1,10 +1,10 @@
 # Certifying Datalog
 
 This repo contains a checker for Datalog proof trees and proofs encoded as directed acyclic graphs.
-The checker is implemented and formally verified in [Lean4](https://github.com/leanprover/lean4).  
+The checker is implemented and formally verified in [Lean 4](https://github.com/leanprover/lean4).
 For more details on the usage, take a look into the (subdirectories of the) `Examples` directory.
 
-## Notes on Setup:
+## Notes on Setup
 
 Using [`elan`](https://github.com/leanprover/elan) / `lake`:  
 ```
