@@ -4,14 +4,14 @@ import CertifyingDatalog.Unification
 import Mathlib.Data.Set.Basic
 import CertifyingDatalog.Basic
 
-structure partialGroundRule (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.relationSymbols] [Hashable τ.vars] (i: interpretation τ) where
+structure partialGroundRule (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.predicateSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.predicateSymbols] [Hashable τ.vars] (i: interpretation τ) where
   head: atom τ
   groundedBody: List (groundAtom τ)
   ungroundedBody: List (atom τ)
 
   members: ∀ (ga: groundAtom τ), ga ∈ groundedBody → ga ∈ i
 
-variable  {τ: signature}[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants]  [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+variable  {τ: signature}[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.predicateSymbols] [Inhabited τ.constants]  [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
  {i: interpretation τ}
 def partialGroundRule.isSafe (pgr: partialGroundRule τ i): Prop :=
   atomVariables pgr.head ⊆ collectResultsToFinset atomVariables pgr.ungroundedBody
@@ -110,7 +110,7 @@ def atomWithoutVariablesToGroundAtom (a: atom τ) (h: atomVariables a = ∅): gr
   have h: ∀ (t: term τ), t ∈ a.atom_terms → termVariables t = ∅ := by
     rw [← atomVariablesEmptyIffAllTermVariablesEmpty]
     apply h
-  have term_length: (List.map (fun ⟨x, _h⟩ => termWithoutVariablesToConstant x (h x _h)) a.atom_terms.attach).length = τ.relationArity (a.symbol) := by
+  have term_length: (List.map (fun ⟨x, _h⟩ => termWithoutVariablesToConstant x (h x _h)) a.atom_terms.attach).length = τ.predicateArity (a.symbol) := by
     rw [List.length_map, List.length_attach]
     apply a.term_length
 {symbol:= a.symbol, atom_terms := List.map (fun ⟨x, _h⟩ => termWithoutVariablesToConstant x (h x _h)) a.atom_terms.attach, term_length := term_length }

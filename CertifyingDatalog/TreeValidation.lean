@@ -3,9 +3,9 @@ import CertifyingDatalog.Unification
 import CertifyingDatalog.Basic
 
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.predicateSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.predicateSymbols]
 
-def symbolSequence (r: rule τ): List τ.relationSymbols := r.head.symbol::(List.map atom.symbol r.body)
+def symbolSequence (r: rule τ): List τ.predicateSymbols := r.head.symbol::(List.map atom.symbol r.body)
 
 lemma symbolSequenceOfMatchIsEqual (r: rule τ) (gr: groundRule τ) (match_r: ∃ (s: substitution τ), applySubstitutionRule s r = gr): symbolSequence r = symbolSequence gr :=
 by
@@ -59,14 +59,14 @@ by
   rw [← List.length_map r1.body atom.symbol, ← List.length_map r2.body atom.symbol]
   rw [body]
 
-def parseProgramToSymbolSequenceMap (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)): List τ.relationSymbols → List (rule τ) :=
+def parseProgramToSymbolSequenceMap (P: List (rule τ)) (m: List τ.predicateSymbols → List (rule τ)): List τ.predicateSymbols → List (rule τ) :=
   match P with
   | [] => m
   | hd::tl =>
     let seq:= symbolSequence hd
     parseProgramToSymbolSequenceMap tl (fun x => if x = seq then hd::(m x) else m x)
 
-lemma parseProgramToSymbolSequenceMap_mem (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)): ∀ (l: List (τ.relationSymbols)) (r: rule τ), r ∈ (parseProgramToSymbolSequenceMap P m) l ↔ r ∈ m l ∨ (symbolSequence r = l ∧ r ∈ P) :=
+lemma parseProgramToSymbolSequenceMap_mem (P: List (rule τ)) (m: List τ.predicateSymbols → List (rule τ)): ∀ (l: List (τ.predicateSymbols)) (r: rule τ), r ∈ (parseProgramToSymbolSequenceMap P m) l ↔ r ∈ m l ∨ (symbolSequence r = l ∧ r ∈ P) :=
 by
   induction P generalizing m with
   | nil =>
@@ -122,7 +122,7 @@ by
   unfold groundRule.toRule
   simp
 
-def checkRuleMatch (m: List τ.relationSymbols → List (rule τ)) (gr: groundRule τ): Except String Unit :=
+def checkRuleMatch (m: List τ.predicateSymbols → List (rule τ)) (gr: groundRule τ): Except String Unit :=
   if List.any (m (symbolSequence gr.toRule)) (fun x => Option.isSome (matchRule x gr)) = true
   then Except.ok ()
   else Except.error ("No match for " ++ ToString.toString gr)
@@ -158,7 +158,7 @@ by
 
 
 
-def treeValidator (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (t: proofTree τ) : Except String Unit :=
+def treeValidator (m: List τ.predicateSymbols → List (rule τ)) (d: database τ) (t: proofTree τ) : Except String Unit :=
   match t with
   | tree.node a l =>
     if l.isEmpty
