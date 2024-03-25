@@ -91,7 +91,7 @@ by
     simp at p
     apply p
 
-lemma matchTermFindsMinimalSolution' (t: term τ) (c: τ.constants) (s: substitution τ) (h: Option.isSome (matchTerm t c s)): ∀ (s': substitution τ), (s ⊆ s' ∧ applySubstitutionTerm s' t = c) → (Option.get (matchTerm t c s) h) ⊆ s' :=
+lemma matchTermFindsMinimalSolution (t: term τ) (c: τ.constants) (s: substitution τ) (h: Option.isSome (matchTerm t c s)): ∀ (s': substitution τ), (s ⊆ s' ∧ applySubstitutionTerm s' t = c) → (Option.get (matchTerm t c s) h) ⊆ s' :=
 by
   cases t with
   | constant c' =>
@@ -320,7 +320,7 @@ by
       constructor
       simp at s'_prop
       simp [s'_prop]
-      apply matchTermFindsMinimalSolution'
+      apply matchTermFindsMinimalSolution
       constructor
       simp [s'_prop]
       simp at s'_prop
@@ -351,7 +351,7 @@ by
       intro s'_hd
       apply ih
       apply h
-      apply matchTermFindsMinimalSolution'
+      apply matchTermFindsMinimalSolution
       constructor
       apply s_s'
       simp [s'_hd]
