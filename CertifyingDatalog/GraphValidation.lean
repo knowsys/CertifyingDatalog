@@ -13,7 +13,7 @@ namespace PreGraph
   def vertices (g : PreGraph A) : List A := g.toList.map Prod.fst
   def successors (g : PreGraph A) (a : A) : List A := g.findD a []
 
-  def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.findD a []) → pg.contains a'
+  def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.successors a) → pg.contains a'
 
   theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Std.HashMap.in_projection_of_toList_iff_contains
   theorem in_successors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.successors a ↔ b ∈ (pg.findD a []) := by unfold successors; intros; rfl
@@ -153,6 +153,7 @@ namespace PreGraph
       exact hv
     intro a ha b hb
     rw [← in_vertices_iff_contains] at ha
+    unfold successors at hb
     rw [this a ha] at hb
     contradiction
 
@@ -370,6 +371,7 @@ namespace PreGraph
 
   theorem add_vertex_with_successors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_successors v vs).complete := by
     unfold complete
+    unfold successors
     intro a ha
     rw [add_vertex_with_successors_contains_iff_contains_or_in_new_vertices] at ha
     intro a' ha'
@@ -381,8 +383,8 @@ namespace PreGraph
       cases ha' with
       | inl ha' =>
         cases Decidable.em (a' = v) with
-        | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_successors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hl
-        | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_successors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hr
+        | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [contains_and_eq.right]; apply ha'; exact hl
+        | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left;  rw [contains_and_eq.right]; apply ha'; exact hr
       | inr ha' =>
         cases Decidable.em (a' = v) with
         | inl hl =>
@@ -397,8 +399,8 @@ namespace PreGraph
     | inl contains_and_neq =>
       rw [add_vertex_with_successors_findD_semantics_2 pg v a _ contains_and_neq] at ha'
       cases Decidable.em (a' = v) with
-      | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_successors_iff_found]; apply ha'; exact hl
-      | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_successors_iff_found]; apply ha'; exact hr
+      | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; apply ha'; exact hl
+      | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; apply ha'; exact hr
     | inr rest => cases rest with
     | inl not_contains_and_eq =>
       rw [add_vertex_with_successors_findD_semantics_3 pg v a _ not_contains_and_eq] at ha'
@@ -431,8 +433,7 @@ namespace Graph
     apply g.property
     . rw [← PreGraph.in_vertices_iff_contains]
       apply ha
-    . rw [← PreGraph.in_successors_iff_found]
-      unfold successors at hb
+    . unfold successors at hb
       apply hb
 
   def from_vertices (vs : List A) : Graph A :=

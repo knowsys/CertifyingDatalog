@@ -858,14 +858,7 @@ lemma substitution_subs_refl (s: substitution τ): s ⊆ s :=
 by
   unfold_projs
   unfold substitution_subs
-  intro v
-  by_cases sv: s v = Option.none
-  simp [sv]
-  push_neg at sv
-  rw [Option.ne_none_iff_exists] at sv
-  rcases sv with ⟨x, some_x⟩
-  simp [← some_x]
-
+  simp
 lemma substitution_subs_antisymm (s1 s2: substitution τ) (s1s2: s1 ⊆ s2)(s2s1: s2 ⊆ s1): s1 = s2 :=
 by
   funext x
