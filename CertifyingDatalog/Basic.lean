@@ -264,3 +264,14 @@ lemma List.foldl_union_empty {A B: Type} [DecidableEq B] (l: List A) (f: A → F
     rw [Finset.union_eq_empty]
     tauto
 
+lemma List.foldl_union_subset_set {A B: Type} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (S: Set B): ↑( List.foldl_union f init l) ⊆ S ↔ ↑init ⊆ S ∧ ∀ (a:A), a ∈ l → ↑ (f a) ⊆ S:= by
+  unfold foldl_union
+  induction l generalizing init with
+  | nil =>
+    simp
+  | cons hd tl ih =>
+    simp
+    rw [ih]
+    simp
+    tauto
+
