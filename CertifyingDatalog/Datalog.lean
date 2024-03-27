@@ -170,225 +170,68 @@ instance: Coe (groundAtom τ) (atom τ) where
   coe
     | a => a.toAtom
 
-def termVariables: term τ → Set τ.vars
+def termVariables: term τ → Finset τ.vars
 | (term.constant _) => ∅
 | (term.variableDL v) => {v}
 
-def termVariables_computable: term τ → List τ.vars
-| term.constant _ => []
-| term.variableDL v => [v]
 
-lemma termVariablesEqTermVariables_computableToList: termVariables = (fun (t: term τ) => List.toSet (termVariables_computable t)):= by
-  funext t
-  unfold termVariables
-  unfold termVariables_computable
-  unfold List.toSet
-  cases t with
-  | constant c =>
-    simp
-  | variableDL w =>
-    simp
-    unfold List.toSet
-    simp
+def atomVariables (a: atom τ) : Finset τ.vars := List.foldl_union termVariables ∅ a.atom_terms
 
-def collectResultsToFinset {A: Type} (f: A → Set τ.vars): List A → Set τ.vars
-| [] => ∅
-| hd::tl => (f hd) ∪ (collectResultsToFinset f tl)
 
-lemma collectResultsToFinsetSemantics {A: Type} (f: A → Set τ.vars) (l: List A): collectResultsToFinset f l = {v: τ.vars| ∃ (a:A),a ∈ l ∧  v ∈ f a} :=
+lemma atomVariablesSubsetImpltermVariablesSubset {a: atom τ} {t: term τ}{S: Finset τ.vars}(mem: t ∈ a.atom_terms) (subs: atomVariables a ⊆ S): termVariables t ⊆ S :=
 by
-  induction l with
-  | nil =>
-    unfold collectResultsToFinset
-    simp
-  | cons hd tl ih =>
-    unfold collectResultsToFinset
-    rw [Set.ext_iff]
-    intro v
-    simp
-    rw [ih]
-    simp
-
-def collectResultsToList {A: Type} (f: A → List τ.vars): List A → List τ.vars
-| [] => []
-| hd::tl => f hd ++ collectResultsToList f tl
-
-lemma collectResultsToListSemantics {A: Type} (f: A → List τ.vars) (l: List A) (v: τ.vars): v ∈ collectResultsToList f l ↔ ∃ (a:A), a ∈ l ∧ v ∈ f a := by
-  induction l with
-  | nil =>
-    unfold collectResultsToList
-    simp
-  | cons hd tl ih =>
-    unfold collectResultsToList
-    simp
-    rw [ih]
-
-lemma collectResultsToListEqCollectResultsToFinset {A: Type} (f: A → List τ.vars) (l: List A): List.toSet (collectResultsToList f l ) = collectResultsToFinset (fun x => List.toSet (f x)) l := by
-  cases l with
-  | nil =>
-    unfold collectResultsToFinset
-    unfold collectResultsToList
-    unfold List.toSet
-    rfl
-  | cons hd tl =>
-    apply Set.ext
-    intro v
-    rw [← List.toSet_mem, collectResultsToFinsetSemantics]
-    unfold collectResultsToList
-    simp
-    rw [← List.toSet_mem, collectResultsToListSemantics]
-    simp [List.toSet_mem]
-
-
-lemma collectResultsToFinsetMemberIffListMember {A: Type} (f: A → Set τ.vars) (v: τ.vars) (l: List A): v ∈ collectResultsToFinset f l ↔ ∃ (a:A), a ∈ l ∧ v ∈ f a :=
-by
-  induction l with
-  | nil =>
-    unfold collectResultsToFinset
-    simp
-  | cons hd tl ih =>
-    simp [collectResultsToFinset]
-    constructor
-    intro h
-    cases h with
-    | inl h =>
-      left
-      apply h
-    | inr h =>
-      rw [← ih]
-      right
-      apply h
-    intro h
-    cases h with
-    | inl h =>
-      left
-      apply h
-    | inr h =>
-      rw [ih]
-      right
-      apply h
-
-lemma memberResultIsSubsetCollectResultsToFinset (f: A → Set τ.vars) (a:A) (l: List A) (mem: a ∈ l): f a ⊆ collectResultsToFinset f l :=
-by
-  induction l with
-  | nil =>
-    simp at mem
-  | cons hd tl ih =>
-    simp at mem
-    cases mem with
-    | inl h =>
-      rw [h]
-      unfold collectResultsToFinset
-      simp
-    | inr h =>
-      unfold collectResultsToFinset
-      rw [← Set.empty_union (f a)]
-      apply Set.union_subset_union
-      simp
-      apply ih
-      apply h
-
-lemma collectResultsToFinsetIsSubsetIffListElementsAre {A: Type} {S: Set (τ.vars)} {l: List A}{f: A → (Set τ.vars)}: collectResultsToFinset f l ⊆ S ↔ ∀ (a:A), a ∈ l → (f a) ⊆ S :=
-by
-  constructor
-  intros h a a_l
-  apply Set.Subset.trans (b:= collectResultsToFinset f l)
-  apply memberResultIsSubsetCollectResultsToFinset
-  apply a_l
-  apply h
-
-  intro h
-  rw [Set.subset_def]
-  intros x x_mem
-  rw [collectResultsToFinsetMemberIffListMember] at x_mem
-  rcases x_mem with ⟨a, a_l, x_fa⟩
-  apply Set.mem_of_subset_of_mem
-  apply h
-  apply a_l
-  apply x_fa
-
-def atomVariables (a: atom τ) : Set τ.vars := collectResultsToFinset termVariables  a.atom_terms
-
-def atomVariables_computable (a: atom τ): List τ.vars := collectResultsToList termVariables_computable a.atom_terms
-
-lemma atomVariables_mem_iff_atomVariables_computable_mem (v: τ.vars) (a: atom τ): v ∈ atomVariables a ↔ v ∈ atomVariables_computable a := by
+  apply Finset.Subset.trans (s₂:= atomVariables a)
   unfold atomVariables
-  unfold atomVariables_computable
-  rw [List.toSet_mem, collectResultsToListEqCollectResultsToFinset]
-  rw [termVariablesEqTermVariables_computableToList]
-
-lemma atomVariablesEqAtomVariables_computableToList: atomVariables = (fun (a: atom τ) => List.toSet (atomVariables_computable a)) := by
-  funext a
-  unfold atomVariables
-  unfold atomVariables_computable
-  rw [collectResultsToListEqCollectResultsToFinset, termVariablesEqTermVariables_computableToList]
+  simp
+  apply List.subset_result_foldl_union
+  exact mem
+  exact subs
 
 
+def ruleVariables (r: rule τ): Finset τ.vars := (atomVariables  r.head) ∪ (List.foldl_union atomVariables ∅ r.body)
 
-lemma atomVariablesSubsetImpltermVariablesSubset {a: atom τ} {t: term τ}{S: Set τ.vars}(mem: t ∈ a.atom_terms) (subs: atomVariables a ⊆ S): termVariables t ⊆ S :=
+lemma ruleVariablesSubsetImplAtomVariablesSubset {r: rule τ} {a: atom τ}{S: Finset τ.vars}(mem: a = r.head ∨ a ∈ r.body) (subs: ruleVariables r ⊆ S): atomVariables a ⊆ S :=
 by
-  apply Set.Subset.trans (b:= atomVariables a)
-  unfold atomVariables
-  apply memberResultIsSubsetCollectResultsToFinset _ _ _ mem
-  apply subs
-
-
-def ruleVariables (r: rule τ): Set τ.vars := (atomVariables  r.head) ∪ (collectResultsToFinset atomVariables  r.body)
-
-lemma ruleVariablesSubsetImplAtomVariablesSubset {r: rule τ} {a: atom τ}{S: Set τ.vars}(mem: a = r.head ∨ a ∈ r.body) (subs: ruleVariables r ⊆ S): atomVariables a ⊆ S :=
-by
-  apply Set.Subset.trans (b:= ruleVariables r) (bc:= subs)
+  apply Finset.Subset.trans (s₂:= ruleVariables r)
   unfold ruleVariables
+  rw [Finset.subset_iff]
+  intro x x_mem
+  simp
   cases mem with
   | inl h =>
-    rw [h]
-    nth_rw 1 [← Set.union_empty (atomVariables r.head)]
-    apply Set.union_subset_union
-    apply Set.Subset.rfl
-    simp
+    rw [h] at x_mem
+    left
+    apply x_mem
   | inr h =>
-    nth_rw 1 [← Set.empty_union (atomVariables a)]
-    apply Set.union_subset_union
-    simp
-    apply memberResultIsSubsetCollectResultsToFinset (mem:=h)
+    right
+    rw [List.mem_foldl_union]
+    right
+    use a
+  apply subs
 
-def rule.isSafe (r: rule τ): Prop := atomVariables r.head ⊆ collectResultsToFinset atomVariables r.body
+def rule.isSafe (r: rule τ): Prop := atomVariables r.head ⊆ List.foldl_union atomVariables ∅ r.body
 
 def safetyCheckRule (r: rule τ) : Except String Unit :=
-  match List.diff' (atomVariables_computable r.head) (collectResultsToList (atomVariables_computable) r.body) with
-  | [] => Except.ok ()
-  | hd::_ => Except.error ("Rule" ++ ToString.toString r ++ "is not safe " ++ (ToString.toString hd ++ "only occurs in body"))
+  if (atomVariables r.head) \ (List.foldl_union atomVariables ∅ r.body) = ∅
+  then Except.ok ()
+  else Except.error ("Rule" ++ ToString.toString r ++ "is not safe ")
+
+
 
 lemma safetyCheckRuleUnitIffRuleSafe (r: rule τ) : safetyCheckRule r = Except.ok () ↔ r.isSafe := by
   unfold safetyCheckRule
-  constructor
-  intro h
-  cases diff: List.diff' (atomVariables_computable r.head) (collectResultsToList atomVariables_computable r.body) with
-  | cons hd tl =>
-    simp [diff] at h
-  | nil =>
-    rw [List.diff'_empty] at diff
-    unfold rule.isSafe
-    rw [Set.subset_def]
-    intro v v_head
-    rw [atomVariables_mem_iff_atomVariables_computable_mem] at v_head
-    specialize diff v v_head
-    rw [List.toSet_mem, collectResultsToListEqCollectResultsToFinset] at diff
-    rw [← atomVariablesEqAtomVariables_computableToList] at diff
-    apply diff
-
   unfold rule.isSafe
-  rw [Set.subset_def]
-  intro safe
-  have h: List.diff' (atomVariables_computable r.head) (collectResultsToList atomVariables_computable r.body) = [] :=by
+  split
+  rename_i h
+  simp
+  simp at h
+  assumption
 
-    rw [List.diff'_empty]
-    intro v v_head
-    rw [← atomVariables_mem_iff_atomVariables_computable_mem] at v_head
-    specialize safe v v_head
-    rw [List.toSet_mem,collectResultsToListEqCollectResultsToFinset, ← atomVariablesEqAtomVariables_computableToList]
-    apply safe
-  simp [h]
+  rename_i h
+  simp
+  by_contra p
+  simp at h
+  contradiction
 
 def safetyCheckProgram (P: List (rule τ)): Except String Unit :=
   List.map_except_unit P (fun r => safetyCheckRule r)
@@ -483,21 +326,22 @@ by
 
 def applyGroundingAtom (g: grounding τ) (a: atom τ): atom τ := {symbol:= a.symbol, atom_terms:= List.map (applyGroundingTerm g) a.atom_terms, term_length := applyGroundingTermPreservesLength g a}
 
+
 lemma groundingRemovesAtomVariables (a: atom τ) (g: grounding τ): atomVariables (applyGroundingAtom g a) = ∅ :=
 by
   unfold applyGroundingAtom
   unfold atomVariables
   simp
-  induction a.atom_terms with
-  | nil =>
-    unfold collectResultsToFinset
+  rw [List.foldl_union_empty]
+  simp
+  intro x _
+  unfold termVariables
+  unfold applyGroundingTerm
+  cases x with
+  | constant c =>
     simp
-  | cons hd tl ih =>
-    unfold collectResultsToFinset
+  | variableDL v =>
     simp
-    constructor
-    rw [applyGroundingTermRemovesVariables]
-    apply ih
 
 def applyGroundingTerm'(g: grounding τ) (t: term τ): τ.constants :=
   match t with
@@ -513,23 +357,17 @@ def atomGrounding (g: grounding τ) (a: atom τ): groundAtom τ := {symbol := a.
 
 def applyGroundingRule (r: rule τ) (g: grounding τ): rule τ := {head := applyGroundingAtom  g r.head, body := List.map (applyGroundingAtom  g) r.body }
 
-lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariables  (applyGroundingRule r g) = ∅ := by
+lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariables (applyGroundingRule r g) = ∅ := by
   unfold applyGroundingRule
   unfold ruleVariables
   simp
+  rw [Finset.union_eq_empty]
   rw [groundingRemovesAtomVariables]
-  induction r.body with
-  | nil =>
-    unfold collectResultsToFinset
-    simp
-  | cons hd tl ih =>
-    unfold collectResultsToFinset
-    simp
-    constructor
-    rw [groundingRemovesAtomVariables]
-    rcases ih with ⟨_, right⟩
-    apply right
-
+  simp
+  rw [List.foldl_union_empty]
+  simp
+  intro a _
+  apply groundingRemovesAtomVariables
 
 def ruleGrounding (r: rule τ) (g:grounding τ): groundRule τ := {head:=atomGrounding g r.head, body:= List.map (atomGrounding g) r.body }
 
@@ -593,7 +431,7 @@ lemma List.get_map' {A B: Type} (f: A → B) (l: List A) (n: ℕ)(isLt1: n < l.l
   rw [← get?_eq_get, get?_map, get?_eq_get]
   rfl
 
-lemma applySubstitutionAtomIsGroundImplVarsSubsetDomain {a: atom τ} {s: substitution τ} (subs_ground: ∃ (a': groundAtom τ), applySubstitutionAtom s a = a'): atomVariables a ⊆ substitution_domain s :=
+lemma applySubstitutionAtomIsGroundImplVarsSubsetDomain {a: atom τ} {s: substitution τ} (subs_ground: ∃ (a': groundAtom τ), applySubstitutionAtom s a = a'): ↑ (atomVariables a) ⊆ (substitution_domain s ):=
 by
   unfold atomVariables
   simp at subs_ground
@@ -603,7 +441,12 @@ by
   rw [atomEquality] at a'_prop
   simp at a'_prop
   rcases a'_prop with ⟨_, terms_eq⟩
-  rw [collectResultsToFinsetIsSubsetIffListElementsAre]
+  rw [Set.subset_def]
+  simp
+  intro x x_mem
+
+
+  rw [List.subset_foldl_union]
   intros t t_mem
   cases t with
   | constant c =>
@@ -627,7 +470,7 @@ by
     apply v_pos_a
 
 
-lemma applySubstitutionRuleIsGroundImplVarsSubsetDomain {r: rule τ} {s: substitution τ} (subs_ground: ∃ (r': groundRule τ), applySubstitutionRule s r = r'): ruleVariables r ⊆ substitution_domain s :=
+lemma applySubstitutionRuleIsGroundImplVarsSubsetDomain {r: rule τ} {s: substitution τ} (subs_ground: ∃ (r': groundRule τ), applySubstitutionRule s r = r'): ↑ (ruleVariables r) ⊆ substitution_domain s :=
 by
   unfold ruleVariables
   simp at subs_ground
@@ -723,7 +566,7 @@ by
 
 def substitutionToGrounding [ex: Inhabited τ.constants] (s: substitution τ): grounding τ := fun x => if p:Option.isSome (s x) then Option.get (s x) p else ex.default
 
-lemma substitutionToGroundingEquivTerm [Inhabited τ.constants] (t: term τ) (s: substitution τ) (h: termVariables t ⊆ substitution_domain s): term.constant (applyGroundingTerm' (substitutionToGrounding s) t) = applySubstitutionTerm s t :=
+lemma substitutionToGroundingEquivTerm [Inhabited τ.constants] (t: term τ) (s: substitution τ) (h: ↑ (termVariables t) ⊆ substitution_domain s): term.constant (applyGroundingTerm' (substitutionToGrounding s) t) = applySubstitutionTerm s t :=
 by
   unfold substitutionToGrounding
   unfold applyGroundingTerm'

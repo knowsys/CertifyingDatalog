@@ -204,3 +204,68 @@ lemma List.map_except_go_ok_length {A B C: Type} (f: A → Except B C) (l1: List
         rw [← ih]
         simp
         rw [Nat.succ_eq_add_one, Nat.add_assoc, Nat.add_comm (m:= 1)]
+
+def List.foldl_union {A B: Type} [DecidableEq B]  (f: A → Finset B) (init: Finset B) (l: List A): Finset B := List.foldl (fun x y => x ∪ f y) init l
+
+lemma List.mem_foldl_union {A B: Type} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (b:B): b ∈ List.foldl_union f init l ↔ b ∈ init ∨ ∃ (a:A), a ∈ l ∧ b ∈ f a :=
+by
+  unfold foldl_union
+  induction l generalizing init with
+  | nil =>
+    simp
+  | cons hd tl ih =>
+    simp
+    rw [ih]
+    simp
+    tauto
+
+lemma List.subset_foldl_union {A B: Type} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B): init ⊆ List.foldl_union f init l := by
+  unfold foldl_union
+  induction l generalizing init with
+  | nil =>
+    simp
+  | cons hd tl ih =>
+    simp
+    apply Finset.Subset.trans (s₂ := init ∪ f hd)
+    rw [Finset.subset_iff]
+    intro x x_mem
+    simp
+    left
+    apply x_mem
+    apply ih
+
+
+
+lemma List.subset_result_foldl_union {A B: Type} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (a:A) (mem: a ∈ l): f a ⊆ List.foldl_union f init l := by
+  unfold foldl_union
+  induction l generalizing init with
+  | nil =>
+    simp at mem
+  | cons hd tl ih =>
+    simp at mem
+    simp
+    cases mem with
+    | inl a_hd =>
+      rw [a_hd]
+      apply Finset.Subset.trans (s₂ := init ∪ f hd)
+      rw [Finset.subset_iff]
+      intro x x_mem
+      simp
+      right
+      apply x_mem
+      apply subset_foldl_union
+    | inr a_tl =>
+      apply ih
+      exact a_tl
+
+
+lemma List.foldl_union_empty {A B: Type} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B):List.foldl_union f init l = ∅ ↔ init = ∅ ∧ ∀ (a:A), a ∈ l → f a = ∅ := by
+  unfold List.foldl_union
+  induction l generalizing init with
+  | nil =>
+    simp
+  | cons hd tl ih =>
+    simp
+    rw [ih]
+    rw [Finset.union_eq_empty]
+    tauto
