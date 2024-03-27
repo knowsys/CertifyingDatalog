@@ -178,9 +178,9 @@ def termVariables: term τ → Finset τ.vars
 def atomVariables (a: atom τ) : Finset τ.vars := List.foldl_union termVariables ∅ a.atom_terms
 
 
-lemma atomVariablesSubsetImpltermVariablesSubset {a: atom τ} {t: term τ}{S: Finset τ.vars}(mem: t ∈ a.atom_terms) (subs: atomVariables a ⊆ S): termVariables t ⊆ S :=
+lemma atomVariablesSubsetImpltermVariablesSubset {a: atom τ} {t: term τ}{S: Set τ.vars}(mem: t ∈ a.atom_terms) (subs: ↑ (atomVariables a) ⊆ S): ↑ (termVariables t) ⊆ S :=
 by
-  apply Finset.Subset.trans (s₂:= atomVariables a)
+  apply Set.Subset.trans (b:= atomVariables a)
   unfold atomVariables
   simp
   apply List.subset_result_foldl_union
@@ -190,11 +190,11 @@ by
 
 def ruleVariables (r: rule τ): Finset τ.vars := (atomVariables  r.head) ∪ (List.foldl_union atomVariables ∅ r.body)
 
-lemma ruleVariablesSubsetImplAtomVariablesSubset {r: rule τ} {a: atom τ}{S: Finset τ.vars}(mem: a = r.head ∨ a ∈ r.body) (subs: ruleVariables r ⊆ S): atomVariables a ⊆ S :=
+lemma ruleVariablesSubsetImplAtomVariablesSubset {r: rule τ} {a: atom τ}{S: Set τ.vars}(mem: a = r.head ∨ a ∈ r.body) (subs: ↑ (ruleVariables r) ⊆ S): ↑ (atomVariables a) ⊆ S :=
 by
-  apply Finset.Subset.trans (s₂:= ruleVariables r)
+  apply Set.Subset.trans (b:= ruleVariables r)
   unfold ruleVariables
-  rw [Finset.subset_iff]
+  rw [Set.subset_def]
   intro x x_mem
   simp
   cases mem with
@@ -207,6 +207,8 @@ by
     rw [List.mem_foldl_union]
     right
     use a
+    simp at x_mem
+    simp[*]
   apply subs
 
 def rule.isSafe (r: rule τ): Prop := atomVariables r.head ⊆ List.foldl_union atomVariables ∅ r.body
@@ -441,12 +443,9 @@ by
   rw [atomEquality] at a'_prop
   simp at a'_prop
   rcases a'_prop with ⟨_, terms_eq⟩
-  rw [Set.subset_def]
+  rw [List.foldl_union_subset_set]
   simp
-  intro x x_mem
 
-
-  rw [List.subset_foldl_union]
   intros t t_mem
   cases t with
   | constant c =>
@@ -479,14 +478,17 @@ by
   rw [ruleEquality] at r'_prop
   simp at r'_prop
   rcases r'_prop with ⟨left,right⟩
-  apply Set.union_subset
+  simp
+  constructor
   apply applySubstitutionAtomIsGroundImplVarsSubsetDomain
   simp
   use r'.head
   rw [left]
   unfold groundRule.toRule
   simp
-  rw [collectResultsToFinsetIsSubsetIffListElementsAre]
+
+  rw [List.foldl_union_subset_set]
+  simp
   intros a a_mem
   apply applySubstitutionAtomIsGroundImplVarsSubsetDomain
   unfold groundRule.toRule at right
@@ -586,7 +588,7 @@ by
     simp at h
     exact absurd h p
 
-lemma substitutionToGroundingEquivAtom [Inhabited τ.constants] (a: atom τ) (s: substitution τ) (h: atomVariables a ⊆ substitution_domain s): groundAtom.toAtom (atomGrounding  (substitutionToGrounding s) a) = applySubstitutionAtom s a :=
+lemma substitutionToGroundingEquivAtom [Inhabited τ.constants] (a: atom τ) (s: substitution τ) (h: ↑ (atomVariables a) ⊆ substitution_domain s): groundAtom.toAtom (atomGrounding  (substitutionToGrounding s) a) = applySubstitutionAtom s a :=
 by
   unfold atomGrounding
   unfold groundAtom.toAtom
@@ -603,7 +605,7 @@ by
   apply List.get_mem
   exact h
 
-lemma substitutionToGroundingEquivRule [Inhabited τ.constants] (r: rule τ) (s: substitution τ) (h: ruleVariables r ⊆ substitution_domain s ): groundRule.toRule (ruleGrounding r (substitutionToGrounding s)) = applySubstitutionRule s r :=
+lemma substitutionToGroundingEquivRule [Inhabited τ.constants] (r: rule τ) (s: substitution τ) (h: ↑ (ruleVariables r) ⊆ substitution_domain s ): groundRule.toRule (ruleGrounding r (substitutionToGrounding s)) = applySubstitutionRule s r :=
 by
   unfold groundRule.toRule
   unfold ruleGrounding
