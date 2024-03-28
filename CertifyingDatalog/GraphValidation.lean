@@ -647,14 +647,6 @@ by
   simp at i_zero
   simp
 
--- added based on https://leanprover.zulipchat.com/#narrow/stream/113488-general/topic/finset.2Efilter
-noncomputable def Finset.filter_nc (p: A → Prop) (S: Finset A):= @Finset.filter A p (Classical.decPred p) S
-
-lemma Finset.mem_filter_nc (a:A) (p: A → Prop) (S: Finset A): a ∈ Finset.filter_nc p S ↔ p a ∧ a ∈ S :=
-by
-  unfold filter_nc
-  simp [Finset.mem_filter]
-  rw [And.comm]
 
 noncomputable def globalSuccessors (a:A) (G: Graph A): Finset A := Finset.filter_nc (fun b => canReach a b G) G.vertices.toFinset
 
