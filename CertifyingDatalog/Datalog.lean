@@ -385,6 +385,41 @@ def ruleFromGroundAtoms (head: groundAtom τ) (body: List (groundAtom τ)): rule
 
 def groundProgram (P: program τ) := {r: groundRule τ | ∃ (r': rule τ) (g: grounding τ), r' ∈ P ∧ r = ruleGrounding r' g}
 
+def termWithoutVariablesToConstant (t: term τ) (h: termVariables t = ∅): τ.constants :=
+  match t with
+  | term.constant c => c
+  | term.variableDL v =>
+      have h': False := by
+        unfold termVariables at h
+        simp at h
+      False.elim h'
+
+lemma atomVariablesEmptyIffAllTermVariablesEmpty (a: atom τ): atomVariables a = ∅ ↔ ∀ (t: term τ), t ∈ a.atom_terms → termVariables t = ∅ := by
+  unfold atomVariables
+  rw [List.foldl_union_empty]
+  simp
+
+def atomWithoutVariablesToGroundAtom (a: atom τ) (h: atomVariables a = ∅): groundAtom τ :=
+{
+  symbol:= a.symbol,
+  atom_terms := List.map (fun ⟨x, _h⟩ => termWithoutVariablesToConstant x (Iff.mp (atomVariablesEmptyIffAllTermVariablesEmpty a) h x _h)) a.atom_terms.attach,
+  term_length :=
+    by
+      simp
+      apply a.term_length
+}
+
+lemma groundAtomToAtomOfAtomWithoutVariablesToGroundAtomIsSelf (a: atom τ) (h: atomVariables a = ∅): a = atomWithoutVariablesToGroundAtom a h :=
+by
+  simp
+  unfold groundAtom.toAtom
+  unfold atomWithoutVariablesToGroundAtom
+  simp
+  rw [atomEquality]
+  simp
+
+  admit
+
 end grounding
 section substitutions
 variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.predicateSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
@@ -800,6 +835,24 @@ by
   apply left
   apply subs_ext_listConstant (s1 := s1) (subs:= subs) (eq:= right)
 
+
+lemma termVariablesApplySubstitution (t: term τ) (s: substitution τ): termVariables (applySubstitutionTerm s t) = (termVariables t).filter_nc (fun x => ¬ x ∈ substitution_domain s) := by
+  cases t with
+  | constant c =>
+    unfold applySubstitutionTerm
+    unfold termVariables
+    rw [Finset.ext_iff]
+    simp
+    simp [Finset.mem_filter_nc]
+  | variableDL v =>
+    unfold applySubstitutionTerm
+    unfold termVariables
+    rw [Finset.ext_iff]
+    simp
+    sorry
+
+lemma atomVariablesApplySubstitution (a: atom τ) (s: substitution τ): atomVariables (applySubstitutionAtom s a) = (atomVariables a).filter_nc (fun x => ¬ x ∈ substitution_domain s)  := by
+  sorry
 
 end substitutions
 section semantics
