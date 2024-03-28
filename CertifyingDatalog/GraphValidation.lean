@@ -1548,54 +1548,41 @@ by
     unfold foldl_except_set
     simp
   | cons hd tl ih =>
-    constructor
-    intro h a a_mem
-    simp at a_mem
-    rcases h with ⟨S, foldl⟩
-    cases a_mem with
-    | inl a_hd =>
-      unfold foldl_except_set at foldl
-      rw [a_hd]
-      cases h: f hd init with
-      | ok S' =>
-        unfold Except.isOk
-        unfold Except.toBool
-        simp
-      | error e =>
-        simp [h] at foldl
-    | inr a_tl =>
-      unfold foldl_except_set at foldl
-      cases h: f hd init with
-      | ok S' =>
-        specialize ih S'
-        have S'_prop: ∀ (b : B), S'.contains b → p b := by
-          apply f_prev hd init S' init_prop h
-        specialize ih S'_prop
-        simp [h] at foldl
-        rw [← f_ignore_B a S' init S'_prop init_prop]
-        revert a
-        rw [← ih]
-        use S
-      | error e =>
-        simp [h] at foldl
-
-    intro h
-    have f_hd_result: ∃ (S: HashSet B), f hd init = Except.ok S := by
-      rw [except_is_ok_iff_exists]
-      apply h
-      simp
     unfold foldl_except_set
-    rcases f_hd_result with ⟨S', f_S'⟩
-    simp [f_S']
-    specialize ih S'
-    have S'_prop: ∀ (b:B), S'.contains b → p b  := by
-      apply f_prev hd init S' init_prop f_S'
-    specialize ih S'_prop
+    split
+    simp
+    rename_i msg h
+    rw [h]
+    unfold Except.isOk
+    unfold Except.toBool
+    simp
+
+    rename_i e S h
     rw [ih]
-    intro a a_mem
-    rw [f_ignore_B a S' init S'_prop init_prop]
-    apply h
-    simp [a_mem]
+    simp
+    rw [h]
+    simp [except_is_ok_of_ok]
+    constructor
+    intro h' a a_tl
+    specialize f_ignore_B a init S
+    rw [f_ignore_B]
+    apply h'
+    exact a_tl
+    apply init_prop
+    apply f_prev hd init S
+    exact init_prop
+    exact h
+
+    intro h' a a_tl
+    specialize f_ignore_B a init S
+    rw [← f_ignore_B]
+    apply h' a a_tl
+    apply init_prop
+    all_goals{
+    apply f_prev hd init S
+    exact init_prop
+    exact h
+    }
 
 
 def addElementIfOk [Hashable A] (e: Except B (HashSet A)) (a:A): Except B (HashSet A) :=

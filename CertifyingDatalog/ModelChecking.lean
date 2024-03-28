@@ -125,6 +125,14 @@ lemma inGetSubstitutionsImplNoVars (i: List (groundAtom τ))(a: atom τ) (s: sub
   rw [matchSemantic]
   apply groundAtomsHaveNoVariables
 
+lemma atomWithoutVariablesToGroundAtomOfGroundAtom (ga: groundAtom τ) (h: atomVariables ga.toAtom = ∅): atomWithoutVariablesToGroundAtom ga.toAtom h = ga :=
+by
+  unfold groundAtom.toAtom
+  unfold atomWithoutVariablesToGroundAtom
+  simp
+  congr
+  admit
+
 lemma inGetSubstitutionsImplInInterpretation (i: List (groundAtom τ))(a: atom τ) (s: substitution τ) (h: s ∈ getSubstitutions i a)  (noVars: atomVariables (applySubstitutionAtom s a) = ∅): atomWithoutVariablesToGroundAtom (applySubstitutionAtom s a) noVars ∈ i :=
 by
   unfold getSubstitutions at h
@@ -255,13 +263,40 @@ def groundingStep (pgr: partialGroundRule τ) (hd: atom τ) (tl: List (atom τ))
   ungroundedBody := List.map (applySubstitutionAtom s) tl
 }
 
-lemma groundingStepPreservesSafety (pgr: partialGroundRule τ) (hd: atom τ) (tl: List (atom τ)) (s: substitution τ) (noVars: atomVariables (applySubstitutionAtom s hd) = ∅ ) (safe: pgr.isSafe): (groundingStep pgr hd tl s noVars).isSafe :=
+lemma groundingStepPreservesSafety (pgr: partialGroundRule τ) (hd: atom τ) (tl: List (atom τ)) (s: substitution τ) (h: pgr.ungroundedBody = hd::tl) (noVars: atomVariables (applySubstitutionAtom s hd) = ∅ ) (safe: pgr.isSafe): (groundingStep pgr hd tl s noVars).isSafe :=
 by
   unfold partialGroundRule.isSafe
   unfold groundingStep
   simp
   rw [atomVariablesApplySubstitution]
-  admit
+  rw [Finset.subset_iff]
+
+  intro v
+  rw [List.mem_foldl_union]
+  simp
+  simp_rw [atomVariablesApplySubstitution]
+  rw [Finset.mem_filter_nc]
+  intro h
+  rcases h with ⟨v_dom, v_head⟩
+  unfold partialGroundRule.isSafe at safe
+  rw [Finset.subset_iff] at safe
+  specialize safe v_head
+  rw [List.mem_foldl_union] at safe
+  simp at safe
+  rcases safe with ⟨a, a_body, v_a⟩
+  use a
+  rw [h] at a_body
+  simp at a_body
+  cases a_body with
+  | inl a_hd =>
+    rw [atomVariablesApplySubstitution] at noVars
+    rw [a_hd] at v_a
+
+    admit
+  | inr a_tl =>
+    simp [a_tl]
+    rw [Finset.mem_filter_nc]
+    simp [v_dom, v_a]
 
 
 
@@ -283,7 +318,7 @@ def exploreGrounding (pgr: partialGroundRule τ) (i: List (groundAtom τ)) (safe
       List.map_except_unit (getSubstitutions i hd).attach (fun ⟨s, _h⟩ =>
         let noVars':= inGetSubstitutionsImplNoVars i hd s _h
         if atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars' ∈ i
-        then exploreGrounding (groundingStep pgr hd tl s noVars') i (groundingStepPreservesSafety pgr hd tl s noVars' safe)
+        then exploreGrounding (groundingStep pgr hd tl s noVars') i (groundingStepPreservesSafety pgr hd tl s h noVars' safe)
         else
           Except.ok ()
       )
@@ -485,7 +520,8 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
         apply body_subs
         right
         left
-
+        rw [groundAtomToAtomEquality]
+        rw [← groundAtomToAtomOfAtomWithoutVariablesToGroundAtomIsSelf]
         admit
       contradiction
 

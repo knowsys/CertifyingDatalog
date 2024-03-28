@@ -357,6 +357,7 @@ by
 
 def atomGrounding (g: grounding τ) (a: atom τ): groundAtom τ := {symbol := a.symbol, atom_terms := List.map (applyGroundingTerm'  g) a.atom_terms, term_length := applyGroundingTerm'PreservesLength  g a}
 
+
 def applyGroundingRule (r: rule τ) (g: grounding τ): rule τ := {head := applyGroundingAtom  g r.head, body := List.map (applyGroundingAtom  g) r.body }
 
 lemma groundingRemovesRuleVariables (r: rule τ) (g: grounding τ): ruleVariables (applyGroundingRule r g) = ∅ := by
@@ -417,6 +418,13 @@ by
   simp
   rw [atomEquality]
   simp
+  rw [atomVariablesEmptyIffAllTermVariablesEmpty] at h
+
+  apply List.ext_get
+  simp
+  intro n h1 h2
+  simp
+  unfold termWithoutVariablesToConstant
 
   admit
 
@@ -849,7 +857,33 @@ lemma termVariablesApplySubstitution (t: term τ) (s: substitution τ): termVari
     unfold termVariables
     rw [Finset.ext_iff]
     simp
-    sorry
+
+    by_cases h: Option.isSome (s v)
+    simp [h]
+    intro v'
+    simp [Finset.mem_filter_nc]
+    unfold substitution_domain
+    simp
+    intro h'
+    by_contra p
+    rw [p] at h'
+    rw [Option.isNone_iff_eq_none] at h'
+    rw [h'] at h
+    simp at h
+
+    intro v'
+    simp [h]
+    simp [Finset.mem_filter_nc]
+    intro h'
+    unfold substitution_domain
+    simp
+    rw [h']
+    cases p:s v with
+    | some c =>
+      rw [p] at h
+      simp at h
+    | none =>
+      simp
 
 lemma atomVariablesApplySubstitution (a: atom τ) (s: substitution τ): atomVariables (applySubstitutionAtom s a) = (atomVariables a).filter_nc (fun x => ¬ x ∈ substitution_domain s)  := by
   sorry
