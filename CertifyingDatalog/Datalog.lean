@@ -423,9 +423,18 @@ by
   simp
   intro n h1 h2
   simp
-  unfold termWithoutVariablesToConstant
 
-  admit
+  have h': ∀ (t:term τ) (noVars:termVariables t = ∅), t = termWithoutVariablesToConstant t noVars := by
+    intro t noVars
+    simp
+    unfold termWithoutVariablesToConstant
+    cases t with
+    | constant c => simp
+    | variableDL v =>
+      unfold termVariables at noVars
+      simp at noVars
+  apply h'
+
 
 end grounding
 section substitutions
@@ -885,7 +894,43 @@ lemma termVariablesApplySubstitution (t: term τ) (s: substitution τ): termVari
       simp
 
 lemma atomVariablesApplySubstitution (a: atom τ) (s: substitution τ): atomVariables (applySubstitutionAtom s a) = (atomVariables a).filter_nc (fun x => ¬ x ∈ substitution_domain s)  := by
-  sorry
+  apply Finset.ext
+  intro v
+  unfold atomVariables
+  rw [List.mem_foldl_union, Finset.mem_filter_nc, List.mem_foldl_union]
+  simp
+  unfold applySubstitutionAtom
+  simp
+
+  have h: ∀ (s:substitution τ) (v: τ.vars) (t: term τ), v ∈ termVariables (applySubstitutionTerm s t) ↔ v ∉ substitution_domain s ∧ v ∈ termVariables t := by
+    intro s v t
+    cases t with
+    | constant c =>
+      unfold termVariables
+      unfold applySubstitutionTerm
+      simp
+    | variableDL v' =>
+      unfold termVariables
+      unfold applySubstitutionTerm
+      unfold substitution_domain
+      simp
+
+      by_cases h: Option.isSome (s v')
+      simp[h]
+      intro h'
+      by_contra p
+      rw [p] at h'
+      rw [Option.isNone_iff_eq_none] at h'
+      rw [h'] at h
+      unfold Option.isSome at h
+      simp at h
+
+      simp[h]
+      simp at h
+      aesop
+
+  simp_rw [h]
+  tauto
 
 end substitutions
 section semantics
