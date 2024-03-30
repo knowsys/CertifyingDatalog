@@ -359,10 +359,8 @@ def exploreGrounding (pgr: partialGroundRule τ) (i: List (groundAtom τ)) (safe
     else
       List.map_except_unit (getSubstitutions i hd).attach (fun ⟨s, _h⟩ =>
         let noVars':= inGetSubstitutionsImplNoVars i hd s _h
-        if atomWithoutVariablesToGroundAtom (applySubstitutionAtom s hd) noVars' ∈ i
-        then exploreGrounding (groundingStep pgr hd tl s noVars') i (groundingStepPreservesSafety pgr hd tl s h noVars' safe)
-        else
-          Except.ok ()
+        exploreGrounding (groundingStep pgr hd tl s noVars') i (groundingStepPreservesSafety pgr hd tl s h noVars' safe)
+
       )
 termination_by pgr.ungroundedBody.length
 decreasing_by
@@ -746,8 +744,6 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       unfold partialGroundRule.isTrue at h
       rw [swapPgrApplySubstitution] at h
       apply h
-      apply inGetSubstitutionsImplInInterpretation
-      exact s_getSubs
       unfold partialGroundRule.isActive
       simp
       intro ga ga_mem
@@ -767,7 +763,7 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       unfold partialGroundRule.toRule
       simp
 
-      intro h s s_mem s_hd_i
+      intro h s s_mem
       rw [ih]
       unfold partialGroundRule.isTrue
       intro g
@@ -786,7 +782,8 @@ theorem exploreGroundingSemantics (i: List (groundAtom τ)) (pgr: partialGroundR
       | inr ga_hd =>
         rw [ga_hd]
         rw [← List.toSet_mem]
-        exact s_hd_i
+        apply inGetSubstitutionsImplInInterpretation
+        exact s_mem
       simp
       exact length
 
