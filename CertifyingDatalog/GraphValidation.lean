@@ -2271,7 +2271,7 @@ by
     exact absurd n_empty empty
 
 
-lemma extractTreeStepValidProofTreeIffAllLocallyValidAndAcyclic (P: program τ) (d: database τ) (a: groundAtom τ) (G: Graph (groundAtom τ)) (acyclic: isAcyclic G) (mem: a ∈ G.vertices) (valid: ∀ (a: groundAtom τ), a ∈ G.vertices → locallyValid P d a G): isValid P d (extractTree a G mem acyclic) :=
+lemma extractTreeValidIffAllLocallyValidAndAcyclic (P: program τ) (d: database τ) (a: groundAtom τ) (G: Graph (groundAtom τ)) (acyclic: isAcyclic G) (mem: a ∈ G.vertices) (valid: ∀ (a: groundAtom τ), a ∈ G.vertices → locallyValid P d a G): isValid P d (extractTree a G mem acyclic) :=
 by
   induction' h:(globalSuccessors a G).card using Nat.strongInductionOn with n ih generalizing a
   unfold extractTree
@@ -2321,5 +2321,5 @@ by
   use extractTree a G a_mem acyclic
   constructor
   apply rootOfExtractTree
-  apply extractTreeStepValidProofTreeIffAllLocallyValidAndAcyclic
+  apply extractTreeValidIffAllLocallyValidAndAcyclic
   apply valid

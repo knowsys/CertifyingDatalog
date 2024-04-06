@@ -327,7 +327,7 @@ lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database �
   apply ga_t
 
 
-lemma validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () ↔ {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t :=
+lemma validateTreeListUnitIffSubsetSemanticsAndAllValid (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () ↔ {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t :=
 by
   constructor
   intro h
