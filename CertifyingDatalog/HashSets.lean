@@ -14,6 +14,45 @@ instance: Std.HashMap.LawfulHashable A := {hash_eq := by simp}
 
 instance: PartialEquivBEq A := {symm:= by simp, trans:= by simp}
 
+lemma List.find?_mem_iff (l: List A) (p: A → Bool) (a:A) (unique: List.Pairwise (fun x y => ¬ (p x = true ∧ p y = true)) l): l.find? p = some a ↔ a ∈ l ∧ p a = true := by
+  induction l with
+  | nil =>
+    simp
+  | cons hd tl ih =>
+    unfold List.find?
+    by_cases p_hd: p hd = true
+    simp [p_hd]
+    constructor
+    intro hd_a
+    constructor
+    left
+    apply Eq.symm hd_a
+    rw [← hd_a]
+    exact p_hd
+    intro h
+    rcases h with ⟨a_mem, p_a⟩
+    cases a_mem with
+    | inl a_hd =>
+      apply Eq.symm a_hd
+    | inr a_tl =>
+      simp at unique
+      rcases unique with ⟨unique, _⟩
+      specialize unique a a_tl p_hd
+      rw [unique] at p_a
+      contradiction
+
+    simp [p_hd]
+    rw [ih]
+    aesop
+    aesop
+
+lemma Array.get_set_not_eq (as: Array A) (i: Fin as.size) (j : Nat) (hj : j < as.size) (v : A) (i_j: ¬ j = i.val): (as.set i v)[j]'(by simp [*]) = as[j] := by
+  rw [Array.get_set]
+  simp
+  intro h
+  simp_rw[h] at i_j
+  simp at i_j
+  exact hj
 
 lemma Array.mem_iff_exists (as: Array A) (a:A): a ∈ as ↔ ∃ (i: Fin as.size), a = as[i] :=
 by
@@ -604,8 +643,6 @@ lemma foldl_reinsertAux (source:(AssocList A B)) (target: HashMap.Imp.Buckets A 
 
 
 lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (target : Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (HashMap.Imp.expand.go i source target).1 ∧ ab ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B), (bkt ∈ target.1 ∨ ∃ (j: Fin source.size), j.val ≥ i ∧ bkt = source[j]) ∧ ab ∈ bkt.toList := by
-  sorry
-  /-
   induction' h:(source.size - i)  with n ih generalizing source i target
 
   rw [Nat.sub_eq_zero_iff_le] at h
@@ -641,16 +678,20 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
 
   --step
   unfold expand.go
-  have h_i: i < source.size := by
-    apply Nat.lt_of_sub_eq_succ h
+  split
+  swap
+  rename_i h'
+  simp at h'
+  exfalso
+  aesop
+  rename_i h_i
   simp [h_i]
   specialize ih (i+1) (source.set (Fin.mk i h_i) AssocList.nil) (List.foldl (fun d x => reinsertAux d x.1 x.2) target (AssocList.toList source[i]))
   simp at ih
-  have h': Array.size source - (i + 1) = n := by
-    rw [← Nat.succ_eq_add_one, Nat.sub_succ, h]
-    simp
-  specialize ih h'
   rw [ih]
+  swap
+  rw [← Nat.succ_eq_add_one, Nat.sub_succ, h]
+  simp
 
   simp_rw [or_and_right, exists_or]
   constructor
@@ -674,27 +715,28 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
     right
     use bkt
     rcases g with ⟨j, j_i, bkt_set⟩
-    constructor
-    rw [Array.get_set] at bkt_set
-    simp at bkt_set
     have j_isLt: j.val < Array.size source := by
       have h: j.val < Array.size (Array.set source {val:=i, isLt := h_i} AssocList.nil) := by
         apply j.isLt
       simp at h
       exact h
-    use Fin.mk j j_isLt
+
+    have i_j: ¬ i = j.val := by
+      by_contra p
+      simp_rw [← p, ← Nat.succ_eq_add_one, Nat.succ_le_iff] at j_i
+      simp at j_i
+    constructor
+    use Fin.mk j.val j_isLt
     simp
     constructor
     apply Nat.le_trans (m:= i+1)
     simp
     apply j_i
-    rw [bkt_set]
-    split
-    rename_i i_j
-    rw [← i_j] at j_i
-    simp at j_i
+    simp [bkt_set]
+    rw [Array.get_set_not_eq]
     simp
-    apply ab_mem
+    aesop
+    exact ab_mem
 
   intro g
   rw [foldl_reinsertAux]
@@ -710,7 +752,7 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
     left
     right
     have source_eq: source[i] = source[j.val] := by
-      congr
+      simp_rw [j_i]
     rw [source_eq, ← bkt_j]
     apply ab_mem
 
@@ -722,24 +764,27 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
         apply j.isLt
       use Fin.mk j.val k'
     rcases h_k with ⟨k, k_j⟩
-    constructor
-    use k
-    constructor
-    rw [k_j, ← Nat.succ_eq_add_one, Nat.succ_le_iff]
-    apply Nat.lt_of_le_of_ne
-    apply i_j
-    apply j_i
-    rw [Array.get_set]
-    simp
-    split
-    rename_i i_k
-    rw [i_k] at j_i
-    contradiction
+    · constructor
+      use k
+      constructor
+      · rw [k_j, ← Nat.succ_eq_add_one, Nat.succ_le_iff]
+        apply Nat.lt_of_le_of_ne
+        apply i_j
+        exact j_i
+      rw [Array.get_set]
+      simp
+      split
+      · rename_i i_k
+        rw [i_k] at j_i
+        contradiction
 
-    rw [bkt_j]
-    congr
-  -/
-
+      · rw [bkt_j]
+        simp_rw [k_j]
+        have h': source.size = Array.size (Array.set source { val := i, isLt := h_i } AssocList.nil) := by
+          simp
+        simp_rw [h']
+        exact k.isLt
+      exact ab_mem
 
 
 lemma HashMap.Imp.expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:A) (b:B): (∃ (bkt: AssocList A B),  bkt ∈ buckets.1 ∧ (a,b) ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B),  bkt ∈ (expand size buckets).buckets.1 ∧  (a,b) ∈ bkt.toList := by
@@ -997,6 +1042,70 @@ by
       left
       simp [h]
 
+lemma swap_not_equal (a a':A): ¬ a = a' ↔ ¬ a' = a :=
+by
+  aesop
+
+lemma List.Pairwise_diff_to_element_if_all_diff (l: AssocList A B)(a:A) (h:List.Pairwise (fun x y => ¬x.1 = y.1) l.toList): List.Pairwise (fun x y => ¬((x.1 == a) = true ∧ (y.1 == a) = true)) (AssocList.toList l ) := by
+  induction l with
+  | nil =>
+    simp
+  | cons hda hdb tl ih =>
+    simp
+    constructor
+    intro a' b' ab'_tl hda_a
+    rw [← hda_a]
+    simp at h
+    rw [swap_not_equal]
+    apply (And.left h)
+    exact ab'_tl
+    simp at ih
+    apply ih
+    simp at h
+    apply And.right h
+
+lemma Pairwise_diff_to_element_if_bucket (l: AssocList A B) (m: HashMap.Imp A B) (wf: HashMap.Imp.WF m) (mem: l ∈ m.buckets.1) (a:A): List.Pairwise (fun x y => ¬((x.1 == a) = true ∧ (y.1 == a) = true))
+  (AssocList.toList l ) := by
+    have distinct: List.Pairwise (fun x y => ¬x.1 = y.1) l.toList := by
+      apply HashMap.Imp.Buckets.distinct_elements
+      rw [HashMap.Imp.WF_iff] at wf
+      apply And.right wf
+      exact mem
+    simp at distinct
+    apply List.Pairwise_diff_to_element_if_all_diff
+    exact distinct
+
+lemma HashMap.Imp.find_iff_kv (m: HashMap.Imp A B) (wf: HashMap.Imp.WF m) (a:A) (b:B): m.find? a = some b ↔ m.kv_member a b = true := by
+  cases m with
+  | mk size buckets =>
+    unfold kv_member
+    unfold find?
+    simp
+    rw [AssocList.mem_containsKeyValue_iff_mem_toList (ab:=(a,b))]
+    constructor
+    intro h
+    rcases h with ⟨a',mem⟩
+    rw [List.find?_mem_iff] at mem
+    simp at mem
+    rcases mem with ⟨mem, a_a'⟩
+    rw [a_a'] at mem
+    exact mem
+    apply Pairwise_diff_to_element_if_bucket
+    use wf
+    simp
+    exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
+
+    intro h
+    use a
+    rw [List.find?_mem_iff]
+    simp
+    exact h
+    apply Pairwise_diff_to_element_if_bucket
+    use wf
+    simp
+    exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
+
+
 
 def HashMap.keys' (m: HashMap A B): Finset A := m.val.keys'
 
@@ -1008,6 +1117,12 @@ by
   apply m.2
 
 def HashMap.kv_member (m: HashMap A B) (a: A) (b:B): Bool := m.1.kv_member a b
+
+lemma HashMap.find_iff_kv (m: HashMap A B)  (a:A) (b:B): m.find? a = some b ↔ m.kv_member a b = true := by
+  unfold find?
+  unfold kv_member
+  apply HashMap.Imp.find_iff_kv
+  exact m.2
 
 lemma HashMap.keys'_iff_kv (m: HashMap A B) (a:A): a ∈ m.keys' ↔ ∃ (b:B), m.kv_member a b:= by
   cases m with
@@ -1054,9 +1169,109 @@ lemma HashMap.contains_insert (m : HashMap A B) (a a': A) (b:B): (m.insert a b).
   simp [h, a_a']
   aesop
 
+lemma HashMap.Imp.contains_iff_find? (m: HashMap.Imp A B) (wf: HashMap.Imp.WF m) (a:A): m.contains a ↔ ∃ (b:B), m.find? a = some b := by
+  unfold contains
+  unfold find?
+  cases m with
+  | mk size buckets =>
+    simp
+    constructor
+    intro h
+    rcases h with ⟨b, mem⟩
+    use b
+    use a
+    rw [List.find?_mem_iff]
+    simp
+    exact mem
+    apply Pairwise_diff_to_element_if_bucket
+    use wf
+    simp
+    exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
+
+    intro h
+    rcases h with ⟨b,a',mem⟩
+    use b
+    rw [List.find?_mem_iff] at mem
+    simp at mem
+    aesop
+    apply Pairwise_diff_to_element_if_bucket
+    use wf
+    simp
+    exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
+
+
+lemma HashMap.find_insert (m: HashMap A B) (a a': A) (b :B): (m.insert a b).find? a' = if a' = a then some b else m.find? a' := by
+  split
+  rename_i h
+  rw [find_iff_kv, insert_semantics, h]
+  right
+  rfl
+
+  rename_i h
+  cases h': find? m a' with
+  | some b2 =>
+    rw [find_iff_kv, insert_semantics]
+    left
+    constructor
+    rw [← find_iff_kv]
+    exact h'
+    aesop
+  | none =>
+    rw [Option.eq_none_iff_forall_not_mem]
+    by_contra p
+    simp at p
+    rcases p with ⟨b2, find_b2⟩
+    rw [find_iff_kv, insert_semantics] at find_b2
+    simp[h] at find_b2
+    cases find_b2 with
+    | inl h_1 =>
+      rw [← find_iff_kv] at h_1
+      rw [h_1] at h'
+      simp at h'
+    | inr h_1 =>
+      aesop
+
+
+lemma HashMap.contains_iff_find? (m: HashMap A B)  (a:A): m.contains a ↔ ∃ (b:B), m.find? a = some b := by
+  unfold contains
+  unfold find?
+  apply HashMap.Imp.contains_iff_find?
+  exact m.2
+
+lemma HashMap.contains_of_find? (m: HashMap A B)  (a:A) (b:B) (h: m.find? a = some b): m.contains a := by
+  rw [contains_iff_find?]
+  use b
+
+lemma HashMap.findD_eq_find? (m: HashMap A B) (a:A) (b:B): m.findD a b = match m.find? a with
+                    | some b' => b'
+                    | none => b := by
+  unfold findD
+  rw [Option.getD_eq_iff]
+  aesop
+
+lemma HashMap.not_contains_find_none (m: HashMap A B) (a:A) (h: ¬ m.contains a = true): m.find? a = none := by
+  rw [contains_iff_find?] at h
+  simp at h
+  cases h':find? m a with
+  | some b =>
+    specialize h b
+    contradiction
+  | none =>
+    rfl
+
 -- Axioms for HashMap
 
-theorem HashMap.findD_is_default_when_not_contains (hm : HashMap A B) (a : A) (h : ¬ hm.contains a) : ∀ b, hm.findD a b = b := by sorry
+theorem HashMap.findD_is_default_when_not_contains (hm : HashMap A B) (a : A) (h : ¬ hm.contains a) : ∀ b, hm.findD a b = b := by
+  intro b
+  rw [findD_eq_find?]
+  split
+  rename_i b' find
+  have mem: contains hm a = true := by
+    apply HashMap.contains_of_find?
+    exact find
+  contradiction
+
+  rfl
 
 theorem HashMap.in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := by
   rw [List.mem_map]
@@ -1076,9 +1291,27 @@ theorem HashMap.for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A 
 
 theorem HashMap.findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Std.HashMap.ofList l).findD a b = ((l.find? (fun x => x.fst == a)).map Prod.snd).getD b := by sorry
 
-theorem HashMap.findD_insert (hm : HashMap A B) (a a' : A) : ∀ b, (hm.insert a b).findD a' b = hm.findD a' b := by sorry
-theorem HashMap.findD_insert' (hm : HashMap A B) (a : A) (b : B) : ∀ b', (hm.insert a b).findD a b' = b := by sorry
-theorem HashMap.findD_insert'' (hm : HashMap A B) (a a' : A) (h : a ≠ a') : ∀ b b', (hm.insert a b).findD a' b' = hm.findD a' b' := by sorry
+theorem HashMap.findD_insert (hm : HashMap A B) (a a' : A) (h: ¬ hm.contains a = true): ∀ b, (hm.insert a b).findD a' b = hm.findD a' b := by
+  intro b
+  rw [findD_eq_find?, findD_eq_find?, find_insert]
+  by_cases a_a': a' = a
+  simp [a_a']
+  have find_hm : find? hm a = none := by
+    apply not_contains_find_none
+    exact h
+  simp [find_hm]
+
+  simp [a_a']
+
+theorem HashMap.findD_insert' (hm : HashMap A B) (a : A) (b : B) : ∀ b', (hm.insert a b).findD a b' = b := by
+  intro b'
+  rw [findD_eq_find?, find_insert]
+  simp
+
+theorem HashMap.findD_insert'' (hm : HashMap A B) (a a' : A) (h : a ≠ a') : ∀ b b', (hm.insert a b).findD a' b' = hm.findD a' b' := by
+  intro b b'
+  rw [findD_eq_find?, findD_eq_find?, find_insert]
+  aesop
 
 end HashMap
 
