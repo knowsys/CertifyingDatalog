@@ -14,6 +14,13 @@ instance: Std.HashMap.LawfulHashable A := {hash_eq := by simp}
 
 instance: PartialEquivBEq A := {symm:= by simp, trans:= by simp}
 
+lemma Array.get_set_not_eq (as: Array A) (i: Fin as.size) (j : Nat) (hj : j < as.size) (v : A) (i_j: ¬ j = i.val): (as.set i v)[j]'(by simp [*]) = as[j] := by
+  rw [Array.get_set]
+  simp
+  intro h
+  simp_rw[h] at i_j
+  simp at i_j
+  exact hj
 
 lemma Array.mem_iff_exists (as: Array A) (a:A): a ∈ as ↔ ∃ (i: Fin as.size), a = as[i] :=
 by
@@ -604,8 +611,6 @@ lemma foldl_reinsertAux (source:(AssocList A B)) (target: HashMap.Imp.Buckets A 
 
 
 lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (target : Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (HashMap.Imp.expand.go i source target).1 ∧ ab ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B), (bkt ∈ target.1 ∨ ∃ (j: Fin source.size), j.val ≥ i ∧ bkt = source[j]) ∧ ab ∈ bkt.toList := by
-  sorry
-  /-
   induction' h:(source.size - i)  with n ih generalizing source i target
 
   rw [Nat.sub_eq_zero_iff_le] at h
@@ -641,16 +646,20 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
 
   --step
   unfold expand.go
-  have h_i: i < source.size := by
-    apply Nat.lt_of_sub_eq_succ h
+  split
+  swap
+  rename_i h'
+  simp at h'
+  exfalso
+  aesop
+  rename_i h_i
   simp [h_i]
   specialize ih (i+1) (source.set (Fin.mk i h_i) AssocList.nil) (List.foldl (fun d x => reinsertAux d x.1 x.2) target (AssocList.toList source[i]))
   simp at ih
-  have h': Array.size source - (i + 1) = n := by
-    rw [← Nat.succ_eq_add_one, Nat.sub_succ, h]
-    simp
-  specialize ih h'
   rw [ih]
+  swap
+  rw [← Nat.succ_eq_add_one, Nat.sub_succ, h]
+  simp
 
   simp_rw [or_and_right, exists_or]
   constructor
@@ -674,27 +683,28 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
     right
     use bkt
     rcases g with ⟨j, j_i, bkt_set⟩
-    constructor
-    rw [Array.get_set] at bkt_set
-    simp at bkt_set
     have j_isLt: j.val < Array.size source := by
       have h: j.val < Array.size (Array.set source {val:=i, isLt := h_i} AssocList.nil) := by
         apply j.isLt
       simp at h
       exact h
-    use Fin.mk j j_isLt
+
+    have i_j: ¬ i = j.val := by
+      by_contra p
+      simp_rw [← p, ← Nat.succ_eq_add_one, Nat.succ_le_iff] at j_i
+      simp at j_i
+    constructor
+    use Fin.mk j.val j_isLt
     simp
     constructor
     apply Nat.le_trans (m:= i+1)
     simp
     apply j_i
-    rw [bkt_set]
-    split
-    rename_i i_j
-    rw [← i_j] at j_i
-    simp at j_i
+    simp [bkt_set]
+    rw [Array.get_set_not_eq]
     simp
-    apply ab_mem
+    aesop
+    exact ab_mem
 
   intro g
   rw [foldl_reinsertAux]
@@ -710,7 +720,7 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
     left
     right
     have source_eq: source[i] = source[j.val] := by
-      congr
+      simp_rw [j_i]
     rw [source_eq, ← bkt_j]
     apply ab_mem
 
@@ -722,24 +732,27 @@ lemma HashMap.Imp.expand_go_mem (i : Nat) (source : Array (AssocList A B)) (targ
         apply j.isLt
       use Fin.mk j.val k'
     rcases h_k with ⟨k, k_j⟩
-    constructor
-    use k
-    constructor
-    rw [k_j, ← Nat.succ_eq_add_one, Nat.succ_le_iff]
-    apply Nat.lt_of_le_of_ne
-    apply i_j
-    apply j_i
-    rw [Array.get_set]
-    simp
-    split
-    rename_i i_k
-    rw [i_k] at j_i
-    contradiction
+    · constructor
+      use k
+      constructor
+      · rw [k_j, ← Nat.succ_eq_add_one, Nat.succ_le_iff]
+        apply Nat.lt_of_le_of_ne
+        apply i_j
+        exact j_i
+      rw [Array.get_set]
+      simp
+      split
+      · rename_i i_k
+        rw [i_k] at j_i
+        contradiction
 
-    rw [bkt_j]
-    congr
-  -/
-
+      · rw [bkt_j]
+        simp_rw [k_j]
+        have h': source.size = Array.size (Array.set source { val := i, isLt := h_i } AssocList.nil) := by
+          simp
+        simp_rw [h']
+        exact k.isLt
+      exact ab_mem
 
 
 lemma HashMap.Imp.expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:A) (b:B): (∃ (bkt: AssocList A B),  bkt ∈ buckets.1 ∧ (a,b) ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B),  bkt ∈ (expand size buckets).buckets.1 ∧  (a,b) ∈ bkt.toList := by
