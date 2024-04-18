@@ -117,6 +117,7 @@ namespace PreGraph
       split
       rfl
       rw [Std.HashMap.findD_insert]
+      assumption
 
   def add_vertex_with_successors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
     let pg_with_added_successors := if pg.contains v then pg.insert v ((pg.successors v) ++ vs) else pg.insert v vs
