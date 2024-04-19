@@ -766,10 +766,10 @@ by
     | nil =>
       simp at nonempty
     | cons hd tl =>
-      have h : ¬  List.length (hd :: tl) + 1 < 2 := by
-        simp
-        rw [← Nat.succ_eq_add_one]
-        simp_arith
+      have h : ¬ List.length (hd :: tl) + 1 < 2 := by simp
+      -- empty lines to keep links from paper submission up to date 
+      -- TODO: remove these later
+      -- EMPTY
       simp only [h]
       simp
       constructor
