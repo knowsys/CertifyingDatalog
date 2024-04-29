@@ -2151,12 +2151,12 @@ by
   unfold root
   simp
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.predicateSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
  (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = {head:= v, body:= (G.successors v) }) ∨ ((G.successors v) = [] ∧ d.contains v)
 
-def localValidityCheck (m: List τ.predicateSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
+def localValidityCheck (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
   if l.isEmpty
   then
     if d.contains a
