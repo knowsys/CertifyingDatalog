@@ -4,12 +4,12 @@ import CertifyingDatalog.Unification
 import Mathlib.Data.Set.Basic
 import CertifyingDatalog.Basic
 
-structure partialGroundRule (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.predicateSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.predicateSymbols] [Hashable τ.vars] [ToString τ.constants] [ToString τ.vars] [ToString τ.predicateSymbols] where
+structure partialGroundRule (τ: signature)[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.relationSymbols] [Hashable τ.vars] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] where
   head: atom τ
   groundedBody: List (groundAtom τ)
   ungroundedBody: List (atom τ)
 
-variable  {τ: signature}[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.predicateSymbols] [Inhabited τ.constants]  [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.predicateSymbols] {i: interpretation τ}
+variable  {τ: signature}[DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants]  [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] {i: interpretation τ}
 
 def partialGroundRule.isSafe (pgr: partialGroundRule τ): Prop :=
   atomVariables pgr.head ⊆ List.foldl_union atomVariables ∅ pgr.ungroundedBody

@@ -74,13 +74,13 @@ structure problemInput where
 deriving Lean.FromJson, Lean.ToJson
 
 structure parsingArityHelper where
-  (predicateList: List String)
-  (arity: {x // x ∈ predicateList} → Nat)
+  (relationList: List String)
+  (arity: {x // x ∈ relationList} → Nat)
 
-def emptyParsingArityHelper: parsingArityHelper := {predicateList:= [], arity:= fun _ => 0}
+def emptyParsingArityHelper: parsingArityHelper := {relationList:= [], arity:= fun _ => 0}
 
 def extendParsingArityHelper (sig: parsingArityHelper) (symbol: String) (arity: Nat): Except String parsingArityHelper :=
-  if h: symbol ∈ sig.predicateList
+  if h: symbol ∈ sig.relationList
   then
     if sig.arity (Subtype.mk symbol h) == arity
     then
@@ -88,9 +88,9 @@ def extendParsingArityHelper (sig: parsingArityHelper) (symbol: String) (arity: 
     else
       Except.error ("Mismatched arity for " ++ symbol ++ " Given ")
   else
-    Except.ok {predicateList := sig.predicateList ++ [symbol], arity := (fun x => if q:(x = symbol) then arity else
-      have p: x.val ∈ sig.predicateList := by
-        have h': x.val ∈ (sig.predicateList ++ [symbol] ) := by
+    Except.ok {relationList := sig.relationList ++ [symbol], arity := (fun x => if q:(x = symbol) then arity else
+      have p: x.val ∈ sig.relationList := by
+        have h': x.val ∈ (sig.relationList ++ [symbol] ) := by
           apply x.property
         simp at h'
         cases h' with
@@ -102,7 +102,7 @@ def extendParsingArityHelper (sig: parsingArityHelper) (symbol: String) (arity: 
      sig.arity (Subtype.mk x.val p))}
 
 def parsingSignature (helper: parsingArityHelper): signature :=
-  {constants:= String, vars:= String, predicateSymbols := {x // x ∈ helper.predicateList}, predicateArity := helper.arity}
+  {constants:= String, vars:= String, relationSymbols := {x // x ∈ helper.relationList}, relationArity := helper.arity}
 
 instance (helper: parsingArityHelper): DecidableEq (parsingSignature helper).constants :=
 by
@@ -122,15 +122,15 @@ by
   simp
   apply instDecidableEqString
 
-instance (helper: parsingArityHelper): DecidableEq (parsingSignature helper).predicateSymbols :=  Subtype.instDecidableEqSubtype
+instance (helper: parsingArityHelper): DecidableEq (parsingSignature helper).relationSymbols :=  Subtype.instDecidableEqSubtype
 
-instance (helper: parsingArityHelper): Hashable (parsingSignature helper).predicateSymbols :=  instHashableSubtype
+instance (helper: parsingArityHelper): Hashable (parsingSignature helper).relationSymbols :=  instHashableSubtype
 
 instance (helper: parsingArityHelper): Hashable (parsingSignature helper).constants :=  instHashableString
 
 instance (helper: parsingArityHelper): Hashable (parsingSignature helper).vars :=  instHashableString
 
-instance (helper: parsingArityHelper): ToString (parsingSignature helper).predicateSymbols :=  instToStringSubtype
+instance (helper: parsingArityHelper): ToString (parsingSignature helper).relationSymbols :=  instToStringSubtype
 
 instance (helper: parsingArityHelper): ToString (parsingSignature helper).constants :=  instToStringString
 
@@ -173,12 +173,12 @@ def transformMockTermToConstant (helper: parsingArityHelper) (mt: mockTerm): Exc
   | mockTerm.variable v => Except.error ("Encountered variable" ++ v ++ "in ground atom ")
 
 def transformMockAtomToAtom (helper: parsingArityHelper) (ma: mockAtom): Except String (atom (parsingSignature helper)) :=
-  if h: ma.symbol ∈ helper.predicateList
+  if h: ma.symbol ∈ helper.relationList
   then
     if p: helper.arity (Subtype.mk ma.symbol h) = ma.terms.length
     then
       have q: List.length (List.map (transformMockTermToTerm helper) ma.terms) =
-    signature.predicateArity (parsingSignature helper) { val := ma.symbol, property := h } := by
+    signature.relationArity (parsingSignature helper) { val := ma.symbol, property := h } := by
         rw [List.length_map]
         rw [← p]
         unfold parsingSignature
@@ -189,7 +189,7 @@ def transformMockAtomToAtom (helper: parsingArityHelper) (ma: mockAtom): Except 
   else Except.error ("Unknown symbol" ++ ma.symbol)
 
 def transformMockAtomToGroundAtom (helper: parsingArityHelper) (ma: mockAtom): Except String (groundAtom (parsingSignature helper)) :=
-  if h: ma.symbol ∈ helper.predicateList
+  if h: ma.symbol ∈ helper.relationList
   then
     if p: helper.arity (Subtype.mk ma.symbol h) = ma.terms.length
     then
@@ -197,7 +197,7 @@ def transformMockAtomToGroundAtom (helper: parsingArityHelper) (ma: mockAtom): E
       | Except.error msg => Except.error ("Error parsing ground atom" ++ msg)
       | Except.ok l =>
 
-      have length: List.length l = signature.predicateArity (parsingSignature helper) { val := ma.symbol, property := h } :=
+      have length: List.length l = signature.relationArity (parsingSignature helper) { val := ma.symbol, property := h } :=
       by
         unfold parsingSignature
         simp

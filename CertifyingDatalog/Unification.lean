@@ -1,7 +1,7 @@
 import CertifyingDatalog.Datalog
 
 section term_matching
-variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.predicateSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def extend (s: substitution τ) (v: τ.vars) (c: τ.constants) : substitution τ := fun x => if x = v then Option.some c else s x
 
@@ -224,7 +224,7 @@ by
 end term_matching
 
 section atom_matching
-variable {τ: signature} [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.predicateSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def matchTermList (s: substitution τ) (l1: List (term τ)) (l2: List (τ.constants)): Option (substitution τ) :=
   match l1 with
@@ -446,7 +446,7 @@ by
 end atom_matching
 
 section rule_matching
-variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.predicateSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def matchAtomList (s: substitution τ) (l1: List (atom τ)) (l2: List (groundAtom τ)): Option (substitution τ) :=
   match l1 with

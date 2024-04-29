@@ -323,71 +323,6 @@ by
       rw [ih]
       tauto
 
-def AssocList.containsKeyValue (l: AssocList A B) (a: A) (b: B): Bool :=
-  match l with
-  | nil => false
-  | cons hda hdb tl =>
-    if a == hda
-    then
-      if b == hdb
-      then true
-      else AssocList.containsKeyValue  tl a b
-    else AssocList.containsKeyValue  tl a b
-
-lemma AssocList.mem_containsKeyValue_iff_mem_toList (l: AssocList A B) (ab :A × B): AssocList.containsKeyValue l ab.1 ab.2 ↔ ab ∈ l.toList :=
-by
-  induction l with
-  | nil =>
-    unfold containsKeyValue
-    simp
-  | cons hda hdb tl ih =>
-    unfold containsKeyValue
-    constructor
-    intro h
-    simp
-    by_cases hda_ab: ab.1 = hda
-    by_cases hdb_ab: ab.2 = hdb
-    left
-    ext
-    simp[*]
-    simp[*]
-
-    simp[hda_ab, hdb_ab] at h
-    right
-    rw [← ih]
-    simp [h, hda_ab]
-
-    simp [hda_ab] at h
-    right
-    rw [← ih]
-    apply h
-
-    -- back direction
-    intro h
-    unfold toList at h
-    simp at h
-    by_cases hda_ab: ab.1 = hda
-    by_cases hdb_ab: ab.2 = hdb
-    simp [hda_ab, hdb_ab]
-
-    simp [hda_ab]
-    cases h with
-    | inl h =>
-      rw [h] at hdb_ab
-      simp at hdb_ab
-    | inr h =>
-      rw [← ih, hda_ab] at h
-      simp [h]
-
-
-    cases h with
-    | inl h =>
-      rw [h] at hda_ab
-      simp at hda_ab
-    | inr h =>
-      rw [← ih] at h
-      simp [h]
-
 
 instance: DecidableEq (AssocList A B) :=
   fun l1 l2 =>
@@ -445,7 +380,7 @@ def HashMap.Imp.kv_member (m: HashMap.Imp A B) (a: A) (b:B): Bool :=
   let ⟨i, h⟩ := mkIdx buckets.2 (hash a |>.toUSize)
   let bkt := buckets.1[i]
 
-  bkt.containsKeyValue a b
+  (a,b) ∈ bkt.toList
 
 lemma HashMap.Imp.kv_member_iff_in_kv (m: HashMap.Imp A B) (wf: HashMap.Imp.WF m) (a: A) (b:B): (a,b) ∈ m.kv ↔ HashMap.Imp.kv_member m a b = true :=
 by
@@ -479,8 +414,6 @@ by
     rw [i_eq] at bkt_i
     simp at bkt_i
     rw [← bkt_i]
-    rw [← AssocList.mem_containsKeyValue_iff_mem_toList] at ab_mem
-    simp at ab_mem
     apply ab_mem
 
     intro h
@@ -488,7 +421,6 @@ by
     simp
     constructor
     exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
-    rw [← AssocList.mem_containsKeyValue_iff_mem_toList]
     exact h
 
 
@@ -1081,7 +1013,6 @@ lemma HashMap.Imp.find_iff_kv (m: HashMap.Imp A B) (wf: HashMap.Imp.WF m) (a:A) 
     unfold kv_member
     unfold find?
     simp
-    rw [AssocList.mem_containsKeyValue_iff_mem_toList (ab:=(a,b))]
     constructor
     intro h
     rcases h with ⟨a',mem⟩

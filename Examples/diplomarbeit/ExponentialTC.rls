@@ -1,0 +1,4 @@
+@source E[2]: load-csv("sources/E.csv").
+
+T(?X,?Y) :- E(?X,?Y).
+T(?X,?Z) :- E(?X,?Y), T(?Y,?Z), T(?Y,?Z).
