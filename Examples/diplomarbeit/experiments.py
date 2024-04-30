@@ -65,8 +65,7 @@ def completenessExperiments():
                 log.write(json.dumps({"Type": "tree", "density": density, "numNodes": numNodes, "completeness": False,"trees": problem["trees"], "Result": result.stdout, "Preparation time": str(preparation), "Validation time": str(duration)})+ "\n")
 
 def graphExperiments():
-    #densities = [0.01, 0.05, 0.1, 0.3]
-    densities = [0.5]
+    densities = [0.01, 0.05, 0.1, 0.3, 0.5]
     numNodes = 100
     tries = 5
     logFile = "log_graph.txt"
@@ -100,7 +99,7 @@ def graphExperiments():
             duration = time.time() - start
             
             with open(logFile , "a") as log:
-                log.write(json.dumps({"Type": "tree", "density": density, "numNodes": numNodes, "completeness": True,"trees": problem["trees"], "Result": result.stdout, "Preparation time": str(preparation), "Validation time": str(duration)})+ "\n")
+                log.write(json.dumps({"Type": "tree", "density": density, "numNodes": numNodes, "completeness": True,"trees": problem["trees"], "Result": result.stdout,  "Nemo time": nemoTime, "Preparation time": str(preparation), "Validation time": str(duration)})+ "\n")
 
             start = time.time()
             result = subprocess.run([certifyingDatalogPath, problemFile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
@@ -108,7 +107,7 @@ def graphExperiments():
             duration = time.time() - start
             
             with open(logFile , "a") as log:
-                log.write(json.dumps({"Type": "tree", "density": density, "numNodes": numNodes, "completeness": False,"trees": problem["trees"], "Result": result.stdout, "Preparation time": str(preparation), "Validation time": str(duration)})+ "\n")
+                log.write(json.dumps({"Type": "tree", "density": density, "numNodes": numNodes, "completeness": False,"trees": problem["trees"], "Result": result.stdout, "Nemo time": nemoTime, "Preparation time": str(preparation), "Validation time": str(duration)})+ "\n")
 
             print("Start")
             start = time.time()
@@ -319,6 +318,6 @@ def galenExperiments():
                 log.write(json.dumps({"graph": problem["graph"], "Result": result.stdout, "Nemo time": nemoTime, "Preparation time": str(preparation), "Validation time": str(duration), "numberAtoms": atomNumber})+"\n")
 
 graphExperiments()
-graphExperiments2()
+#graphExperiments2()
 #galenExperiments()
 #exponentialExample()

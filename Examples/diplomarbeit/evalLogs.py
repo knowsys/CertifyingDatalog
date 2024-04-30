@@ -82,21 +82,25 @@ def evalGraph():
                     numberNodes = numberNodes + treeNumNodes(tree)
             else:
                 numberNodes = graphNumNodes(data["graph"])
-            rows.append({"Type": data["Type"], "Density": data["density"], "Completeness": data["completeness"], "Number of nodes": int(numberNodes), "Preparation time": float(data["Preparation time"]), "Validation time": float(data["Validation time"])})
+            rows.append({"Type": data["Type"], "Density": data["density"], "Completeness": data["completeness"], "Number of nodes": int(numberNodes), "Nemo time": float(data["Nemo time"]), "Preparation time": float(data["Preparation time"]), "Validation time": float(data["Validation time"])})
 
             if data["Result"] in outputs:
                 pass
             else:
                 outputs.add(data["Result"])
-            df = pd.DataFrame(rows, index = list(range(0, len(rows))))
-            df.style.format(precision=2)
+        df = pd.DataFrame(rows, index = list(range(0, len(rows))))
+        df.style.format(precision=2)
 
-            groupedDf = df.groupby(["Type", "Completeness", "Density"]).agg({"Number of nodes": ["mean", "std"], "Preparation time": ["mean", "std"], "Validation time": ["mean", "std"]})
+        df = df.loc[df["Completeness"]== False]
 
-            groupedDf = groupedDf.style.format(precision=2)
-            print(outputs)
-            with open("Output.txt", "w") as output:
-                output.write(groupedDf.to_latex())
+        print(df.head())
+
+        groupedDf = df.groupby(["Density", "Type"]).agg({"Number of nodes": ["mean", "std"], "Preparation time": ["mean", "std"], "Validation time": ["mean", "std"]})
+
+        groupedDf = groupedDf.style.format(precision=2)
+        print(outputs)
+        with open("Output.txt", "w") as output:
+            output.write(groupedDf.to_latex())
 
 def evalGalen():
     columns = ["Type", "Number of nodes", "Nemo time", "Preparation time", "Validation time"]
@@ -124,14 +128,14 @@ def evalGalen():
                 pass
             else:
                 outputs.add(data["Result"])
-            df = pd.DataFrame(rows, index = list(range(0, len(rows))))
+        df = pd.DataFrame(rows, index = list(range(0, len(rows))))
 
-            groupedDf = df.groupby(["Type", "Number of atoms"]).agg({"Number of nodes": ["mean", "std"], "Preparation time": ["mean", "std"], "Validation time": ["mean", "std"]})
+        groupedDf = df.groupby(["Number of atoms", "Type"]).agg({"Number of nodes": ["mean", "std"],  "Preparation time": ["mean", "std"], "Validation time": ["mean", "std"]})
 
-            groupedDf = groupedDf.style.format(precision=2)
-            print(outputs)
-            with open("Output.txt", "w") as output:
-                output.write(groupedDf.to_latex())
+        groupedDf = groupedDf.style.format(precision=2)
+        print(outputs)
+        with open("Output.txt", "w") as output:
+            output.write(groupedDf.to_latex())
 
 
 def evalGraph2():
@@ -171,4 +175,4 @@ def evalGraph2():
             with open("Output.txt", "w") as output:
                 output.write(groupedDf.to_latex())
 
-evalGraph()
+evalGalen()
