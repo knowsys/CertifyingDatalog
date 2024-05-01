@@ -58,14 +58,14 @@ def evalExponentialExample():
                 pass
             else:
                 outputs.add(data["Result"])
-            df = pd.DataFrame(rows, index = list(range(0, len(rows))))
+        df = pd.DataFrame(rows, index = list(range(0, len(rows))))
 
-            groupedDf = df.groupby(["Type", "Size"]).agg({"Number of nodes": ["mean"] , "Nemo time": ["mean", "std"], "Preparation time": ["mean", "std"], "Validation time": ["mean", "std"]})
+        groupedDf = df.groupby(["Size", "Type"]).agg({"Number of nodes": ["mean"] , "Nemo time": ["mean", "std"], "Preparation time": ["mean", "std"], "Validation time": ["mean", "std"]})
 
-            groupedDf = groupedDf.style.format(precision=2)
-            print(outputs)
-            with open("Output.txt", "w") as output:
-                output.write(groupedDf.to_latex())
+        groupedDf = groupedDf.style.format(precision=2)
+        print(outputs)
+        with open("Output.txt", "w") as output:
+            output.write(groupedDf.to_latex())
 
 def evalGraph():
     columns = ["Type", "Density", "Completeness", "Number of nodes", "Preparation time", "Validation time"]
@@ -175,4 +175,4 @@ def evalGraph2():
             with open("Output.txt", "w") as output:
                 output.write(groupedDf.to_latex())
 
-evalGalen()
+evalExponentialExample()
