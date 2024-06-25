@@ -1262,8 +1262,6 @@ lemma HashMap.not_contains_find_none (m: HashMap A B) (a:A) (h: ¬ m.contains a 
   | none =>
     rfl
 
--- Axioms for HashMap
-
 theorem HashMap.findD_is_default_when_not_contains (hm : HashMap A B) (a : A) (h : ¬ hm.contains a) : ∀ b, hm.findD a b = b := by
   intro b
   rw [findD_eq_find?]
