@@ -1,16 +1,16 @@
-import Std.Data.HashMap
-import Std.Data.AssocList
-import Std.Classes.BEq
+import Batteries.Data.HashMap
+import Batteries.Data.AssocList
+import Batteries.Classes.BEq
 import Mathlib.Data.List.Defs
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Bool.AllAny
 
 
-namespace Std
+namespace Batteries
 section HashMap
 variable {A:Type} [Hashable A] [DecidableEq A] {B: Type} [DecidableEq B]
 
-instance: Std.HashMap.LawfulHashable A := {hash_eq := by simp}
+instance: Batteries.HashMap.LawfulHashable A := {hash_eq := by simp}
 
 instance: PartialEquivBEq A := {symm:= by simp, trans:= by simp}
 
@@ -96,10 +96,7 @@ lemma List.mem_set (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a 
       | inr get_a =>
         rcases get_a with ⟨k, get_a⟩
         right
-        have isLt_k: Nat.succ k.val < (hd::tl).length := by
-          simp
-          apply Nat.succ_lt_succ
-          apply k.isLt
+        have isLt_k: Nat.succ k.val < (hd::tl).length := by simp
         use Fin.mk (Nat.succ k.val) isLt_k
         constructor
         cases i with
@@ -120,26 +117,24 @@ lemma List.mem_set (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a 
         right
         cases hj:j.val with
         | zero =>
-          rw [← Ne.def,←  Fin.val_ne_iff, hj, hi] at j_i
+          rw [← Ne.eq_def, ← Fin.val_ne_iff, hj, hi] at j_i
           simp at j_i
         | succ k =>
           have isLt_k: k < tl.length := by
-            rw [← Nat.succ_lt_succ_iff, ← hj]
+            rw [← Nat.succ_lt_succ_iff, Nat.succ_eq_add_one, ← hj]
             apply j.isLt
           use Fin.mk k isLt_k
           rw [get_j]
-          have hj': j = Fin.mk k.succ _ := by
+          have hj': j = Fin.mk k.succ (by simp [isLt_k]) := by
             rw [Fin.ext_iff]
             simp
             apply hj
-            rw [Nat.succ_lt_succ_iff]
-            apply isLt_k
           rw [hj', List.get_cons_succ]
     | succ m =>
       rw [List.set_succ]
       simp
       have isLt_m: m < tl.length := by
-        rw [← Nat.succ_lt_succ_iff, ← hi]
+        rw [← Nat.succ_lt_succ_iff, Nat.succ_eq_add_one, ← hi]
         apply i.isLt
       specialize ih (Fin.mk m isLt_m)
       rw [ih]
@@ -150,7 +145,7 @@ lemma List.mem_set (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a 
         right
         use 0
         simp [ahd]
-        rw [← Ne.def, ← Fin.val_ne_iff]
+        rw [← Ne.eq_def, ← Fin.val_ne_iff]
         simp [Fin.ext, hi]
       | inr h =>
         cases h with
@@ -159,19 +154,16 @@ lemma List.mem_set (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a 
         | inr h =>
           rcases h with ⟨j,j_i, get_j⟩
           right
-          have isLt_j: j.val.succ < (hd::tl).length := by
-            simp
-            rw [Nat.succ_lt_succ_iff]
-            apply j.isLt
+          have isLt_j: j.val.succ < (hd::tl).length := by simp
           use Fin.mk j.val.succ isLt_j
           constructor
-          rw [← Ne.def, ← Fin.val_ne_iff]
+          rw [← Ne.eq_def, ← Fin.val_ne_iff]
           simp
           rw [hi]
-          rw [← Ne.def,Nat.succ_ne_succ]
-          rw [← Ne.def, ← Fin.val_ne_iff] at j_i
+          rw [← Ne.eq_def, Nat.succ_ne_succ]
+          rw [← Ne.eq_def, ← Fin.val_ne_iff] at j_i
           simp at j_i
-          rw [Ne.def]
+          rw [Ne.eq_def]
           apply j_i
 
           simp
@@ -196,18 +188,15 @@ lemma List.mem_set (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a 
           right
           right
           have isLt_n: n < tl.length := by
-            rw [← Nat.succ_lt_succ_iff, ← hj]
+            rw [← Nat.succ_lt_succ_iff, Nat.succ_eq_add_one, ← hj]
             apply j.isLt
           use Fin.mk n isLt_n
           simp
           constructor
-          rw [← Ne.def, ← Nat.succ_ne_succ, ← hj, ← hi]
+          rw [← Ne.eq_def, ← Nat.succ_ne_succ, Nat.succ_eq_add_one, ← hj, Nat.succ_eq_add_one, ← hi]
           rw [Fin.val_ne_iff]
           apply j_i
-          have isLt_succ_n: n + 1 < (hd::tl).length := by
-            simp
-            rw [← Nat.succ_eq_add_one, Nat.succ_lt_succ_iff]
-            apply isLt_n
+          have isLt_succ_n: n + 1 < (hd::tl).length := by simp; apply isLt_n
           rw [get_j, ← List.get_cons_succ (a:=hd) (h:= isLt_succ_n)]
           congr
           rw [Fin.ext_iff]
@@ -411,7 +400,7 @@ by
     right
     use j
     constructor
-    rw [← Ne.def, ← Fin.val_ne_iff] at j_i
+    rw [← Ne.eq_def, ← Fin.val_ne_iff] at j_i
     simp at j_i
     apply j_i
     rw [← bkt_j]
@@ -429,7 +418,7 @@ by
     constructor
     use j
     constructor
-    rw [← Ne.def, ← Fin.val_ne_iff]
+    rw [← Ne.eq_def, ← Fin.val_ne_iff]
     simp
     apply j_i
     simp
@@ -464,7 +453,7 @@ by
     rw [Array.mem_iff_exists] at bkt_mem
     rcases bkt_mem with ⟨i, bkt_i⟩
     have i_eq: i = (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2) := by
-      have hash_self: ∀ (i : Nat) (h : i < Array.size buckets.val), Std.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := by
+      have hash_self: ∀ (i : Nat) (h : i < Array.size buckets.val), Batteries.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := by
         rcases wf with ⟨_, wf⟩
         apply wf.hash_self
       specialize hash_self i i.isLt
@@ -548,13 +537,13 @@ by
     simp at h
     rw [HashMap.Imp.Buckets.keys'_mem_iff] at h
     rcases h with ⟨l, l_buckets, a_l⟩
-    rw [Std.HashMap.Imp.WF_iff] at wf
+    rw [Batteries.HashMap.Imp.WF_iff] at wf
     simp at wf
     rcases wf with ⟨_, wf⟩
-    rw [Std.AssocList.contains_eq, List.any_iff_exists]
+    rw [Batteries.AssocList.contains_eq, List.any_iff_exists]
     unfold mkIdx
     simp
-    rw [Std.AssocList.contains_eq, List.any_iff_exists] at a_l
+    rw [Batteries.AssocList.contains_eq, List.any_iff_exists] at a_l
     rcases a_l with ⟨ab, ab_mem, ab_a⟩
     use ab.2
     rw [← Array.contains_def] at l_buckets
@@ -565,7 +554,7 @@ by
 
     have i_val : i = USize.toNat (UInt64.toUSize (hash a) % Array.size buckets.val) := by
       have hash_self: ∀ (i : Nat) (h : i < Array.size buckets.val),
-      Std.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := wf.hash_self
+      Batteries.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := wf.hash_self
 
       specialize hash_self i.val i_len
       unfold AssocList.All at hash_self
@@ -828,9 +817,9 @@ lemma HashMap.Imp.expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:
   apply ab_mem
 
 lemma HashMap.Imp.Buckets.distinct_elements (buckets: HashMap.Imp.Buckets A B) (wf: HashMap.Imp.Buckets.WF buckets) (l: AssocList A B) (mem: l ∈ buckets.1): List.Pairwise (fun x y => ¬x.1 = y.1) l.toList := by
-  have dist: ∀ (bucket : Std.AssocList A B),
+  have dist: ∀ (bucket : Batteries.AssocList A B),
   bucket ∈ buckets.val.data →
-    List.Pairwise (fun (a b : A × B) => ¬(a.fst == b.fst) = true) (Std.AssocList.toList bucket) := by
+    List.Pairwise (fun (a b : A × B) => ¬(a.fst == b.fst) = true) (Batteries.AssocList.toList bucket) := by
       apply wf.distinct
   simp at dist
   apply dist
@@ -839,7 +828,7 @@ lemma HashMap.Imp.Buckets.distinct_elements (buckets: HashMap.Imp.Buckets A B) (
 
 lemma HashMap.Imp.Buckets.element_member_in_hash_bucket (a: A ) (b: B) (buckets: HashMap.Imp.Buckets A B) (wf: HashMap.Imp.Buckets.WF buckets) (i: Fin (buckets.1.size)): (a,b) ∈ buckets.1[↑i].toList →  i.val = USize.toNat (mkIdx buckets.2 (UInt64.toUSize (hash a))) := by
   have hash_self: ∀ (i : Nat) (h : i < Array.size buckets.val),
-  Std.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := by
+  Batteries.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := by
     apply wf.hash_self
   specialize hash_self i.val i.isLt
   unfold AssocList.All at hash_self
@@ -857,7 +846,7 @@ by
   rw [← Imp.kv_member_iff_in_kv (wf:=wf), ← Imp.kv_member_iff_in_kv (wf:= Imp.WF.insert wf)]
   cases m with
   | mk size buckets =>
-    rw [Std.HashMap.Imp.WF_iff] at wf
+    rw [Batteries.HashMap.Imp.WF_iff] at wf
     simp at wf
     rcases wf with ⟨_, wf⟩
     unfold insert
@@ -1285,11 +1274,11 @@ theorem HashMap.in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) 
   simp
   sorry
 
-theorem HashMap.ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Std.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by sorry
+theorem HashMap.ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Batteries.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by sorry
 
 theorem HashMap.for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A B) (a : A) (a_in_hm : hm.contains a) : ∀ b, hm.insert a (hm.findD a b) = hm := by sorry
 
-theorem HashMap.findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Std.HashMap.ofList l).findD a b = ((l.find? (fun x => x.fst == a)).map Prod.snd).getD b := by sorry
+theorem HashMap.findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Batteries.HashMap.ofList l).findD a b = ((l.find? (fun x => x.fst == a)).map Prod.snd).getD b := by sorry
 
 theorem HashMap.findD_insert (hm : HashMap A B) (a a' : A) (h: ¬ hm.contains a = true): ∀ b, (hm.insert a b).findD a' b = hm.findD a' b := by
   intro b

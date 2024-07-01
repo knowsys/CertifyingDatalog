@@ -47,7 +47,6 @@ by
   intro h
   rw [Set.ext_iff] at h
   simp at h
-  push_neg at h
 
   constructor
   rw [Set.ext_iff]
@@ -237,7 +236,6 @@ by
   rw [← List.toSet_mem]
   apply ga_i
   simp
-  simp at match_ga
   have match_some: Option.isSome (matchAtom emptySubstitution a ga) = true := by
     rw [Option.isSome_iff_exists]
     use s
@@ -501,7 +499,6 @@ def exploreGrounding (i: List (groundAtom τ)) (pgr: partialGroundRule τ i.toSe
       rw [Set.ext_iff]
       simp
       intro v
-      push_neg
       rw [Set.subset_def] at safe
       specialize safe v
       apply safe
@@ -774,7 +771,6 @@ lemma variableMemberOfcollecResultsIffMemberList (l: List (term τ)) (v: τ.vars
     simp
     rw [← ih]
     unfold termVariables
-    simp
     cases hd with
     | constant c =>
       simp

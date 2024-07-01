@@ -1,4 +1,4 @@
-import Std.Data.List.Basic
+import Batteries.Data.List.Basic
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.Basic
 import CertifyingDatalog.GraphValidation
@@ -122,7 +122,7 @@ by
   simp
   apply instDecidableEqString
 
-instance (helper: parsingArityHelper): DecidableEq (parsingSignature helper).predicateSymbols :=  Subtype.instDecidableEqSubtype
+instance (helper: parsingArityHelper): DecidableEq (parsingSignature helper).predicateSymbols :=  Subtype.instDecidableEq
 
 instance (helper: parsingArityHelper): Hashable (parsingSignature helper).predicateSymbols :=  instHashableSubtype
 

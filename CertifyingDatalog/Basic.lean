@@ -63,18 +63,9 @@ by
     rw [← hd_b]
     rw [ih]
     simp
+    intro hn
     intro h
-    constructor
-    intro p
-    right
-    exact p
-    intro p
-    cases p with
-    | inl p =>
-      exfalso
-      exact absurd p h
-    | inr p =>
-      exact p
+    contradiction
 
     simp [hd_b]
     rw [ih]
@@ -140,6 +131,9 @@ lemma List.diff'_empty {A: Type} [DecidableEq A] (l1 l2: List A): List.diff' l1 
       simp
     | cons hd tl =>
       simp
+      exists hd
+      intro contra
+      contradiction
 
   | cons hd tl ih =>
     constructor
@@ -203,4 +197,4 @@ lemma List.map_except_go_ok_length {A B C: Type} (f: A → Except B C) (l1: List
         specialize ih (curr ++ [c]) h
         rw [← ih]
         simp
-        rw [Nat.succ_eq_add_one, Nat.add_assoc, Nat.add_comm (m:= 1)]
+        rw [Nat.add_assoc, Nat.add_comm (m:= 1)]

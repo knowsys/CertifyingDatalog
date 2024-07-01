@@ -2,10 +2,9 @@ import CertifyingDatalog.Basic
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.TreeValidation
 import CertifyingDatalog.HashSets
-import Mathlib.Data.List.Card
 import Mathlib.Data.Finset.Card
 
-abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Std.HashMap A (List A)
+abbrev PreGraph (A: Type) [DecidableEq A] [Hashable A] := Batteries.HashMap A (List A)
 
 namespace PreGraph
   variable {A: Type}[DecidableEq A][Hashable A]
@@ -15,10 +14,10 @@ namespace PreGraph
 
   def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.findD a []) → pg.contains a'
 
-  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Std.HashMap.in_projection_of_toList_iff_contains
+  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Batteries.HashMap.in_projection_of_toList_iff_contains
   theorem in_successors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.successors a ↔ b ∈ (pg.findD a []) := by unfold successors; intros; rfl
 
-  def from_vertices (vs : List A) : PreGraph A := Std.HashMap.ofList (vs.map (fun v => (v, [])))
+  def from_vertices (vs : List A) : PreGraph A := Batteries.HashMap.ofList (vs.map (fun v => (v, [])))
 
   def add_vertex (pg : PreGraph A) (v : A) : PreGraph A :=
     if pg.contains v then
@@ -51,7 +50,7 @@ namespace PreGraph
         split at hl
         apply Or.inl
         exact hl
-        rw [Std.HashMap.contains_insert] at hl
+        rw [Batteries.HashMap.contains_insert] at hl
         cases Decidable.em (pg.contains v) with
         | inl v_in_pg => apply Or.inl; exact v_in_pg
         | inr v_not_in_pg =>
@@ -67,7 +66,7 @@ namespace PreGraph
         exact hr.left
         apply Or.inr
         exact hr.right
-        rw [Std.HashMap.contains_insert] at hr
+        rw [Batteries.HashMap.contains_insert] at hr
         cases Decidable.em (pg.contains v) with
         | inl v_in_pg => apply Or.inl; exact v_in_pg
         | inr v_not_in_pg => apply Or.inr; constructor; simp at v_not_in_pg; exact v_not_in_pg; apply Or.inr; exact hr.right
@@ -78,7 +77,7 @@ namespace PreGraph
         unfold add_vertex
         split
         exact hl
-        rw [Std.HashMap.contains_insert]
+        rw [Batteries.HashMap.contains_insert]
         apply Or.inl
         exact hl
       | inr hr =>
@@ -88,11 +87,11 @@ namespace PreGraph
           apply Or.inl
           unfold add_vertex
           split
-          case inl u_in_pg =>
+          case isTrue u_in_pg =>
             apply False.elim; rw [v_is_u] at hrl
             have : ¬ pg.contains u := by simp [hrl]
             contradiction
-          rw [Std.HashMap.contains_insert]
+          rw [Batteries.HashMap.contains_insert]
           apply Or.inr
           rw [v_is_u]
           simp
@@ -116,7 +115,7 @@ namespace PreGraph
       unfold add_vertex
       split
       rfl
-      rw [Std.HashMap.findD_insert]
+      rw [Batteries.HashMap.findD_insert]
       assumption
 
   def add_vertex_with_successors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
@@ -127,7 +126,7 @@ namespace PreGraph
     unfold vertices
     unfold from_vertices
     intro v
-    rw [Std.HashMap.in_projection_of_toList_iff_contains, Std.HashMap.ofList_mapped_to_pair_contains_iff_list_elem]
+    rw [Batteries.HashMap.in_projection_of_toList_iff_contains, Batteries.HashMap.ofList_mapped_to_pair_contains_iff_list_elem]
 
   theorem from_vertices_no_vertex_has_successors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
     induction vs with
@@ -135,14 +134,14 @@ namespace PreGraph
     | cons v vs ih =>
       unfold from_vertices at *
       intro v v_in_list
-      rw [Std.HashMap.findD_ofList_is_list_find_getD]
+      rw [Batteries.HashMap.findD_ofList_is_list_find_getD]
       simp [List.find?]
       split
       case h_1 => simp
       case h_2 _ _ v_not_first =>
         have v_in_vs : v ∈ vs := by cases v_in_list; simp at v_not_first; assumption
         have ih_plugged_in := ih v v_in_vs
-        rw [Std.HashMap.findD_ofList_is_list_find_getD] at ih_plugged_in
+        rw [Batteries.HashMap.findD_ofList_is_list_find_getD] at ih_plugged_in
         apply ih_plugged_in
 
   theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
@@ -167,8 +166,8 @@ namespace PreGraph
     cases h with
     | inl hl =>
       split at hl
-      case inl hl' =>
-        rw [Std.HashMap.contains_insert] at hl
+      case isTrue hl' =>
+        rw [Batteries.HashMap.contains_insert] at hl
         cases hl with
         | inl hll =>
           cases Decidable.em (a = v) with
@@ -181,8 +180,8 @@ namespace PreGraph
           rw [← this]
           apply hl'
           rw [this]
-      case inr hr' =>
-        rw [Std.HashMap.contains_insert] at hl
+      case isFalse hr' =>
+        rw [Batteries.HashMap.contains_insert] at hl
         cases hl with
         | inl hll =>
           cases Decidable.em (a = v) with
@@ -201,8 +200,8 @@ namespace PreGraph
     | inr hr =>
       let ⟨hrl, hrr⟩ := hr
       split at hrl
-      case inl hl' =>
-        rw [Std.HashMap.contains_insert] at hrl
+      case isTrue hl' =>
+        rw [Batteries.HashMap.contains_insert] at hrl
         cases Decidable.em (a = v) with
         | inl a_eq_v =>
           apply False.elim
@@ -227,8 +226,8 @@ namespace PreGraph
             constructor
             apply a_neq_v
             apply hrr
-      case inr hr' =>
-        rw [Std.HashMap.contains_insert] at hrl
+      case isFalse hr' =>
+        rw [Batteries.HashMap.contains_insert] at hrl
         cases Decidable.em (a = v) with
         | inl a_eq_v =>
           apply False.elim
@@ -259,38 +258,38 @@ namespace PreGraph
     | inl hll =>
       apply Or.inl
       split
-      rw [Std.HashMap.contains_insert]
+      rw [Batteries.HashMap.contains_insert]
       apply Or.inl
       exact hll.left
-      rw [Std.HashMap.contains_insert]
-      apply Or.inl
-      exact hll.left
-    | inr hlr => cases hlr with
-    | inl hll =>
-      apply Or.inl
-      split
-      rw [Std.HashMap.contains_insert]
-      apply Or.inl
-      exact hll.left
-      rw [Std.HashMap.contains_insert]
+      rw [Batteries.HashMap.contains_insert]
       apply Or.inl
       exact hll.left
     | inr hlr => cases hlr with
     | inl hll =>
       apply Or.inl
       split
-      rw [Std.HashMap.contains_insert]
+      rw [Batteries.HashMap.contains_insert]
+      apply Or.inl
+      exact hll.left
+      rw [Batteries.HashMap.contains_insert]
+      apply Or.inl
+      exact hll.left
+    | inr hlr => cases hlr with
+    | inl hll =>
+      apply Or.inl
+      split
+      rw [Batteries.HashMap.contains_insert]
       apply Or.inr
       rw [hll.right]
       simp
-      rw [Std.HashMap.contains_insert]
+      rw [Batteries.HashMap.contains_insert]
       apply Or.inr
       rw [hll.right]
       simp
     | inr hlr =>
       apply Or.inr
       split
-      rw [Std.HashMap.contains_insert]
+      rw [Batteries.HashMap.contains_insert]
       constructor
       intro contra
       cases contra
@@ -301,7 +300,7 @@ namespace PreGraph
         have : a ≠ v := hlr.right.left
         contradiction
       exact hlr.right.right
-      rw [Std.HashMap.contains_insert]
+      rw [Batteries.HashMap.contains_insert]
       constructor
       intro contra
       cases contra
@@ -319,21 +318,21 @@ namespace PreGraph
     rw [add_vertices_findD_semantics]
     rw [← h.right]
     simp [h.left]
-    rw [Std.HashMap.findD_insert']
+    rw [Batteries.HashMap.findD_insert']
 
   theorem add_vertex_with_successors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : (pg.add_vertex_with_successors v vs).findD a [] = (pg.successors a) := by
     unfold add_vertex_with_successors
     simp
     rw [add_vertices_findD_semantics]
     split
-    rw [Std.HashMap.findD_insert'']
+    rw [Batteries.HashMap.findD_insert'']
     unfold successors
     rfl
     have contra := h.right
     intro contra'
     rw [contra'] at contra
     contradiction
-    rw [Std.HashMap.findD_insert'']
+    rw [Batteries.HashMap.findD_insert'']
     unfold successors
     rfl
     have contra := h.right
@@ -347,22 +346,22 @@ namespace PreGraph
     rw [add_vertices_findD_semantics]
     rw [← h.right]
     simp [h.left]
-    rw [Std.HashMap.findD_insert']
+    rw [Batteries.HashMap.findD_insert']
 
   theorem add_vertex_with_successors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v) : (pg.add_vertex_with_successors v vs).findD a [] = [] := by
     unfold add_vertex_with_successors
     simp
     rw [add_vertices_findD_semantics]
     split
-    rw [Std.HashMap.findD_insert'']
-    rw [Std.HashMap.findD_is_default_when_not_contains]
+    rw [Batteries.HashMap.findD_insert'']
+    rw [Batteries.HashMap.findD_is_default_when_not_contains]
     exact h.left
     have contra := h.right
     intro contra'
     rw [contra'] at contra
     contradiction
-    rw [Std.HashMap.findD_insert'']
-    rw [Std.HashMap.findD_is_default_when_not_contains]
+    rw [Batteries.HashMap.findD_insert'']
+    rw [Batteries.HashMap.findD_is_default_when_not_contains]
     exact h.left
     have contra := h.right
     intro contra'
@@ -457,7 +456,7 @@ end Graph
 
 section dfs
 variable {A: Type}[DecidableEq A][Hashable A] {B: Type} [DecidableEq B] [Hashable B] [DecidableEq B]
-open Std
+open Batteries
 
 lemma pred_lt (n m: ℕ) (h:n < m ): n.pred < m :=
 by
@@ -472,19 +471,10 @@ by
     apply Nat.lt_of_succ_lt h
 
 lemma Nat.pred_gt_zero_iff (n: ℕ): n.pred > 0 ↔ n ≥ 2 :=
-by
+by 
   cases n with
-  | zero =>
-    simp
-  | succ n =>
-    cases n with
-    | zero =>
-      simp
-    | succ m =>
-      simp
-      rw [Nat.two_le_iff]
-      simp
-
+  | zero => simp
+  | succ n => cases n <;> simp
 
 def isWalk (l: List A) (G: Graph A): Prop :=
  ( ∀ (a:A), a ∈ l → a ∈ G.vertices ) ∧ ∀ (i: ℕ), i > 0 → ∀ (g: i < l.length), l.get (Fin.mk i.pred (pred_lt i l.length g)) ∈ G.successors (l.get (Fin.mk i g) )
@@ -578,12 +568,7 @@ by
       specialize connected (Nat.succ k)
       simp at connected
       simp at i_len
-      have g: Nat.succ k < List.length (a :: l) := by
-        rw [Nat.succ_lt_succ_iff] at i_len
-        simp
-        rw [Nat.succ_eq_add_one, Nat.succ_eq_add_one]
-        apply i_len
-      specialize connected g
+      specialize connected i_len
       apply connected
 
 lemma isWalkImplSubset {l: List A} {G: Graph A} (walk: isWalk l G ): l.toFinset ⊆ G.vertices.toFinset :=
@@ -614,11 +599,7 @@ by
   intro i i_zero i_len
   specialize conn (Nat.succ i)
   simp at conn
-  have g:  Nat.succ i < List.length (a :: l) := by
-    simp
-    apply Nat.succ_lt_succ
-    apply i_len
-  specialize conn g
+  specialize conn i_len
   cases i with
   | zero =>
     simp at i_zero
@@ -670,7 +651,6 @@ noncomputable def Finset.filter_nc (p: A → Prop) (S: Finset A):= @Finset.filte
 lemma Finset.mem_filter_nc (a:A) (p: A → Prop) (S: Finset A): a ∈ Finset.filter_nc p S ↔ p a ∧ a ∈ S :=
 by
   unfold filter_nc
-  have dec: DecidablePred p := Classical.decPred p
   simp [Finset.mem_filter]
   rw [And.comm]
 
@@ -701,13 +681,13 @@ by
     apply Nat.ne_of_lt
     apply i_zero
     apply i_original
-  rw [List.get_append i.pred i_original_pred]
+  rw [List.get_append (i-1) i_original_pred]
   apply conn i i_zero
 
   simp at i_original
   cases i_original with
   | refl =>
-    rw [List.get_append_right (i:= p.length), List.get_append p.length.pred (getLastForNonequal_isLt p nonempty_p)]
+    rw [List.get_append_right (i:= p.length), List.get_append (p.length-1) (getLastForNonequal_isLt p nonempty_p)]
     simp
     apply backExtend
     simp
@@ -836,10 +816,8 @@ by
     cases hab with
     | refl =>
       cases hac with
-      | refl =>
-        simp
-      | step hc =>
-        simp
+      | refl => simp
+      | step hc => simp; constructor; intro h; apply Nat.lt_of_sub_ne_zero; apply Nat.not_eq_zero_of_lt; apply h; intro h; apply Nat.zero_lt_sub_of_lt; apply h
     | step hb =>
       cases hac with
       | refl =>
@@ -926,15 +904,9 @@ by
     simp at mem
   | cons hd tl ih =>
     unfold getSubListToMember
-    by_cases a_hd: a = hd
-    simp [a_hd]
-    rw [Nat.one_eq_succ_zero, Nat.succ_le_succ_iff]
-    apply Nat.zero_le
-
-    simp [a_hd]
-    simp[a_hd] at mem
-    rw [Nat.succ_le_succ_iff]
-    apply ih
+    split
+    . simp
+    . simp; apply ih
 
 lemma zero_lt_inhabited_list_length' (l: List A) (nonempty: l ≠ []): 0 < l.length :=
 by
@@ -1024,11 +996,9 @@ by
         specialize conn_ht (Nat.succ 0)
         simp at conn_ht
         simp at i_len
-        have g: Nat.succ 0 < List.length (hd :: tl) := by
-          simp
+        have g: 0 < tl.length := by
           apply Nat.lt_of_lt_of_le
           apply i_len
-          apply Nat.succ_le_succ
           apply getSubListToMember_len_le_original
 
         specialize conn_ht g
@@ -1054,7 +1024,6 @@ by
         specialize conn_ih (Nat.succ k)
         simp at conn_ih
         simp at i_len
-        rw [Nat.succ_lt_succ_iff, ← Nat.succ_eq_add_one] at i_len
         specialize conn_ih i_len
         apply conn_ih
 
@@ -1170,8 +1139,8 @@ by
           simp
       specialize conn g
       have ha: List.get c (Fin.mk (Nat.pred (List.length c)) g) = b := by
+        simp [Nat.pred_eq_sub_one]
         rw [← ends, List.get_eq_iff]
-        simp
         apply get_c_b
       rw [ha, ← a_b] at conn
       have isLt': Nat.pred (Nat.pred (List.length c)) < c.length := by
@@ -1373,10 +1342,7 @@ by
       have p: getSubListToMember visited a mem ≠ [] := by
         apply getSubListToMemberNonEmpty
       exact absurd h' p
-    | cons hd tl =>
-      simp
-      rw [Nat.two_le_iff]
-      simp
+    | cons hd tl => simp
 
   simp [h]
   constructor
@@ -1393,19 +1359,14 @@ by
     rcases walk with ⟨_, conn⟩
     specialize conn (Nat.succ 0)
     simp at conn
-    have g : Nat.succ 0 < List.length (a :: visited) := by
-      simp
-      apply Nat.succ_lt_succ
+    have g : 0 < visited.length := by
       cases visited with
       | nil =>
         simp at mem
       | cons hd' tl' =>
         simp
     specialize conn g
-    have isLt: 0 < List.length visited := by
-      apply Nat.lt_of_succ_lt_succ
-      apply g
-    have first_vis: List.get visited { val := 0, isLt := isLt} = hd := by
+    have first_vis: List.get visited { val := 0, isLt := g} = hd := by
       cases visited with
       | nil =>
         simp at mem
@@ -1675,9 +1636,9 @@ by
   | inr i_p =>
     simp [i_p]
     rw [List.get_append_left, List.get_append_right]
-    simp[get_b]
+    simp [Nat.pred_eq_sub_one] at get_b
+    simp [get_b]
     apply b_succ
-    simp
     simp
     cases p with
     | nil =>
@@ -1686,6 +1647,10 @@ by
       simp at i_zero
     | cons hd tl =>
       simp
+    rw [← i_p]
+    apply Nat.sub_one_lt_of_le
+    simp [i_zero]
+    simp
 
   constructor
   rw [List.get_append_left]
@@ -1773,7 +1738,7 @@ by
   rw [inter] at h
   simp at h
 
-def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (not_mem: ¬ (a ∈ currWalk)) (visited: HashSet A) : Except String (HashSet A) :=
+def dfs_step [Hashable A] (a: A) (G: Graph A) (f: A → List A → Except String Unit) (currWalk: List A) (walk: isWalk (a::currWalk) G) (_not_mem: ¬ (a ∈ currWalk)) (visited: HashSet A) : Except String (HashSet A) :=
   if visited.contains a
   then Except.ok visited
   else
@@ -1795,9 +1760,8 @@ decreasing_by
   simp
   use a
   constructor
-  intro _
-  left
-  rfl
+  intro _ _
+  contradiction
 
   rw [Finset.subset_iff]
   intro b
@@ -1810,7 +1774,7 @@ decreasing_by
     have mem_walk: a ∈ a::currWalk := by
       simp
     apply isWalkImplSubset' walk a mem_walk
-    apply not_mem
+    apply _not_mem
   | inr h =>
     rcases h with ⟨left,right⟩
     push_neg at right
@@ -1836,7 +1800,6 @@ by
     apply isWalkImplSubset' walk
     simp
   have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n := by
-    rw [Nat.succ_eq_add_one] at h
     have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) := by
       rw [Finset.ext_iff]
       simp
@@ -1854,11 +1817,8 @@ by
       apply Ne.symm a_a'
       intro ha
       cases ha with
-      | inl a_a =>
-        exact absurd (Eq.symm a_a) a_a'
-      | inr ha =>
-        rw [not_or] at ha
-        simp [ha]
+      | inl a_a => exact absurd (Eq.symm a_a) a_a'
+      | inr ha => simp [ha]
     rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
     apply h
     simp
@@ -1939,7 +1899,6 @@ by
     apply isWalkImplSubset' walk
     simp
   have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n := by
-    rw [Nat.succ_eq_add_one] at h
     have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) := by
       rw [Finset.ext_iff]
       simp
@@ -1957,11 +1916,8 @@ by
       apply Ne.symm a_a'
       intro ha
       cases ha with
-      | inl a_a =>
-        exact absurd (Eq.symm a_a) a_a'
-      | inr ha =>
-        rw [not_or] at ha
-        simp [ha]
+      | inl a_a => exact absurd (Eq.symm a_a) a_a'
+      | inr ha => simp [ha]
     rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
     apply h
     simp
@@ -2042,7 +1998,6 @@ by
     apply isWalkImplSubset' walk
     simp
   have card: Finset.card (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) = n := by
-    rw [Nat.succ_eq_add_one] at h
     have h': List.toFinset G.vertices \ List.toFinset currWalk = insert a (List.toFinset G.vertices \ List.toFinset (a :: currWalk)) := by
       rw [Finset.ext_iff]
       simp
@@ -2060,11 +2015,8 @@ by
       apply Ne.symm a_a'
       intro ha
       cases ha with
-      | inl a_a =>
-        exact absurd (Eq.symm a_a) a_a'
-      | inr ha =>
-        rw [not_or] at ha
-        simp [ha]
+      | inl a_a => exact absurd (Eq.symm a_a) a_a'
+      | inr ha => simp [ha]
     rw [h', Finset.card_insert_of_not_mem, ← Nat.succ_eq_add_one, ← Nat.succ_eq_add_one, Nat.succ_inj'] at h
     apply h
     simp
@@ -2135,8 +2087,8 @@ by
   apply And.left (reach_f )
   apply b_succ
 
-  simp
-  intro b b_succ S S' S_prop S'_prop
+  intro h_b S S' S_prop S'_prop
+  have ⟨b, b_succ⟩ := h_b
   rw [ih, ih]
   apply S'_prop
   apply card
@@ -2191,8 +2143,7 @@ by
   use (fun x => ¬reachesCycle x G ∧ ∀ (b : A), canReach x b G → f b (Graph.successors G b) = Except.ok ())
   simp [HashSet.empty_contains]
 
-  simp
-  intro a a_mem S S' S_prop S'_prop
+  intro _ S S' S_prop S'_prop
   rw [dfs_step_sematics (visited_prop:=S_prop), dfs_step_sematics (visited_prop:=S'_prop)]
 
   simp
