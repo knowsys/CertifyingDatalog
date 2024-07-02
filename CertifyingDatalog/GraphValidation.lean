@@ -137,7 +137,7 @@ namespace PreGraph
     | nil => simp
     | cons v vs ih => 
       simp
-      rw [Batteries.List.find_concat]
+      rw [List.find_concat]
 
       have : ∀ {α β} (opta optb : Option α) (f : α -> β), (opta.orElse (fun _ => optb)).map f = (opta.map f).orElse (fun _ => (optb.map f)) := by intro _ _ opta optb f; cases opta <;> simp
       rw [this]

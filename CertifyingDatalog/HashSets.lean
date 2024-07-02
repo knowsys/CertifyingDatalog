@@ -5,6 +5,36 @@ import Mathlib.Data.List.Defs
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Bool.AllAny
 
+namespace List 
+theorem foldl_cons_is_concat (as bs : List α) : as.foldl (fun acc a => a :: acc) bs = as.reverse ++ bs := by 
+  revert bs
+  induction as with 
+  | nil => simp 
+  | cons a as ih => 
+    simp
+    intro _
+    apply ih
+
+theorem elem_concat_iff_elem_of_one (as bs : List α) : ∀ e, e ∈ (as ++ bs) ↔ e ∈ as ∨ e ∈ bs := by simp 
+
+theorem find_concat (as bs : List α) : ∀ f, (as ++ bs).find? f = (as.find? f).orElse (fun () => bs.find? f) := by 
+  intro f 
+  induction as with 
+  | nil => simp
+  | cons a as ih =>
+    have find_sem : ∀ a as, (a :: as).find? f = if f a then some a else (as.find? f) := by 
+      intro a as
+      conv => left; unfold find?
+      split 
+      case h_1 _ h => simp[h]
+      case h_2 _ h => simp[h]
+    have : ∀ (a : α) (as bs : List α), (a :: as ++ bs) = (a :: (as ++ bs)) := by simp
+    rw [this]
+    rw [find_sem]
+    split
+    case isTrue h => rw [find_sem]; simp[h]
+    case isFalse h => rw [find_sem]; simp[h]; rw [ih]
+end List
 
 namespace Batteries
 section HashMap
@@ -497,6 +527,59 @@ by
   unfold keys'
   rw [Array.foldl_union]
   simp
+
+def HashMap.Imp.Buckets.toList (buckets : Imp.Buckets A B) : List (A × B) := List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) [] buckets.val.data
+
+theorem HashMap.Imp.Buckets.in_toList_means_in_list_at_index (buckets : Imp.Buckets A B) : (a, b) ∈ buckets.toList -> a ∈ buckets.keys' := by 
+  intro h
+  rw [keys'_iff_kv]
+  exists b
+  unfold kv
+  simp [Array.foldl_eq_foldl_data]
+  unfold toList at h
+  revert h
+  have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data -> (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data := by 
+    induction buckets.val.data with 
+    | nil => simp
+    | cons bucket buckets ih => 
+      intro bucket_list h
+      simp at h 
+      simp
+      have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by 
+        apply Finset.ext
+        intro pair 
+        simp [Or.comm]
+      rw [← this]
+      apply ih
+      rw [List.foldl_cons_is_concat] at h
+      apply h
+  apply this []
+
+theorem HashMap.Imp.Buckets.in_list_at_index_means_in_toList (buckets : Imp.Buckets A B) : a ∈ buckets.keys' -> ∃ b, (a,b) ∈ buckets.toList := by 
+  intro h
+  rw [keys'_iff_kv] at h
+  cases h with | intro b hb =>
+    unfold kv at hb
+    simp [Array.foldl_eq_foldl_data] at hb
+    exists b
+    unfold toList
+    revert hb
+    have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data -> (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data := by 
+      induction buckets.val.data with 
+      | nil => simp
+      | cons bucket buckets ih => 
+        intro bucket_list hb
+        simp at hb
+        simp
+        rw [List.foldl_cons_is_concat]
+        apply ih
+        have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by 
+          apply Finset.ext
+          intro pair 
+          simp [Or.comm]
+        rw [this]
+        apply hb
+    apply this []
 
 def HashMap.Imp.keys' (m: HashMap.Imp A B): Finset A :=
   match m with
@@ -1261,91 +1344,6 @@ theorem HashMap.findD_is_default_when_not_contains (hm : HashMap A B) (a : A) (h
   contradiction
 
   rfl
-
--- TODO: move list theorems somewhere else
-theorem List.foldl_cons_is_concat (as bs : List α) : as.foldl (fun acc a => a :: acc) bs = as.reverse ++ bs := by 
-  revert bs
-  induction as with 
-  | nil => simp 
-  | cons a as ih => 
-    simp
-    intro _
-    apply ih
-
--- TODO: move list theorems somewhere else
-theorem List.elem_concat_iff_elem_of_one (as bs : List α) : ∀ e, e ∈ (as ++ bs) ↔ e ∈ as ∨ e ∈ bs := by simp 
-
--- TODO: move list theorems somewhere else
-theorem List.find_concat (as bs : List α) : ∀ f, (as ++ bs).find? f = (as.find? f).orElse (fun () => bs.find? f) := by 
-  intro f 
-  induction as with 
-  | nil => simp
-  | cons a as ih =>
-    have find_sem : ∀ a as, (a :: as).find? f = if f a then some a else (as.find? f) := by 
-      intro a as
-      conv => left; unfold List.find?
-      split 
-      case h_1 _ h => simp[h]
-      case h_2 _ h => simp[h]
-    have : ∀ (a : α) (as bs : List α), (a :: as ++ bs) = (a :: (as ++ bs)) := by simp
-    rw [this]
-    rw [find_sem]
-    split
-    case isTrue h => rw [find_sem]; simp[h]
-    case isFalse h => rw [find_sem]; simp[h]; rw [ih]
-
-def HashMap.Imp.Buckets.toList (buckets : Imp.Buckets A B) : List (A × B) := List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) [] buckets.val.data
-
-theorem HashMap.Imp.Buckets.in_toList_means_in_list_at_index (buckets : Imp.Buckets A B) : (a, b) ∈ buckets.toList -> a ∈ buckets.keys' := by 
-  intro h
-  rw [keys'_iff_kv]
-  exists b
-  unfold kv
-  simp [Array.foldl_eq_foldl_data]
-  unfold toList at h
-  revert h
-  have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data -> (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data := by 
-    induction buckets.val.data with 
-    | nil => simp
-    | cons bucket buckets ih => 
-      intro bucket_list h
-      simp at h 
-      simp
-      have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by 
-        apply Finset.ext
-        intro pair 
-        simp [Or.comm]
-      rw [← this]
-      apply ih
-      rw [List.foldl_cons_is_concat] at h
-      apply h
-  apply this []
-
-theorem HashMap.Imp.Buckets.in_list_at_index_means_in_toList (buckets : Imp.Buckets A B) : a ∈ buckets.keys' -> ∃ b, (a,b) ∈ buckets.toList := by 
-  intro h
-  rw [keys'_iff_kv] at h
-  cases h with | intro b hb =>
-    unfold kv at hb
-    simp [Array.foldl_eq_foldl_data] at hb
-    exists b
-    unfold toList
-    revert hb
-    have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data -> (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data := by 
-      induction buckets.val.data with 
-      | nil => simp
-      | cons bucket buckets ih => 
-        intro bucket_list hb
-        simp at hb
-        simp
-        rw [List.foldl_cons_is_concat]
-        apply ih
-        have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by 
-          apply Finset.ext
-          intro pair 
-          simp [Or.comm]
-        rw [this]
-        apply hb
-    apply this []
 
 theorem HashMap.in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) : a ∈ hm.toList.map Prod.fst ↔ hm.contains a := by
   rw [List.mem_map]
