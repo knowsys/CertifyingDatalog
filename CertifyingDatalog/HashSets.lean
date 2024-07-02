@@ -1351,7 +1351,41 @@ theorem HashMap.in_projection_of_toList_iff_contains (hm : HashMap A B) (a : A) 
     simp at h
     cases Imp.Buckets.in_list_at_index_means_in_toList _ h with | intro b hb => exists b
 
-theorem HashMap.ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Batteries.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by sorry
+lemma HashMap.empty_contains: ∀ (a:A), (@HashMap.empty A B).contains a = false :=
+by
+  intro a
+  unfold contains
+  unfold empty
+  unfold mkHashMap
+  unfold HashMap.Imp.empty
+  simp
+  unfold HashMap.Imp.empty'
+  unfold HashMap.Imp.contains
+  simp
+  unfold HashMap.Imp.Buckets.mk
+  simp
+
+theorem HashMap.ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (Batteries.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by 
+  intro b
+  unfold ofList
+  simp
+  
+  have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm (List.map (fun a => (a, b)) l)).contains a = true ↔ hm.contains a ∨ a ∈ l := by 
+    induction l with 
+    | nil => simp 
+    | cons head tail ih => 
+      simp
+      intro hm 
+      rw [ih (hm.insert head b)]
+      rw [contains_insert]
+      have : a = head ↔ head = a := by constructor <;> apply Eq.symm
+      rw [this]
+      simp [or_assoc]
+
+  have applied_this := this empty
+  rw [empty_contains] at applied_this
+  simp at applied_this
+  apply applied_this
 
 theorem HashMap.for_keys_in_map_inserting_findD_does_not_change (hm : HashMap A B) (a : A) (a_in_hm : hm.contains a) : ∀ b, hm.insert a (hm.findD a b) = hm := by sorry
 
@@ -1430,20 +1464,10 @@ lemma HashSet.contains_insert {S: HashSet A} (a:A ): ∀ (a':A), (S.insert a).co
 lemma HashSet.empty_contains: ∀ (a:A), ¬ HashSet.empty.contains a :=
 by
   intro a
-  unfold contains
-  unfold empty
-  unfold HashMap.empty
-  unfold mkHashMap
-  unfold HashMap.Imp.empty
-  unfold HashMap.contains
   simp
-  unfold HashMap.Imp.empty'
-  unfold HashMap.Imp.contains
-  simp
-  unfold HashMap.Imp.Buckets.mk
-  simp
+  apply HashMap.empty_contains
 
-  def HashSet.Subset (S S': HashSet A): Prop := ∀ (b:A), S.contains b → S'.contains b
+def HashSet.Subset (S S': HashSet A): Prop := ∀ (b:A), S.contains b → S'.contains b
 
 instance : HasSubset (HashSet A) := ⟨HashSet.Subset⟩
 
