@@ -1275,6 +1275,25 @@ theorem List.foldl_cons_is_concat (as bs : List α) : as.foldl (fun acc a => a :
 -- TODO: move list theorems somewhere else
 theorem List.elem_concat_iff_elem_of_one (as bs : List α) : ∀ e, e ∈ (as ++ bs) ↔ e ∈ as ∨ e ∈ bs := by simp 
 
+-- TODO: move list theorems somewhere else
+theorem List.find_concat (as bs : List α) : ∀ f, (as ++ bs).find? f = (as.find? f).orElse (fun () => bs.find? f) := by 
+  intro f 
+  induction as with 
+  | nil => simp
+  | cons a as ih =>
+    have find_sem : ∀ a as, (a :: as).find? f = if f a then some a else (as.find? f) := by 
+      intro a as
+      conv => left; unfold List.find?
+      split 
+      case h_1 _ h => simp[h]
+      case h_2 _ h => simp[h]
+    have : ∀ (a : α) (as bs : List α), (a :: as ++ bs) = (a :: (as ++ bs)) := by simp
+    rw [this]
+    rw [find_sem]
+    split
+    case isTrue h => rw [find_sem]; simp[h]
+    case isFalse h => rw [find_sem]; simp[h]; rw [ih]
+
 def HashMap.Imp.Buckets.toList (buckets : Imp.Buckets A B) : List (A × B) := List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) [] buckets.val.data
 
 theorem HashMap.Imp.Buckets.in_toList_means_in_list_at_index (buckets : Imp.Buckets A B) : (a, b) ∈ buckets.toList -> a ∈ buckets.keys' := by 
@@ -1387,7 +1406,70 @@ theorem HashMap.ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A
   simp at applied_this
   apply applied_this
 
-theorem HashMap.findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Batteries.HashMap.ofList l).findD a b = ((l.find? (fun x => x.fst == a)).map Prod.snd).getD b := by sorry
+theorem HashMap.findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (Batteries.HashMap.ofList l).findD a b = ((l.reverse.find? (fun x => x.fst == a)).map Prod.snd).getD b := by 
+  intro b 
+  unfold ofList
+  simp
+
+  have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm l).findD a b = (Option.map Prod.snd (List.find? (fun x => x.1 == a) l.reverse)).getD (hm.findD a b) := by 
+    induction l with 
+    | nil => simp
+    | cons head tail ih => 
+      simp
+      intro hm
+      rw [ih (hm.insert head.1 head.2)]
+      have findD_insert : ∀ b, (hm.insert head.1 head.2).findD a b = if a = head.1 then head.2 else hm.findD a b := by 
+        intro b
+        rw [findD_eq_find?]
+        rw [findD_eq_find?]
+        rw [find_insert]
+        split
+        case h_1 _ b hb => 
+          split at hb
+          case isTrue h => 
+            simp [h]
+            injection hb with hb
+            rw [hb]
+          case isFalse h => 
+            simp [h]
+            rw [hb]
+        case h_2 b _ hb => 
+          split at hb
+          case isTrue _ => contradiction
+          case isFalse h => 
+            simp [h]
+            rw [hb]
+      rw [findD_insert]
+      split
+      case isTrue h =>
+        have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = (tail.reverse.find? (fun x => x.1 == a)).getD head := by 
+          rw [List.find_concat]
+          have : [head].find? (fun x => x.1 == a) = some head := by unfold List.find?; simp [h]
+          rw [this]
+          have : ∀ {α} (opt : Option α) (x : α), opt.orElse (fun _ => some x) = Option.some (opt.getD x) := by 
+            intro _ opt x
+            unfold Option.orElse
+            split <;> simp
+          rw [this]
+        rw [this]
+        simp
+      case isFalse h =>
+        have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = tail.reverse.find? (fun x => x.1 == a) := by 
+          rw [List.find_concat]
+          have : (head.1 == a) = false := by simp; intro contra; apply h; rw [contra]
+          have : [head].find? (fun x => x.1 == a) = none := by unfold List.find?; simp [this]
+          rw [this]
+          have : ∀ {α} (opt : Option α), opt.orElse (fun _ => none) = opt := by
+            intro _ opt
+            unfold Option.orElse
+            split <;> simp
+          rw [this]
+        rw [this]
+
+  rw [this]
+  rw [findD_is_default_when_not_contains]
+  simp
+  apply empty_contains
 
 theorem HashMap.findD_insert (hm : HashMap A B) (a a' : A) (h: ¬ hm.contains a = true): ∀ b, (hm.insert a b).findD a' b = hm.findD a' b := by
   intro b

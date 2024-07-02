@@ -128,32 +128,32 @@ namespace PreGraph
     intro v
     rw [Batteries.HashMap.in_projection_of_toList_iff_contains, Batteries.HashMap.ofList_mapped_to_pair_contains_iff_list_elem]
 
-  theorem from_vertices_no_vertex_has_successors (vs : List A) : ∀ v, v ∈ vs -> ((PreGraph.from_vertices vs).findD v [] = []) := by
-    induction vs with
-    | nil => intros; contradiction
-    | cons v vs ih =>
-      unfold from_vertices at *
-      intro v v_in_list
-      rw [Batteries.HashMap.findD_ofList_is_list_find_getD]
-      simp [List.find?]
-      split
-      case h_1 => simp
-      case h_2 _ _ v_not_first =>
-        have v_in_vs : v ∈ vs := by cases v_in_list; simp at v_not_first; assumption
-        have ih_plugged_in := ih v v_in_vs
-        rw [Batteries.HashMap.findD_ofList_is_list_find_getD] at ih_plugged_in
-        apply ih_plugged_in
+  theorem from_vertices_no_vertex_has_successors (vs : List A) : ∀ v, (PreGraph.from_vertices vs).findD v [] = [] := by
+    intro needle
+    unfold from_vertices
+    rw [Batteries.HashMap.findD_ofList_is_list_find_getD]
+
+    induction vs with 
+    | nil => simp
+    | cons v vs ih => 
+      simp
+      rw [Batteries.List.find_concat]
+
+      have : ∀ {α β} (opta optb : Option α) (f : α -> β), (opta.orElse (fun _ => optb)).map f = (opta.map f).orElse (fun _ => (optb.map f)) := by intro _ _ opta optb f; cases opta <;> simp
+      rw [this]
+      have : ∀ {α} (opta optb : Option α) b, (opta.orElse (fun _ => optb)).getD b = opta.getD (optb.getD b) := by intro _ opta optb b; cases opta <;> simp
+      rw [this]
+      have : (Option.map Prod.snd (List.find? (fun x => x.1 == needle) [(v, [])])).getD [] = ([] : List A) := by unfold List.find?; simp; split <;> simp
+      rw [this]
+      apply ih
 
   theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
     let pg := PreGraph.from_vertices vs
-    have : ∀ v, v ∈ pg.vertices -> (pg.findD v [] = []) := by
-      intro v hv
+    have : ∀ v, pg.findD v [] = [] := by
+      intro v
       apply from_vertices_no_vertex_has_successors
-      rw [from_vertices_contains_exactly_the_passed_vertices] at hv
-      exact hv
-    intro a ha b hb
-    rw [← in_vertices_iff_contains] at ha
-    rw [this a ha] at hb
+    intro a _ b hb
+    rw [this a] at hb
     contradiction
 
   theorem add_vertex_with_successors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_successors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by
