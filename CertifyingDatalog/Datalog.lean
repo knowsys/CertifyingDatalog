@@ -1,6 +1,7 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.List.Defs
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Init.Meta.WellFoundedTactics
 import CertifyingDatalog.Basic
 
 -- basic definitions
@@ -189,7 +190,7 @@ lemma termVariablesEqTermVariables_computableToList: termVariables = (fun (t: te
   | variableDL w =>
     simp
     unfold List.toSet
-    simp
+    simp [insert, Set.insert]
 
 def collectResultsToFinset {A: Type} (f: A → Set τ.vars): List A → Set τ.vars
 | [] => ∅
@@ -1165,6 +1166,7 @@ decreasing_by
   apply Nat.lt_trans (m:= sizeOf l)
   apply List.sizeOf_lt_of_mem _h
   simp
+  apply Nat.zero_lt_one_add
 
 
 lemma databaseElementsHaveValidProofTree (P: program τ) (d: database τ) (a: groundAtom τ) (mem: d.contains a): ∃ (t: proofTree τ), root t = a ∧ isValid P d t:=
@@ -1445,9 +1447,10 @@ end semantics
 
 lemma List.map_except_ok_length' {A B C: Type} (f: A → Except B C) (l1: List A) (l2: List C) (h: List.map_except f l1 = Except.ok l2): List.length l1 = List.length l2 :=
 by
-  have h': length l1 + length nil = length l2 := by
+  have h': length l1 + @List.length C nil = length l2 := by
     apply List.map_except_go_ok_length f l1
     unfold map_except at h
     apply h
   simp at h'
   apply h'
+
