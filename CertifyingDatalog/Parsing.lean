@@ -287,6 +287,25 @@ def addVertex (helper: parsingArityHelper) (ma: mockAtom) (g: Graph (groundAtom 
 
       Except.ok (graph', g.val.size, atomPosMap')
 
+lemma addVertexSafe (helper: parsingArityHelper) (ma: mockAtom) (g g': Graph (groundAtom (parsingSignature helper)) )(atomPosMap atomPosMap': Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (i: ℕ) (h: addVertex helper ma g atomPosMap = Except.ok (g', i, atomPosMap')) (hmap: ∀ (ga: groundAtom (parsingSignature helper)) (i: ℕ), atomPosMap.find? ga = some i → i < g.val.size): i < g'.val.size := by
+  unfold addVertex at h
+  simp at h
+  split at h
+  · simp at h
+  · split at h
+    · rename_i ga _ _ j find
+      specialize hmap ga j find
+      simp at h
+      rcases h with ⟨hg, hi, _⟩
+      rw [← hg, ← hi]
+      exact hmap
+    · simp at h
+      rcases h with ⟨hg, hi, _⟩
+      rw [← hg, ← hi, Graph.addVertex]
+      unfold PreGraph.addVertex
+      simp
+
+
 def addVertexList.go (helper: parsingArityHelper) (l: List mockAtom) (g: Graph (groundAtom (parsingSignature helper)) )(atomPosMap: Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (currList: List ℕ): Except String ((Graph (groundAtom (parsingSignature helper))) × List ℕ ×  Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) :=
   match l with
   | [] => Except.ok (g, currList, atomPosMap)
@@ -299,6 +318,9 @@ def addVertexList.go (helper: parsingArityHelper) (l: List mockAtom) (g: Graph (
 def addVertexList (helper: parsingArityHelper) (l: List mockAtom) (g: Graph (groundAtom (parsingSignature helper)) )(atomPosMap: Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ): Except String ((Graph (groundAtom (parsingSignature helper))) × List ℕ ×  Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) :=
   addVertexList.go helper l g atomPosMap []
 
+lemma addVertexListGraphSizeLE (helper: parsingArityHelper) (l: List mockAtom) (g g': Graph (groundAtom (parsingSignature helper)) ) (l': List ℕ)(atomPosMap atomPosMap': Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (h: addVertexList helper l g atomPosMap = Except.ok (g', l', atomPosMap')): g.val.size ≤ g'.val.size := by
+  sorry
+
 def addMockEdgeVertices  (helper: parsingArityHelper) (me:mockEdge) (currGraph: Graph (groundAtom (parsingSignature helper))) (atomPosMap: Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ): Except String ((Graph (groundAtom (parsingSignature helper))) × ℕ × List ℕ ×  Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) :=
   match addVertex helper me.vertex currGraph atomPosMap with
   | Except.error e => Except.error e
@@ -308,22 +330,37 @@ def addMockEdgeVertices  (helper: parsingArityHelper) (me:mockEdge) (currGraph: 
     | Except.ok (g2, l, atomPosMap2) =>
       Except.ok (g2, i, l, atomPosMap2)
 
-lemma addMockEdgeVerticesStartInArray (helper: parsingArityHelper) (me:mockEdge) (currGraph g: Graph (groundAtom (parsingSignature helper))) (atomPosMap atomPosMap': Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (i:ℕ) (l: List ℕ) (h: addMockEdgeVertices helper me currGraph atomPosMap = Except.ok (g, i, l, atomPosMap')): i < g.val.size := by
+lemma addMockEdgeVerticesSafe (helper: parsingArityHelper) (me:mockEdge) (currGraph g: Graph (groundAtom (parsingSignature helper))) (atomPosMap atomPosMap': Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (i:ℕ) (l: List ℕ) (h: addMockEdgeVertices helper me currGraph atomPosMap = Except.ok (g, i, l, atomPosMap')) (hmap: ∀ (ga: groundAtom (parsingSignature helper)) (i: ℕ), atomPosMap.find? ga = some i → i < currGraph.val.size) : i < g.val.size := by
   revert h
   unfold addMockEdgeVertices
   split
-  simp
+  · simp
+  · rename_i g' j atomPosMap2 h
+    split
+    · simp
+    · rename_i g2 l2 atomPosMap3 h'
+      simp
+      intro hg hi _ _
+      rw [← hi, ← hg]
+      apply Nat.lt_of_lt_of_le
+      apply addVertexSafe (h:=h) (hmap:=hmap)
+      apply addVertexListGraphSizeLE (h:=h')
 
-  rename_i g' j atomPosMap2 h
-  split
-  simp
-  rename_i g2 l2 atomPosMap3 h'
-  simp
+
+
+lemma addMockEdgeVerticesListSafe (helper: parsingArityHelper) (me:mockEdge) (currGraph g: Graph (groundAtom (parsingSignature helper))) (atomPosMap atomPosMap': Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (i:ℕ) (l: List ℕ) (h: addMockEdgeVertices helper me currGraph atomPosMap = Except.ok (g, i, l, atomPosMap')): ∀ (j: ℕ), j ∈ l → j < g.val.size := by
+  unfold addMockEdgeVertices at h
+  split at h
+  · simp at h
+  · split at h
+    · simp at h
+    · sorry
+
+lemma addMockEdgeVerticesPreservesMapProp (helper: parsingArityHelper) (me:mockEdge) (currGraph g: Graph (groundAtom (parsingSignature helper))) (atomPosMap atomPosMap': Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (i:ℕ) (l: List ℕ) (h: addMockEdgeVertices helper me currGraph atomPosMap = Except.ok (g, i, l, atomPosMap')) (hmap: ∀ (ga: groundAtom (parsingSignature helper)) (i: ℕ), atomPosMap.find? ga = some i → i < g.val.size): ∀ (ga: groundAtom (parsingSignature helper)) (i: ℕ), atomPosMap'.find? ga = some i → i < g.val.size := by
   sorry
 
 
-
-def getGraph.go (helper: parsingArityHelper) (l: List mockEdge) (currGraph: Graph (groundAtom (parsingSignature helper))) (atomPosMap: Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) : Except String (Graph (groundAtom (parsingSignature helper))) :=
+def getGraph.go (helper: parsingArityHelper) (l: List mockEdge) (currGraph: Graph (groundAtom (parsingSignature helper))) (atomPosMap: Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) (hmap: ∀ (ga: groundAtom (parsingSignature helper)) (i: ℕ), atomPosMap.find? ga = some i → i < currGraph.val.size) : Except String (Graph (groundAtom (parsingSignature helper))) :=
   match l with
   | [] => Except.ok currGraph
   | hd::tl =>
@@ -331,17 +368,22 @@ def getGraph.go (helper: parsingArityHelper) (l: List mockEdge) (currGraph: Grap
     | Except.error e => Except.error e
     | Except.ok (currGraph2, v, succs, atomPosMap2) =>
       have hv: v < currGraph2.val.size := by
-        apply addMockEdgeVerticesStartInArray (h:=h)
+        apply addMockEdgeVerticesSafe (h:=h) (hmap:=hmap)
       have hsuccs:∀ (i: ℕ), i ∈ succs → i < currGraph2.val.size := by
-        sorry
+        apply addMockEdgeVerticesListSafe (h:=h)
 
       let currGraph3 := currGraph2.addSuccessors v hv succs hsuccs
 
-      getGraph.go helper tl currGraph3 atomPosMap2
+      have hmap': ∀ (ga: groundAtom (parsingSignature helper)) (i: ℕ), atomPosMap2.find? ga = some i → i < currGraph3.val.size := by
+        sorry
 
+      getGraph.go helper tl currGraph3 atomPosMap2 hmap'
+
+lemma emptyHashMapMapProp : ∀ (ga: groundAtom (parsingSignature helper)) (i: ℕ), Batteries.HashMap.find? (∅: Batteries.HashMap (groundAtom (parsingSignature helper)) ℕ) ga = some i → i < (Graph.emptyGraph (groundAtom (parsingSignature helper))).val.size := by
+  simp
 
 def getGraph (helper: parsingArityHelper) (g: mockGraph): Except String (Graph (groundAtom (parsingSignature helper))) :=
-  getGraph.go helper g.edges (Graph.emptyGraph (groundAtom (parsingSignature helper))) Batteries.mkHashMap
+  getGraph.go helper g.edges (Graph.emptyGraph (groundAtom (parsingSignature helper))) ∅ emptyHashMapMapProp
 
 structure graphVerificationProblem (helper: parsingArityHelper) where
   (graph: Graph (groundAtom (parsingSignature helper)))

@@ -42,11 +42,11 @@ namespace PreGraph
     unfold Array.enum
     simp
 
-  def addVertice (pg: PreGraph A) (a:A): PreGraph A :=
+  def addVertex (pg: PreGraph A) (a:A): PreGraph A :=
     pg.push (a, [])
 
-  lemma addVerticePreservesComplete (pg: PreGraph A) (a:A) (compl: pg.complete): addVertice pg a |>.complete := by
-    simp_rw [complete, addVertice,vertices, successors, Array.enum, Array.getD] at *
+  lemma addVertexPreservesComplete (pg: PreGraph A) (a:A) (compl: pg.complete): addVertex pg a |>.complete := by
+    simp_rw [complete, addVertex,vertices, successors, Array.enum, Array.getD] at *
 
     intro n m hn
     split
@@ -125,7 +125,7 @@ namespace Graph
   theorem complete (g : Graph A) : ∀ (n: ℕ ), n ∈ g.vertices →  ∀ (m: ℕ), m ∈ g.successors n → m ∈ g.vertices := by
     aesop
 
-  def addVertex (g: Graph A) (a:A): Graph A := {val:=g.val.addVertice a, property:= PreGraph.addVerticePreservesComplete g.val a g.property}
+  def addVertex (g: Graph A) (a:A): Graph A := {val:=g.val.addVertex a, property:= PreGraph.addVertexPreservesComplete g.val a g.property}
 
   def addSuccessors (g: Graph A) (start: ℕ) (h: start < g.val.size) (succs: List ℕ) (succ_mem: ∀ (i: ℕ), i ∈ succs → i < g.val.size): Graph A := {val:= g.val.addSuccessors start h succs, property:= PreGraph.addSuccessorsPreservesComplete g.val start h succs succ_mem g.property}
 end Graph
