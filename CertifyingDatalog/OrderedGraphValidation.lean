@@ -250,19 +250,18 @@ lemma extractProofTreeIsValid (proof: orderedProofGraph τ) {P: program τ} {d: 
 theorem validateOrderedProofIffValidAndSubset (P: List (rule τ)) (d: database τ) (proof: orderedProofGraph τ):
 validateOrderedProof (parseProgramToSymbolSequenceMap P (fun _ => [])) d proof = Except.ok () ↔ orderedProofGraph.isValid proof P.toFinset d ∧ (labels proof).toSet ⊆ proofTheoreticSemantics P.toFinset d := by
   constructor
-  intro h
-  rw [validateOrderedProofSemantics] at h
-  simp [h]
-  simp [proofTheoreticSemantics, Set.subset_def, ← List.toSet_mem]
-  intro ga ga_mem
-  rw [labelsMemIffExistsPos] at ga_mem
-  rcases ga_mem with ⟨pos, pos_valid, get_pos⟩
-  use extractProofTree proof h pos pos_valid
-  constructor
-  · simp [extractProofTreeRoot, get_pos]
-  · apply extractProofTreeIsValid
-
-  intro h
-  rcases h with ⟨h, _⟩
-  rw [validateOrderedProofSemantics]
-  exact h
+  · intro h
+    rw [validateOrderedProofSemantics] at h
+    simp [h]
+    simp [proofTheoreticSemantics, Set.subset_def, ← List.toSet_mem]
+    intro ga ga_mem
+    rw [labelsMemIffExistsPos] at ga_mem
+    rcases ga_mem with ⟨pos, pos_valid, get_pos⟩
+    use extractProofTree proof h pos pos_valid
+    constructor
+    · simp [extractProofTreeRoot, get_pos]
+    · apply extractProofTreeIsValid
+  · intro h
+    rcases h with ⟨h, _⟩
+    rw [validateOrderedProofSemantics]
+    exact h
