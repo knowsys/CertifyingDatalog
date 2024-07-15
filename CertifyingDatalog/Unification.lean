@@ -1,7 +1,7 @@
 import CertifyingDatalog.Datalog
 
 section term_matching
-variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.predicateSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def extend (s: substitution τ) (v: τ.vars) (c: τ.constants) : substitution τ := fun x => if x = v then Option.some c else s x
 
@@ -91,7 +91,7 @@ by
     simp at p
     apply p
 
-lemma matchTermFindsMinimalSolution' (t: term τ) (c: τ.constants) (s: substitution τ) (h: Option.isSome (matchTerm t c s)): ∀ (s': substitution τ), (s ⊆ s' ∧ applySubstitutionTerm s' t = c) → (Option.get (matchTerm t c s) h) ⊆ s' :=
+lemma matchTermFindsMinimalSolution (t: term τ) (c: τ.constants) (s: substitution τ) (h: Option.isSome (matchTerm t c s)): ∀ (s': substitution τ), (s ⊆ s' ∧ applySubstitutionTerm s' t = c) → (Option.get (matchTerm t c s) h) ⊆ s' :=
 by
   cases t with
   | constant c' =>
@@ -224,7 +224,7 @@ by
 end term_matching
 
 section atom_matching
-variable {τ: signature} [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.predicateSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def matchTermList (s: substitution τ) (l1: List (term τ)) (l2: List (τ.constants)): Option (substitution τ) :=
   match l1 with
@@ -320,7 +320,7 @@ by
       constructor
       simp at s'_prop
       simp [s'_prop]
-      apply matchTermFindsMinimalSolution'
+      apply matchTermFindsMinimalSolution
       constructor
       simp [s'_prop]
       simp at s'_prop
@@ -351,7 +351,7 @@ by
       intro s'_hd
       apply ih
       apply h
-      apply matchTermFindsMinimalSolution'
+      apply matchTermFindsMinimalSolution
       constructor
       apply s_s'
       simp [s'_hd]
@@ -446,7 +446,7 @@ by
 end atom_matching
 
 section rule_matching
-variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.predicateSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 def matchAtomList (s: substitution τ) (l1: List (atom τ)) (l2: List (groundAtom τ)): Option (substitution τ) :=
   match l1 with

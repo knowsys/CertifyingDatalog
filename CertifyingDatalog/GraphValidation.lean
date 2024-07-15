@@ -12,7 +12,7 @@ namespace PreGraph
   def vertices (g : PreGraph A) : List A := g.toList.map Prod.fst
   def successors (g : PreGraph A) (a : A) : List A := g.findD a []
 
-  def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.findD a []) → pg.contains a'
+  def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.successors a) → pg.contains a'
 
   theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Batteries.HashMap.in_projection_of_toList_iff_contains
   theorem in_successors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.successors a ↔ b ∈ (pg.findD a []) := by unfold successors; intros; rfl
@@ -152,7 +152,9 @@ namespace PreGraph
     have : ∀ v, pg.findD v [] = [] := by
       intro v
       apply from_vertices_no_vertex_has_successors
-    intro a _ b hb
+    intro a ha b hb
+    rw [← in_vertices_iff_contains] at ha
+    unfold successors at hb
     rw [this a] at hb
     contradiction
 
@@ -370,6 +372,7 @@ namespace PreGraph
 
   theorem add_vertex_with_successors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_successors v vs).complete := by
     unfold complete
+    unfold successors
     intro a ha
     rw [add_vertex_with_successors_contains_iff_contains_or_in_new_vertices] at ha
     intro a' ha'
@@ -381,8 +384,8 @@ namespace PreGraph
       cases ha' with
       | inl ha' =>
         cases Decidable.em (a' = v) with
-        | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_successors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hl
-        | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [← in_successors_iff_found]; rw [contains_and_eq.right]; apply ha'; exact hr
+        | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left; rw [contains_and_eq.right]; apply ha'; exact hl
+        | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_eq.left;  rw [contains_and_eq.right]; apply ha'; exact hr
       | inr ha' =>
         cases Decidable.em (a' = v) with
         | inl hl =>
@@ -397,8 +400,8 @@ namespace PreGraph
     | inl contains_and_neq =>
       rw [add_vertex_with_successors_findD_semantics_2 pg v a _ contains_and_neq] at ha'
       cases Decidable.em (a' = v) with
-      | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_successors_iff_found]; apply ha'; exact hl
-      | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; rw [← in_successors_iff_found]; apply ha'; exact hr
+      | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; apply ha'; exact hl
+      | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; apply ha'; exact hr
     | inr rest => cases rest with
     | inl not_contains_and_eq =>
       rw [add_vertex_with_successors_findD_semantics_3 pg v a _ not_contains_and_eq] at ha'
@@ -431,8 +434,7 @@ namespace Graph
     apply g.property
     . rw [← PreGraph.in_vertices_iff_contains]
       apply ha
-    . rw [← PreGraph.in_successors_iff_found]
-      unfold successors at hb
+    . unfold successors at hb
       apply hb
 
   def from_vertices (vs : List A) : Graph A :=
@@ -645,14 +647,6 @@ by
   simp at i_zero
   simp
 
--- added based on https://leanprover.zulipchat.com/#narrow/stream/113488-general/topic/finset.2Efilter
-noncomputable def Finset.filter_nc (p: A → Prop) (S: Finset A):= @Finset.filter A p (Classical.decPred p) S
-
-lemma Finset.mem_filter_nc (a:A) (p: A → Prop) (S: Finset A): a ∈ Finset.filter_nc p S ↔ p a ∧ a ∈ S :=
-by
-  unfold filter_nc
-  simp [Finset.mem_filter]
-  rw [And.comm]
 
 noncomputable def globalSuccessors (a:A) (G: Graph A): Finset A := Finset.filter_nc (fun b => canReach a b G) G.vertices.toFinset
 
@@ -1514,54 +1508,41 @@ by
     unfold foldl_except_set
     simp
   | cons hd tl ih =>
-    constructor
-    intro h a a_mem
-    simp at a_mem
-    rcases h with ⟨S, foldl⟩
-    cases a_mem with
-    | inl a_hd =>
-      unfold foldl_except_set at foldl
-      rw [a_hd]
-      cases h: f hd init with
-      | ok S' =>
-        unfold Except.isOk
-        unfold Except.toBool
-        simp
-      | error e =>
-        simp [h] at foldl
-    | inr a_tl =>
-      unfold foldl_except_set at foldl
-      cases h: f hd init with
-      | ok S' =>
-        specialize ih S'
-        have S'_prop: ∀ (b : B), S'.contains b → p b := by
-          apply f_prev hd init S' init_prop h
-        specialize ih S'_prop
-        simp [h] at foldl
-        rw [← f_ignore_B a S' init S'_prop init_prop]
-        revert a
-        rw [← ih]
-        use S
-      | error e =>
-        simp [h] at foldl
-
-    intro h
-    have f_hd_result: ∃ (S: HashSet B), f hd init = Except.ok S := by
-      rw [except_is_ok_iff_exists]
-      apply h
-      simp
     unfold foldl_except_set
-    rcases f_hd_result with ⟨S', f_S'⟩
-    simp [f_S']
-    specialize ih S'
-    have S'_prop: ∀ (b:B), S'.contains b → p b  := by
-      apply f_prev hd init S' init_prop f_S'
-    specialize ih S'_prop
+    split
+    simp
+    rename_i msg h
+    rw [h]
+    unfold Except.isOk
+    unfold Except.toBool
+    simp
+
+    rename_i e S h
     rw [ih]
-    intro a a_mem
-    rw [f_ignore_B a S' init S'_prop init_prop]
-    apply h
-    simp [a_mem]
+    simp
+    rw [h]
+    simp [except_is_ok_of_ok]
+    constructor
+    intro h' a a_tl
+    specialize f_ignore_B a init S
+    rw [f_ignore_B]
+    apply h'
+    exact a_tl
+    apply init_prop
+    apply f_prev hd init S
+    exact init_prop
+    exact h
+
+    intro h' a a_tl
+    specialize f_ignore_B a init S
+    rw [← f_ignore_B]
+    apply h' a a_tl
+    apply init_prop
+    all_goals{
+    apply f_prev hd init S
+    exact init_prop
+    exact h
+    }
 
 
 def addElementIfOk [Hashable A] (e: Except B (HashSet A)) (a:A): Except B (HashSet A) :=
@@ -2170,12 +2151,12 @@ by
   unfold root
   simp
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.predicateSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.predicateSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.predicateSymbols]
+variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 def locallyValid (P: program τ) (d: database τ) (v: groundAtom τ) (G: Graph (groundAtom τ)): Prop :=
  (∃(r: rule τ) (g:grounding τ), r ∈ P ∧ ruleGrounding r g = {head:= v, body:= (G.successors v) }) ∨ ((G.successors v) = [] ∧ d.contains v)
 
-def localValidityCheck (m: List τ.predicateSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
+def localValidityCheck (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (l: List (groundAtom τ)) (a: groundAtom τ) : Except String Unit :=
   if l.isEmpty
   then
     if d.contains a
@@ -2240,7 +2221,7 @@ by
     exact absurd n_empty empty
 
 
-lemma extractTreeStepValidProofTreeIffAllLocallyValidAndAcyclic (P: program τ) (d: database τ) (a: groundAtom τ) (G: Graph (groundAtom τ)) (acyclic: isAcyclic G) (mem: a ∈ G.vertices) (valid: ∀ (a: groundAtom τ), a ∈ G.vertices → locallyValid P d a G): isValid P d (extractTree a G mem acyclic) :=
+lemma extractTreeValidIffAllLocallyValidAndAcyclic (P: program τ) (d: database τ) (a: groundAtom τ) (G: Graph (groundAtom τ)) (acyclic: isAcyclic G) (mem: a ∈ G.vertices) (valid: ∀ (a: groundAtom τ), a ∈ G.vertices → locallyValid P d a G): isValid P d (extractTree a G mem acyclic) :=
 by
   induction' h:(globalSuccessors a G).card using Nat.strongInductionOn with n ih generalizing a
   unfold extractTree
@@ -2290,5 +2271,5 @@ by
   use extractTree a G a_mem acyclic
   constructor
   apply rootOfExtractTree
-  apply extractTreeStepValidProofTreeIffAllLocallyValidAndAcyclic
+  apply extractTreeValidIffAllLocallyValidAndAcyclic
   apply valid

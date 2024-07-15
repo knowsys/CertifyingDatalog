@@ -158,7 +158,7 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
     | error e => simp[model] at h
     | ok _ =>
       simp [model] at h
-      rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees] at valid_trees
+      rw [validateTreeListUnitIffSubsetSemanticsAndAllValid] at valid_trees
       rcases valid_trees with ⟨left,right⟩
       rw [modelCheckerUnitIffAllRulesTrue] at model
       constructor
@@ -185,7 +185,7 @@ lemma mainCheckMockDatabaseUnitIffSolution {helper: parsingArityHelper}  (proble
   unfold mainCheckMockDatabase
   simp
   have p: validateTreeList problem.program (mockDatabase (parsingSignature helper)) problem.trees = Except.ok () := by
-    rw [validateTreeListUnitIffSubsetSemanticsAndAllElementsHaveValidTrees]
+    rw [validateTreeListUnitIffSubsetSemanticsAndAllValid]
     constructor
     rw [← collectModelToSetIsSetOfValidTreesElements]
     rw [sol_eq]

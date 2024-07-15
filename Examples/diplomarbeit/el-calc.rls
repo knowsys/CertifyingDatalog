@@ -1,0 +1,61 @@
+@source isMainClass[any]: load-csv("data/isMainClass.csv.gz") .
+@source isSubClass[any]: load-csv("data/isSubClass.csv.gz") .
+@source conj[any,any,any]: load-csv("data/conj.csv.gz") .
+@source exists[any,any,any]: load-csv("data/exists.csv.gz") .
+@source subClassOf[any,any]: load-csv("data/subClassOf.csv.gz") .
+@source subPropChain[any,any,any]: load-csv("data/subPropChain.csv.gz") .
+@source subProp[any,any]: load-csv("data/subProp.csv.gz") .
+
+%%% Start classification for all named classes:
+
+init(?C) :- isMainClass(?C) .
+
+%%% Inference rules (from "The Incredible ELK", Fig. 3)
+
+% R_0
+subClassOf(?C,?C) :- init(?C) .
+
+% R_\top
+subClassOf(?C,<http://www.w3.org/2002/07/owl#Thing>) :-
+	isMainClass(?C), isSubClass(<http://www.w3.org/2002/07/owl#Thing>) .
+
+% R_\sqcap^-
+subClassOf(?C,?D1), subClassOf(?C,?D2) :-
+	subClassOf(?C,?Y), conj(?Y,?D1,?D2) .
+
+% R_\sqcap^+
+subClassOf(?C,?Y) :-
+	subClassOf(?C,?D1), subClassOf(?C,?D2),
+	conj(?Y,?D1,?D2), isSubClass(?Y) .
+
+% R_\exists^-
+ex(?E,?R,?C) :- subClassOf(?E,?Y), exists(?Y,?R,?C) .
+
+% R_\exists^+
+subClassOf(?E,?Y) :-
+	ex(?E,?R,?C), subClassOf(?C,?D),
+	subProp(?R,?S), exists(?Y,?S,?D), isSubClass(?Y) .
+
+% R_\sqsubseteq
+subClassOf(?C,?E) :-
+	subClassOf(?C,?D),subClassOf(?D,?E) .
+
+% R_\circ
+ex(?E,?S,?D) :-
+	ex(?E,?R1,?C), ex(?C,?R2,?D),
+	subProp(?R1,?S1), subProp(?R2,?S2),subPropChain(?S1,?S2,?S) .
+
+% R_\bot
+subClassOf(?E,<http://www.w3.org/2002/07/owl#Nothing>) :-
+	ex(?E,?R,?C), subClassOf(?C,<http://www.w3.org/2002/07/owl#Nothing>) .
+
+% R_init
+init(?C) :- ex(?E,?R,?C) .
+
+%%% Extract final results for main classes
+
+mainSubClassOf(?A,?B) :-
+	subClassOf(?A,?B), isMainClass(?A), isMainClass(?B) .
+
+@output mainSubClassOf .
+

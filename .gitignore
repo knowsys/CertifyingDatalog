@@ -4,3 +4,11 @@
 /lake-packages/*
 /Examples/__pycache__/*
 /Results/*
+/Examples/diplomarbeit/*.json
+/Examples/diplomarbeit/*.txt
+/Examples/diplomarbeit/data/*
+/Examples/diplomarbeit/results/*
+/Examples/diplomarbeit/sources/*
+/Examples/diplomarbeit/__pycache__
+
+
