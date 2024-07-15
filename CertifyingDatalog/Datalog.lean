@@ -1,6 +1,7 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.List.Defs
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Init.Meta.WellFoundedTactics
 import CertifyingDatalog.Basic
 
 -- basic definitions
@@ -177,12 +178,10 @@ def termVariables: term τ → Finset τ.vars
 
 def atomVariables (a: atom τ) : Finset τ.vars := List.foldl_union termVariables ∅ a.atom_terms
 
-
 lemma atomVariablesSubsetImpltermVariablesSubset {a: atom τ} {t: term τ}{S: Set τ.vars}(mem: t ∈ a.atom_terms) (subs: ↑ (atomVariables a) ⊆ S): ↑ (termVariables t) ⊆ S :=
 by
   apply Set.Subset.trans (b:= atomVariables a)
   unfold atomVariables
-  simp
   apply List.subset_result_foldl_union
   exact mem
   exact subs
@@ -1135,6 +1134,7 @@ decreasing_by
   apply Nat.lt_trans (m:= sizeOf l)
   apply List.sizeOf_lt_of_mem _h
   simp
+  apply Nat.zero_lt_one_add
 
 
 lemma databaseElementsHaveValidProofTree (P: program τ) (d: database τ) (a: groundAtom τ) (mem: d.contains a): ∃ (t: proofTree τ), root t = a ∧ isValid P d t:=
@@ -1415,7 +1415,7 @@ end semantics
 
 lemma List.map_except_ok_length' {A B C: Type} (f: A → Except B C) (l1: List A) (l2: List C) (h: List.map_except f l1 = Except.ok l2): List.length l1 = List.length l2 :=
 by
-  have h': length l1 + length nil = length l2 := by
+  have h': length l1 + @List.length C nil = length l2 := by
     apply List.map_except_go_ok_length f l1
     unfold map_except at h
     apply h

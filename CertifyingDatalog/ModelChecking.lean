@@ -206,7 +206,6 @@ by
   rw [← List.toSet_mem]
   apply ga_i
   simp
-  simp at match_ga
   have match_some: Option.isSome (matchAtom emptySubstitution a ga) = true := by
     rw [Option.isSome_iff_exists]
     use s
@@ -345,11 +344,11 @@ by
 def exploreGrounding (pgr: partialGroundRule τ) (i: List (groundAtom τ)) (safe: pgr.isSafe): Except String Unit :=
   match h:pgr.ungroundedBody with
   | [] =>
-      let head' := atomWithoutVariablesToGroundAtom pgr.head (headOfSafePgrWithoutGroundedBodyHasNoVariables pgr safe h)
+    let head' := atomWithoutVariablesToGroundAtom pgr.head (headOfSafePgrWithoutGroundedBodyHasNoVariables pgr safe h)
 
-      if head' ∈ i
-      then Except.ok ()
-      else Except.error ("Unfulfilled rule: " ++ ToString.toString pgr.toRule)
+    if head' ∈ i
+    then Except.ok ()
+    else Except.error ("Unfulfilled rule: " ++ ToString.toString pgr.toRule)
   | hd::tl =>
     if noVars:atomVariables hd = ∅
     then
@@ -831,5 +830,4 @@ by
   simp
   use r
   simp[*]
-  use g
   apply partialGroundRule.fromRuleIsActive

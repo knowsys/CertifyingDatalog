@@ -63,18 +63,9 @@ by
     rw [← hd_b]
     rw [ih]
     simp
+    intro hn
     intro h
-    constructor
-    intro p
-    right
-    exact p
-    intro p
-    cases p with
-    | inl p =>
-      exfalso
-      exact absurd p h
-    | inr p =>
-      exact p
+    contradiction
 
     simp [hd_b]
     rw [ih]
@@ -140,6 +131,9 @@ lemma List.diff'_empty {A: Type} [DecidableEq A] (l1 l2: List A): List.diff' l1 
       simp
     | cons hd tl =>
       simp
+      exists hd
+      intro contra
+      contradiction
 
   | cons hd tl ih =>
     constructor
@@ -203,7 +197,7 @@ lemma List.map_except_go_ok_length {A B C: Type} (f: A → Except B C) (l1: List
         specialize ih (curr ++ [c]) h
         rw [← ih]
         simp
-        rw [Nat.succ_eq_add_one, Nat.add_assoc, Nat.add_comm (m:= 1)]
+        rw [Nat.add_assoc, Nat.add_comm (m:= 1)]
 
 def List.foldl_union {A B: Type} [DecidableEq B]  (f: A → Finset B) (init: Finset B) (l: List A): Finset B := List.foldl (fun x y => x ∪ f y) init l
 
@@ -281,13 +275,11 @@ lemma List.foldl_union_subset_set {A B: Type} [DecidableEq B] (l: List A) (f: A 
     simp
     tauto
 
-
 -- added based on https://leanprover.zulipchat.com/#narrow/stream/113488-general/topic/finset.2Efilter
 noncomputable def Finset.filter_nc (p: A → Prop) (S: Finset A):= @Finset.filter A p (Classical.decPred p) S
 
 lemma Finset.mem_filter_nc (a:A) (p: A → Prop) (S: Finset A): a ∈ Finset.filter_nc p S ↔ p a ∧ a ∈ S :=
 by
   unfold filter_nc
-  have dec: DecidablePred p := Classical.decPred p
   simp [Finset.mem_filter]
   rw [And.comm]

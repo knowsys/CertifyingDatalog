@@ -178,6 +178,7 @@ decreasing_by
   apply Nat.lt_trans (m:= sizeOf l)
   apply List.sizeOf_lt_of_mem _h
   simp
+  apply Nat.zero_lt_one_add
 
 lemma treeValidatorOkIffIsValid (P: List (rule τ)) (d: database τ) (t: proofTree τ): treeValidator (parseProgramToSymbolSequenceMap P (fun _ => [])) d t = Except.ok () ↔ isValid (List.toFinset P) d t :=
 by
@@ -222,7 +223,6 @@ by
       rw [checkRuleMatchResult]
       simp
     rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
-    push_neg
     simp at checkRuleMatch'
     constructor
     rw [emptyL]
