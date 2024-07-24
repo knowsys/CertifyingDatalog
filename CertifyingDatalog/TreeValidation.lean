@@ -1,344 +1,315 @@
+import CertifyingDatalog.Basic
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.Unification
-import CertifyingDatalog.Basic
 
+-- TODO: should we use a HashMap for this?
+def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] := List τ.relationSymbols → List (Rule τ)
 
-variable {τ: signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
+variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
-def symbolSequence (r: rule τ): List τ.relationSymbols := r.head.symbol::(List.map atom.symbol r.body)
+def SymbolSequenceMap.empty : SymbolSequenceMap τ := fun _ => []
 
-lemma symbolSequenceOfMatchIsEqual (r: rule τ) (gr: groundRule τ) (match_r: ∃ (s: substitution τ), applySubstitutionRule s r = gr): symbolSequence r = symbolSequence gr :=
-by
-  simp at *
-  rcases match_r with ⟨s, apply_s⟩
-  rw [← apply_s]
-  unfold applySubstitutionRule
-  unfold applySubstitutionAtom
-  unfold symbolSequence
-  simp
-
-  apply List.ext_get
-  rw [List.length_map, List.length_map]
-
-  intro n h1 h2
-  rw [List.get_map, List.get_map]
-  simp
-
-lemma symbolSequenceNotEq (r1 r2: rule τ) (h: ¬ symbolSequence r1 = symbolSequence r2): ∀ (s: substitution τ), applySubstitutionRule s r1 ≠ r2 :=
-by
-  by_contra h'
-  push_neg at h'
-  rcases h' with ⟨s, apply_s⟩
-  have symbols2: symbolSequence (applySubstitutionRule s r1) = symbolSequence r2 := by
-    rw [apply_s]
-  unfold symbolSequence at symbols2
-  unfold applySubstitutionRule at symbols2
-  simp at symbols2
-  rcases symbols2 with ⟨head, body⟩
-  unfold applySubstitutionAtom at head
-  simp at head
-  have map_r1: List.map (atom.symbol ∘ applySubstitutionAtom s) r1.body = List.map atom.symbol r1.body := by
+namespace Rule
+  def symbolSequence (r: Rule τ): List τ.relationSymbols := r.head.symbol :: (List.map Atom.symbol r.body)
+  
+  lemma symbolSequence_eq_matchingGroundRule (r: Rule τ) (gr: GroundRule τ) (match_r: ∃ (s: Substitution τ), s.applyRule r = gr): r.symbolSequence = gr.toRule.symbolSequence := by
+    rcases match_r with ⟨s, apply_s⟩
+    rw [← apply_s]
+    unfold Substitution.applyRule
+    unfold Substitution.applyAtom
+    unfold symbolSequence
+    simp
     apply List.ext_get
-    rw [List.comp_map, List.length_map, List.length_map, List.length_map]
-    intros n h1 h2
-    rw [List.get_map, List.get_map]
-    unfold applySubstitutionAtom
+    . rw [List.length_map, List.length_map]
+    . intro n h1 h2
+      rw [List.get_map, List.get_map]
+      simp
+
+  lemma ne_of_symbolSequence_ne (r1 r2 : Rule τ) (h : r1.symbolSequence ≠ r2.symbolSequence) : ∀ (s : Substitution τ), s.applyRule r1 ≠ r2 := by 
+    intro s apply_s
+    apply h
+    rw [← apply_s]
+    unfold symbolSequence
     simp
-  rw [map_r1] at body
-  unfold symbolSequence at h
-  simp at h
-  specialize h head
-  exact absurd body h
-
-
-lemma symbolSequenceEqImplSameLength (r1 r2: rule τ) (h: symbolSequence r1 = symbolSequence r2): r1.body.length = r2.body.length :=
-by
-  unfold symbolSequence at h
-  simp at h
-  rcases h with ⟨_, body⟩
-  rw [← List.length_map r1.body atom.symbol, ← List.length_map r2.body atom.symbol]
-  rw [body]
-
-def parseProgramToSymbolSequenceMap (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)): List τ.relationSymbols → List (rule τ) :=
-  match P with
-  | [] => m
-  | hd::tl =>
-    let seq:= symbolSequence hd
-    parseProgramToSymbolSequenceMap tl (fun x => if x = seq then hd::(m x) else m x)
-
-lemma parseProgramToSymbolSequenceMap_mem (P: List (rule τ)) (m: List τ.relationSymbols → List (rule τ)): ∀ (l: List (τ.relationSymbols)) (r: rule τ), r ∈ (parseProgramToSymbolSequenceMap P m) l ↔ r ∈ m l ∨ (symbolSequence r = l ∧ r ∈ P) :=
-by
-  induction P generalizing m with
-  | nil =>
-    intro l r
-    unfold parseProgramToSymbolSequenceMap
+    unfold Substitution.applyRule
+    unfold Substitution.applyAtom
     simp
-  | cons hd tl ih =>
-    intro l r
-    unfold parseProgramToSymbolSequenceMap
-    simp
-    rw [ih]
-    by_cases l_symb: l = symbolSequence hd
-    simp [l_symb]
-    tauto
+    apply List.ext_get
+    . rw [List.length_map, List.length_map]
+    . intros
+      rw [List.get_map, List.get_map]
+      simp
 
-    simp [l_symb]
-    constructor
-    intro h
-    cases h with
-    | inl h =>
-      left
-      apply h
-    | inr h =>
-      right
-      simp [h]
+  lemma body_length_eq_of_symbolSequence_eq (r1 r2: Rule τ) (h: r1.symbolSequence = r2.symbolSequence): r1.body.length = r2.body.length := by
+    unfold symbolSequence at h
+    simp at h
+    rcases h with ⟨_, body⟩
+    rw [← r1.body.length_map Atom.symbol, ← r2.body.length_map Atom.symbol]
+    rw [body]
+end Rule
 
-    intro h
-    cases h with
-    | inl h =>
-      left
-      apply h
-    | inr h =>
-      right
-      rcases h with ⟨ss_rl, r_P⟩
-      constructor
-      apply ss_rl
-      cases r_P with
-      | inl r_hd =>
-        rw [r_hd] at ss_rl
-        exact absurd (Eq.symm ss_rl) l_symb
-      | inr r_tl =>
-        apply r_tl
+namespace Program
+  def toSymbolSequenceMap_aux (init : SymbolSequenceMap τ) : Program τ -> SymbolSequenceMap τ
+  | .nil => init
+  | .cons rule p => 
+    let new_init := fun seq => if seq = rule.symbolSequence then rule :: (init seq) else init seq
+    toSymbolSequenceMap_aux new_init p
 
-lemma parseProgramToSymbolSequenceMap_semantics (P: List (rule τ)) (r: rule τ): ∀ (r': rule τ), r' ∈ parseProgramToSymbolSequenceMap P (fun _ => []) (symbolSequence r) ↔ r' ∈ P ∧ symbolSequence r' = symbolSequence r :=
-by
-  intro r'
-  rw [parseProgramToSymbolSequenceMap_mem]
-  simp
-  rw [And.comm]
+  def toSymbolSequenceMap (p : Program τ) := p.toSymbolSequenceMap_aux SymbolSequenceMap.empty
 
-lemma groundRuleToRuleBodyLengthEqBodyLength (gr: groundRule τ): gr.body.length = gr.toRule.body.length :=
-by
-  unfold groundRule.toRule
-  simp
+  lemma toSymbolSequenceMap_mem (init : SymbolSequenceMap τ) (p : Program τ) : ∀ (l : List (τ.relationSymbols)) (r : Rule τ), r ∈ (p.toSymbolSequenceMap_aux init l) ↔ r ∈ init l ∨ (r.symbolSequence = l ∧ r ∈ p) := by 
+    induction p generalizing init with
+    | nil =>
+      intros
+      unfold toSymbolSequenceMap_aux
+      simp
+    | cons rule p ih =>
+      intro l r
+      unfold toSymbolSequenceMap_aux
+      simp
+      rw [ih]
+      by_cases l_symb: l = rule.symbolSequence
+      . simp [l_symb]
+        tauto
+      . simp [l_symb]
+        constructor
+        . intro h
+          cases h with
+          | inl h =>
+            left
+            apply h
+          | inr h =>
+            right
+            simp [h]
 
-def checkRuleMatch (m: List τ.relationSymbols → List (rule τ)) (gr: groundRule τ): Except String Unit :=
-  if List.any (m (symbolSequence gr.toRule)) (fun x => Option.isSome (matchRule x gr)) = true
+        . intro h
+          cases h with
+          | inl h =>
+            left
+            apply h
+          | inr h =>
+            right
+            rcases h with ⟨ss_rl, r_P⟩
+            constructor
+            apply ss_rl
+            cases r_P with
+            | inl r_hd =>
+              rw [r_hd] at ss_rl
+              exact absurd (Eq.symm ss_rl) l_symb
+            | inr r_tl =>
+              apply r_tl
+
+
+  lemma toSymbolSequenceMap_semantics (p: Program τ) (r: Rule τ) : ∀ (r': Rule τ), r' ∈ p.toSymbolSequenceMap r.symbolSequence ↔ r' ∈ p ∧ r'.symbolSequence = r.symbolSequence := by
+    intro r'
+    unfold toSymbolSequenceMap
+    rw [toSymbolSequenceMap_mem]
+    simp [SymbolSequenceMap.empty]
+    rw [And.comm]
+end Program
+
+def checkRuleMatch (m: SymbolSequenceMap τ) (gr: GroundRule τ): Except String Unit :=
+  if (m gr.toRule.symbolSequence).any (fun rule => (Substitution.matchRule rule gr).isSome)
   then Except.ok ()
   else Except.error ("No match for " ++ ToString.toString gr)
 
-lemma checkRuleMatchOkIffExistsRuleForGroundRule (P: List (rule τ)) (gr: groundRule τ): checkRuleMatch (parseProgramToSymbolSequenceMap P (fun _ => [])) gr = Except.ok () ↔ ∃ (r: rule τ) (g:grounding τ),r ∈ P ∧ ruleGrounding r g = gr :=
+lemma checkRuleMatchOkIffExistsRuleForGroundRule (p: Program τ) (gr: GroundRule τ): checkRuleMatch p.toSymbolSequenceMap gr = Except.ok () ↔ ∃ (r: Rule τ) (g: Grounding τ), r ∈ p ∧ g.applyRule' r = gr :=
 by
-  simp [groundingSubstitutionEquivalence]
+  simp [grounding_substitution_equiv]
   unfold checkRuleMatch
   split
   rename_i symbolSequenceMatch
   simp
   simp at symbolSequenceMatch
-  simp_rw [parseProgramToSymbolSequenceMap_semantics, matchRuleIsSomeIffSolution] at symbolSequenceMatch
-  rcases symbolSequenceMatch with ⟨r, h, s, applyS⟩
+  simp_rw [Program.toSymbolSequenceMap_semantics] at symbolSequenceMatch
+  rcases symbolSequenceMatch with ⟨r, h, s⟩
   use r
   simp [h]
-  use s
+  use (Substitution.matchRule r gr).get s
+  apply Substitution.matchRuleYieldsSubstitution
 
   rename_i symbolSequenceMatch
   simp at *
-  simp_rw [parseProgramToSymbolSequenceMap_semantics] at symbolSequenceMatch
+  simp_rw [Program.toSymbolSequenceMap_semantics] at symbolSequenceMatch
   intro r rP
   specialize symbolSequenceMatch r
-  by_cases ssm_r_gr: symbolSequence r = symbolSequence gr.toRule
-  simp [rP, ssm_r_gr] at symbolSequenceMatch
-  rw [← not_exists]
-  apply matchRuleNoneImplNoSolution
-  apply symbolSequenceMatch
+  cases (Decidable.em (r.symbolSequence = gr.toRule.symbolSequence)) with 
+  | inl eq => 
+    simp [rP, eq] at symbolSequenceMatch
+    apply Substitution.matchRuleUnsuccessfulThenNoSubstitution
+    apply symbolSequenceMatch
+  | inr neq => 
+    apply Rule.ne_of_symbolSequence_ne
+    apply neq
 
-  apply symbolSequenceNotEq
-  apply ssm_r_gr
+namespace ProofTreeSkeleton
+  def checkValidity (t : ProofTreeSkeleton τ) (m : SymbolSequenceMap τ) (d : Database τ) : Except String Unit :=  
+    match t with 
+    | .node a l =>
+      if l.isEmpty
+      then  if d.contains a
+            then Except.ok ()
+            else
+              match checkRuleMatch m {head:= a, body := List.map Tree.root l} with
+              | Except.ok _ => Except.ok ()
+              | Except.error msg => Except.error msg
+      else
+        match checkRuleMatch m {head:= a, body := List.map Tree.root l} with
+        | Except.ok _ => List.mapExceptUnit l.attach (fun ⟨t, _h⟩ => checkValidity t m d)
+        | Except.error msg => Except.error msg
+  termination_by sizeOf t
+
+  lemma checkValidityOkIffIsValid (t: ProofTreeSkeleton τ) (kb: KnowledgeBase τ) : t.checkValidity kb.prog.toSymbolSequenceMap kb.db = Except.ok () ↔ t.isValid kb :=
+  by
+    induction' h_t : t.height using Nat.strongInductionOn with n ih generalizing t
+    cases t with
+    | node a l =>
+      unfold checkValidity
+      unfold isValid
+      by_cases emptyL: l.isEmpty
+      . rw [if_pos emptyL]
+        by_cases contains_a: kb.db.contains a
+        . rw [if_pos contains_a]
+          constructor
+          intro _
+          right
+          rw [← List.isEmpty_iff_eq_nil]
+          constructor
+          exact emptyL
+          exact contains_a
+          simp
+        . rw [if_neg contains_a]
+          split
+          simp
+          rename_i u checkRuleMatch
+          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch
+          left
+          rw [List.isEmpty_iff_eq_nil] at emptyL
+          rcases checkRuleMatch with ⟨r, g, rP, apply_g⟩
+          use r
+          constructor
+          apply rP
+          constructor
+          use g
+          rw [emptyL]
+          unfold List.Forall
+          simp
+
+          simp
+          rename_i checkRuleMatchResult
+          rw [List.isEmpty_iff_eq_nil] at emptyL
+
+          have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
+            rw [checkRuleMatchResult]
+            simp
+          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
+          simp at checkRuleMatch'
+          constructor
+          rw [emptyL]
+          simp
+          rw [emptyL] at checkRuleMatch'
+          apply checkRuleMatch'
+          simp [contains_a]
+
+      . simp[emptyL]
+        split
+        . rename_i checkRuleMatchResult
+          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatchResult
+          rcases checkRuleMatchResult with ⟨r,g,rP, rulegrounding⟩
+          rw [List.mapExceptUnit_iff]
+          constructor
+          . intro h
+            left
+            use r
+            constructor
+            apply rP
+            constructor
+            use g
+            rw [List.forall_iff_forall_mem]
+            simp
+            intro t t_mem
+            specialize ih t.height
+            have height_t: t.height < n := by
+              rw [← h_t]
+              apply Tree.heightOfMemberIsSmaller
+              unfold Tree.member
+              simp [t_mem]
+            specialize ih height_t t
+            simp at ih
+            rw [← ih]
+            simp at h
+            specialize h t t_mem
+            apply h
+
+          . intro h
+            simp
+            intro t t_mem
+            specialize ih t.height
+            have height_t: t.height < n := by
+              rw [← h_t]
+              apply Tree.heightOfMemberIsSmaller
+              simp [Tree.member, t_mem]
+            specialize ih height_t t
+            simp at ih
+            rw [ih]
+            rw [List.isEmpty_iff_eq_nil] at emptyL
+            simp [emptyL] at h
+            rcases h with ⟨_, _, h⟩
+            rcases h with ⟨_,h⟩
+            rw [List.forall_iff_forall_mem] at h
+            simp at h
+            specialize h t t_mem
+            apply h
+
+        . rw [List.isEmpty_iff_eq_nil] at emptyL
+          simp [emptyL]
+          rename_i checkRuleMatchResult
+          have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
+            rw [checkRuleMatchResult]
+            simp
+          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
+          simp at checkRuleMatch'
+          intro r rP g ground
+          specialize checkRuleMatch' r rP g
+          contradiction
 
 
+  def checkValidityOfList (l: List (ProofTreeSkeleton τ)) (kb : KnowledgeBase τ) : Except String Unit := 
+    let m := kb.prog.toSymbolSequenceMap
+    l.mapExceptUnit (fun t => t.checkValidity m kb.db)
 
-
-def treeValidator (m: List τ.relationSymbols → List (rule τ)) (d: database τ) (t: proofTree τ) : Except String Unit :=
-  match t with
-  | tree.node a l =>
-    if l.isEmpty
-    then  if d.contains a
-          then Except.ok ()
-          else
-            match checkRuleMatch m {head:= a, body := List.map root l} with
-            | Except.ok _ => Except.ok ()
-            | Except.error msg => Except.error msg
-    else
-      match checkRuleMatch m {head:= a, body := List.map root l} with
-      | Except.ok _ => List.map_except_unit l.attach (fun ⟨x, _h⟩ => treeValidator m d x)
-      | Except.error msg => Except.error msg
-termination_by sizeOf t
-decreasing_by
-  simp_wf
-  apply Nat.lt_trans (m:= sizeOf l)
-  apply List.sizeOf_lt_of_mem _h
-  simp
-  apply Nat.zero_lt_one_add
-
-lemma treeValidatorOkIffIsValid (P: List (rule τ)) (d: database τ) (t: proofTree τ): treeValidator (parseProgramToSymbolSequenceMap P (fun _ => [])) d t = Except.ok () ↔ isValid (List.toFinset P) d t :=
-by
-  induction' h_t:(height t) using Nat.strongInductionOn with n ih generalizing t
-  cases t with
-  | node a l =>
-    unfold treeValidator
-    unfold isValid
-    by_cases emptyL: l.isEmpty
-    rw [if_pos emptyL]
-    by_cases contains_a: d.contains a
-    rw [if_pos contains_a]
+  lemma checkValidityOfListOkIffAllValid (l: List (ProofTreeSkeleton τ)) (kb: KnowledgeBase τ) : checkValidityOfList l kb = Except.ok () ↔ ∀ t, t ∈ l -> t.isValid kb := by
+    unfold checkValidityOfList
+    rw [List.mapExceptUnit_iff]
     constructor
-    intro _
-    right
-    rw [← List.isEmpty_iff_eq_nil]
-    simp [*]
-    simp
-    rw [if_neg contains_a]
-
-    split
-    simp
-    rename_i u checkRuleMatch
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch
-    left
-    rw [List.isEmpty_iff_eq_nil] at emptyL
-    rcases checkRuleMatch with ⟨r, g, rP, apply_g⟩
-    use r
-    constructor
-    apply rP
-    constructor
-    use g
-    rw [emptyL]
-    unfold List.Forall
-    simp
-
-    simp
-    rename_i checkRuleMatchResult
-    rw [List.isEmpty_iff_eq_nil] at emptyL
-
-    have checkRuleMatch': ¬ checkRuleMatch (parseProgramToSymbolSequenceMap P fun _ => []) { head := a, body := List.map root l } = Except.ok () := by
-      rw [checkRuleMatchResult]
-      simp
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
-    simp at checkRuleMatch'
-    constructor
-    rw [emptyL]
-    simp
-    rw [emptyL] at checkRuleMatch'
-    apply checkRuleMatch'
-    simp[contains_a]
-
-    simp[emptyL]
-    split
-    rename_i checkRuleMatchResult
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatchResult
-    rcases checkRuleMatchResult with ⟨r,g,rP, rulegrounding⟩
-    rw [List.map_except_unitIsUnitIffAll]
-    constructor
+    . intro h t t_l
+      rw [← checkValidityOkIffIsValid]
+      apply h t t_l
+    . intro h t t_l
+      rw [checkValidityOkIffIsValid]
+      apply h t t_l
+    
+  lemma checkValidityOfImplSubsetSemantics (l: List (ProofTreeSkeleton τ)) (kb: KnowledgeBase τ) : checkValidityOfList l kb = Except.ok () -> {ga | ∃ t, t ∈ l ∧ t.elem ga } ⊆ kb.proofTheoreticSemantics := by 
     intro h
-    left
-    use r
-    constructor
-    apply rP
-    constructor
-    use g
-    rw [List.forall_iff_forall_mem]
+    rw [Set.subset_def]
+    intro ga
     simp
-    intro t t_mem
-    specialize ih (height t)
-    have height_t: height t < n := by
-      rw [← h_t]
-      apply heightOfMemberIsSmaller
-      unfold member
-      simp [t_mem]
-    specialize ih height_t t
-    simp at ih
-    rw [← ih]
-    simp at h
-    specialize h t t_mem
-    apply h
+    intros t t_l ga_t
+    rw [checkValidityOfListOkIffAllValid] at h
+    apply kb.elementsOfEveryProofTreeInSemantics ⟨t, by apply h; exact t_l⟩
+    apply ga_t
 
-    --back direction
-    intro h
-    simp
-    intro t t_mem
-    specialize ih (height t)
-    have height_t: height t < n := by
-      rw [← h_t]
-      apply heightOfMemberIsSmaller
-      simp [member, t_mem]
-    specialize ih height_t t
-    simp at ih
-    rw [ih]
-    rw [List.isEmpty_iff_eq_nil] at emptyL
-    simp [emptyL] at h
-    rcases h with ⟨_, _, h⟩
-    rcases h with ⟨_,h⟩
-    rw [List.forall_iff_forall_mem] at h
-    simp at h
-    specialize h t t_mem
-    apply h
+  lemma checkValidityOfListOkIffAllValidIffAllValidAndSubsetSemantics (l: List (ProofTreeSkeleton τ)) (kb : KnowledgeBase τ) : checkValidityOfList l kb = Except.ok () ↔ (∀ t, t ∈ l -> t.isValid kb) ∧ {ga | ∃ t, t ∈ l ∧ t.elem ga } ⊆ kb.proofTheoreticSemantics :=
+  by
+    constructor
+    . intro h
+      constructor
+      . rw [checkValidityOfListOkIffAllValid] at h
+        apply h
+      . apply checkValidityOfImplSubsetSemantics
+        apply h
+    . intro h
+      rw [checkValidityOfListOkIffAllValid]
+      apply h.left
+end ProofTreeSkeleton
 
-    rw [List.isEmpty_iff_eq_nil] at emptyL
-    simp [emptyL]
-    rename_i checkRuleMatchResult
-    have checkRuleMatch': ¬ checkRuleMatch (parseProgramToSymbolSequenceMap P fun _ => []) { head := a, body := List.map root l } = Except.ok () := by
-      rw [checkRuleMatchResult]
-      simp
-    rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
-    simp at checkRuleMatch'
-    intro r rP g ground
-    specialize checkRuleMatch' r rP g
-    contradiction
-
-
-
-def validateTreeList (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : Except String Unit :=
-  let m:= parseProgramToSymbolSequenceMap P (fun _ => [])
-  List.map_except_unit l (fun t => treeValidator m d t)
-
-lemma validateTreeListUnitIffAllTreesValid (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () ↔  ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t := by
-
-  unfold validateTreeList
-  rw [List.map_except_unitIsUnitIffAll]
-  constructor
-  intro h t t_l
-  rw [← treeValidatorOkIffIsValid]
-  apply h t t_l
-
-  intro h t t_l
-  rw [treeValidatorOkIffIsValid]
-  apply h t t_l
-
-
-lemma validateTreeListUnitImplSubsetSemantics (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () →  {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d := by
-  intro h
-  rw [Set.subset_def]
-  intro ga
-  simp
-  intros t t_l ga_t
-  apply allTreeElementsOfValidTreeInSemantics
-  rw [validateTreeListUnitIffAllTreesValid] at h
-  apply h
-  apply t_l
-  apply ga_t
-
-
-lemma validateTreeListUnitIffSubsetSemanticsAndAllValid (P: List (rule τ)) (d: database τ) (l: List (proofTree τ)) : validateTreeList P d l = Except.ok () ↔ {ga: groundAtom τ| ∃ (t: proofTree τ), t ∈ l ∧ elementMember ga t } ⊆ proofTheoreticSemantics P.toFinset d ∧ ∀ (t: proofTree τ), t ∈ l → isValid P.toFinset d t :=
-by
-  constructor
-  intro h
-  constructor
-  apply validateTreeListUnitImplSubsetSemantics
-  apply h
-
-  rw [validateTreeListUnitIffAllTreesValid] at h
-  apply h
-
-  intro h
-  rcases h with ⟨_, right⟩
-  rw [validateTreeListUnitIffAllTreesValid]
-  apply right
