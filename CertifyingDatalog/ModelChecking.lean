@@ -70,10 +70,9 @@ namespace Grounding
     unfold applyPartialGroundRule
     unfold applyRule'
     simp [PartialGroundRule.toRule]
-    apply List.ext_get
-    . rw [List.length_map]
-    . intro _ _ _
-      rw [List.get_map]
+    apply List.ext_getElem
+    · rw [List.length_map]
+    · intro _ _ _
       simp
       rw [applyAtom'_on_GroundAtom_unchanged]
 end Grounding
@@ -129,10 +128,10 @@ namespace CheckableModel
     ∀ (s : Substitution τ), s ∈ m.substitutionsForAtom a ↔ ∃ ga ∈ m, s.applyAtom a = ga ∧ ∀ (s': Substitution τ), s'.applyAtom a = ga → s ⊆ s' := by 
     intro s
     constructor
-    . intro h
+    · intro h
       exists (s.applyAtom a).toGroundAtom (m.noVars_after_applying_substitutionsForAtom a s h)
       constructor
-      . apply substitutionsForAtom_application_in_model; exact h
+      · apply substitutionsForAtom_application_in_model; exact h
       rw [← Atom.toGroundAtom_isSelf]
       simp
       intro s' eq 
@@ -145,16 +144,16 @@ namespace CheckableModel
       rw [this]
       apply Substitution.matchAtomIsMinimal
       constructor
-      . apply Substitution.empty_isMinimal
-      . rw [eq, this]; rw [Substitution.matchAtomYieldsSubstitution] 
-    . intro h
+      · apply Substitution.empty_isMinimal
+      · rw [eq, this]; rw [Substitution.matchAtomYieldsSubstitution] 
+    · intro h
       rcases h with ⟨ga, mem, ga_eq, minimal⟩ 
       unfold substitutionsForAtom
       simp
       exists ga
       constructor
-      . exact mem
-      . cases eq : Substitution.empty.matchAtom a ga with 
+      · exact mem
+      · cases eq : Substitution.empty.matchAtom a ga with 
         | none => 
           simp
           apply @Substitution.matchAtomUnsuccessfulThenNoSubstitution τ 
@@ -166,12 +165,12 @@ namespace CheckableModel
           simp 
           have : s' = (Substitution.empty.matchAtom a ga).get (by simp [eq]) := by simp [eq]
           apply Substitution.subset_antisymm
-          . rw [this]
+          · rw [this]
             apply Substitution.matchAtomIsMinimal
             constructor
-            . apply Substitution.empty_isMinimal
-            . exact ga_eq 
-          . apply minimal
+            · apply Substitution.empty_isMinimal
+            · exact ga_eq 
+          · apply minimal
             rw [this]
             apply Substitution.matchAtomYieldsSubstitution
 
@@ -213,8 +212,8 @@ namespace CheckableModel
               rw [Substitution.applyAtom_remainingVarsNotInDomain]
               rw [Finset.mem_filter_nc]
               constructor
-              . exact v_in_adj_head.left 
-              . exact v_in_hd
+              · exact v_in_adj_head.left 
+              · exact v_in_hd
             rw [noVars_in_hd] at v_in_applied_hd
             contradiction
           | inr v_in_tl => 
@@ -224,12 +223,12 @@ namespace CheckableModel
             exists s.applyAtom a
             simp
             constructor
-            . exists a
-            . rw [Substitution.applyAtom_remainingVarsNotInDomain]
+            · exists a
+            · rw [Substitution.applyAtom_remainingVarsNotInDomain]
               rw [Finset.mem_filter_nc]
               constructor
-              . exact v_in_adj_head.left 
-              . exact v_in_a
+              · exact v_in_adj_head.left 
+              · exact v_in_a
         )
       )
   termination_by pgr.ungroundedBody.length
@@ -269,7 +268,7 @@ namespace CheckableModel
         unfold GroundRule.bodySet
         simp
         constructor
-        . unfold PartialGroundRule.isActive at active
+        · unfold PartialGroundRule.isActive at active
           intro a a_mem
           simp at a_mem
           apply active
@@ -277,7 +276,7 @@ namespace CheckableModel
           rw [g.applyAtom'_on_GroundAtom_unchanged] at a'_eq
           rw [a'_eq] at a'_mem
           exact a'_mem
-        . rw[this]
+        · rw[this]
           unfold List.toSet
           simp
           exact h
@@ -288,7 +287,7 @@ namespace CheckableModel
       unfold Interpretation.satisfiesRule 
 
       constructor
-      . intro subs_works
+      · intro subs_works
         unfold Grounding.applyRule'
         unfold PartialGroundRule.toRule
         unfold GroundRule.bodySet
@@ -307,11 +306,9 @@ namespace CheckableModel
           unfold Substitution.applyAtom
           unfold Grounding.applyAtom'
           simp
-          rw [List.map_eq_map_iff]
           intro t t_mem
           unfold Substitution.applyTerm
           unfold Grounding.applyTerm'
-          simp
           cases t with 
           | constant c => simp
           | variableDL v => 
@@ -325,11 +322,9 @@ namespace CheckableModel
           unfold Grounding.applyAtom'
           unfold GroundAtom.toAtom
           simp
-          rw [List.map_eq_map_iff]
           intro t t_mem
           unfold Substitution.applyTerm
           unfold Grounding.applyTerm'
-          simp
           cases t with 
           | constant c => simp
           | variableDL v => 
@@ -340,8 +335,8 @@ namespace CheckableModel
               exists Term.variableDL v
               unfold Term.vars
               constructor
-              . exact t_mem
-              . simp
+              · exact t_mem
+              · simp
             simp [subs, this]
 
         have subs_domain : subs.domain = hd.vars := by 
@@ -355,17 +350,16 @@ namespace CheckableModel
           rw [mem_substitutionsForAtom_iff]
           exists g.applyAtom' hd
           constructor
-          . apply g_active_ungrounded; apply Or.inl; rfl
+          · apply g_active_ungrounded; apply Or.inl; rfl
           constructor
-          . exact g_eq_subs_on_hd
-          . intro s' s'_apply_also_ground
+          · exact g_eq_subs_on_hd
+          · intro s' s'_apply_also_ground
             rw [← g_eq_subs_on_hd] at s'_apply_also_ground
             intro v v_in_dom
             rw [subs_domain] at v_in_dom
             simp at v_in_dom
             unfold Substitution.applyAtom at s'_apply_also_ground
             simp at s'_apply_also_ground
-            rw [List.map_eq_map_iff] at s'_apply_also_ground
             specialize s'_apply_also_ground (Term.variableDL v) (by 
               unfold Atom.vars at v_in_dom 
               rw [List.mem_foldl_union] at v_in_dom
@@ -419,7 +413,7 @@ namespace CheckableModel
         rw [Set.subset_def]
         simp
         constructor
-        . rw [← (subs.applyAtom hd).toGroundAtom_isSelf]; rw [g_after_subs]; apply g_active_ungrounded; apply Or.inl; rfl
+        · rw [← (subs.applyAtom hd).toGroundAtom_isSelf]; rw [g_after_subs]; apply g_active_ungrounded; apply Or.inl; rfl
         intro a h
         cases h with 
         | inl h => 
@@ -436,7 +430,7 @@ namespace CheckableModel
           rw [g_after_subs]
           simp 
           exact h.left
-      . intro grounding_works
+      · intro grounding_works
         intro subs subs_mem
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
         rw [m.checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied _ _ (by 
@@ -480,11 +474,9 @@ namespace CheckableModel
           unfold Grounding.applyAtom'
           unfold Substitution.applyAtom
           simp
-          rw [List.map_eq_map_iff]
           intro t t_mem
           unfold Substitution.applyTerm
           unfold Grounding.applyTerm'
-          simp
           cases t with 
           | constant _ => simp
           | variableDL v => simp; cases subs v <;> simp
@@ -504,7 +496,7 @@ namespace CheckableModel
         rw [← Atom.toGroundAtom_isSelf] at h
         simp
         constructor
-        . rw [this]; exact h.left
+        · rw [this]; exact h.left
         intro a a_mem 
         apply h.right
         apply Or.inr
@@ -529,14 +521,14 @@ namespace CheckableModel
       unfold Program.groundProgram
       simp
       constructor
-      . intro h gr r r_mem g eq
+      · intro h gr r r_mem g eq
         specialize h r r_mem
         rw [m.checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)] at h
         unfold PartialGroundRule.isSatisfied at h
         rw [PartialGroundRule.toRule_inv_fromRule] at h
         rw [eq] 
         apply h
-      . intro h r r_mem
+      · intro h r r_mem
         rw [m.checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)]
         unfold PartialGroundRule.isSatisfied
         rw [PartialGroundRule.toRule_inv_fromRule]

@@ -74,9 +74,9 @@ namespace Graph
       rcases h with ⟨r, r_mem, g, r_eq⟩
       exists r
       constructor
-      . exact r_mem
+      · exact r_mem
       constructor
-      . exists g; rw [r_eq]; simp; apply List.ext_get; rw [List.length_map, List.length_attach]; intro n _ _; simp; rw [toTree_root_is_root]
+      · exists g; rw [r_eq]; simp; apply List.ext_get; rw [List.length_map, List.length_attach]; intro n _ _; simp; rw [toTree_root_is_root]
       rw [List.forall_iff_forall_mem]
       simp
       intro tree node node_is_succ tree_comes_from_node
@@ -116,11 +116,11 @@ namespace Graph
     simp
     intro _
     constructor
-    . intro h a a_mem
+    · intro h a a_mem
       rw [← check_local_validity_unit_iff_locallyValid]
       apply h
       exact a_mem
-    . intro h a a_mem
+    · intro h a a_mem
       rw [check_local_validity_unit_iff_locallyValid]
       apply h
       exact a_mem

@@ -29,8 +29,8 @@ section FoldlExcept
           exists ⟨0, by simp⟩ 
           exists ok
           constructor
-          . simp [foldl_except]
-          . rw [eq] at foldl_except_err
+          · simp [foldl_except]
+          · rw [eq] at foldl_except_err
             rw [← foldl_except] at foldl_except_err
             rw [foldl_except_error_stays] at foldl_except_err
             rw [← foldl_except_err]
@@ -43,8 +43,8 @@ section FoldlExcept
           simp [foldl_except]
           simp [foldl_except] at foldl
           constructor
-          . rw [eq]; exact foldl
-          . exact cond 
+          · rw [eq]; exact foldl
+          · exact cond 
 
     lemma foldl_except_all_ok_of_ok (l : List A) (f : B -> A -> Except Err B) : ∀ init, (l.foldl_except f (Except.ok init)).isOk -> 
       ∀ (i : (Fin l.length)), ∃ (res : B), ((l.take i).foldl_except f (Except.ok init)) = Except.ok res ∧ (f res (l.get i)).isOk := by
@@ -76,8 +76,8 @@ section FoldlExcept
               simp at foldl_ok
               exists res
               constructor
-              . exact foldl_ok
-              . have : i = ⟨j+1, by simp; exact j_fin.isLt⟩ := by simp [← eq_i] 
+              · exact foldl_ok
+              · have : i = ⟨j+1, by simp; exact j_fin.isLt⟩ := by simp [← eq_i] 
                 rw [this]
                 simp
                 exact f_ok
@@ -96,15 +96,15 @@ section FoldlExcept
         | cons a as ih => 
           simp [foldl_except]
           apply ih
-          . intro b res a prop_b a_in_as
+          · intro b res a prop_b a_in_as
             apply f_preserves_prop
             exact prop_b
             simp
             apply Or.inr
             exact a_in_as
-          . split
-            . simp
-            . intro step_res
+          · split
+            · simp
+            · intro step_res
               apply f_preserves_prop
               apply init_has_prop
               rfl
@@ -135,7 +135,7 @@ section FoldlExcept
               contradiction
             | ok b => 
               apply as.foldl_except_preserves_prop f (f b a)
-              . intro b res a b_prop a_mem
+              · intro b res a b_prop a_mem
                 apply f_preserves_prop
                 exact b_prop
                 simp
@@ -155,17 +155,17 @@ section FoldlExcept
               exact eq_foldl
           | succ j => 
             apply ih
-            . intro b res a prop_b a_in_as
+            · intro b res a prop_b a_in_as
               apply f_preserves_prop
               exact prop_b
               simp
               apply Or.inr
               exact a_in_as
-            . exists ⟨j, by have isLt := i.isLt; rw [eq] at isLt; simp at isLt; exact isLt⟩
+            · exists ⟨j, by have isLt := i.isLt; rw [eq] at isLt; simp at isLt; exact isLt⟩
               intro b res eq2 eq3
               apply i_prop
-              . simp [eq, foldl_except]; simp [foldl_except] at eq2; exact eq2
-              . have : i = ⟨j+1, by rw [← eq]; exact i.isLt⟩ := by apply Fin.eq_of_val_eq; exact eq 
+              · simp [eq, foldl_except]; simp [foldl_except] at eq2; exact eq2
+              · have : i = ⟨j+1, by rw [← eq]; exact i.isLt⟩ := by apply Fin.eq_of_val_eq; exact eq 
                 rw [this]
                 simp
                 exact eq3
@@ -187,7 +187,7 @@ section FoldlExcept
           apply f_is_superset
           exact a_mem
           exact f_eq
-          . intro init_unwrapped init_unwrapped_eq
+          · intro init_unwrapped init_unwrapped_eq
             injection init_unwrapped_eq with init_unwrapped_eq
             rw [← init_unwrapped_eq]
             apply HashSet.subset_refl
@@ -204,18 +204,18 @@ section FoldlExcept
           intro res eq
           rcases some_contains with ⟨a, a_in_l, a_prop⟩ 
           apply l.foldl_except_preserves_prop' f (Except.ok init) (fun b => b.contains c)
-          . intro b res a c_in_b a_in_l f_ok
+          · intro b res a c_in_b a_in_l f_ok
             apply HashSet.subset_iff.mp
             apply f_is_superset
             exact a_in_l
             exact f_ok
             exact c_in_b
-          . exists ⟨l.indexOf a, by rw [List.indexOf_lt_length]; exact a_in_l⟩
+          · exists ⟨l.indexOf a, by rw [List.indexOf_lt_length]; exact a_in_l⟩
             intro b res _ f_ok
             simp at f_ok
             apply a_prop
             exact f_ok
-          . exact eq
+          · exact eq
   end List
 end FoldlExcept
 
@@ -235,18 +235,18 @@ section Dfs
 
     lemma cond_ok_on_all_canReach_iff (G : Graph A) (a : A) (mem : a ∈ G.vertices) (cond : NodeCondition A) : G.cond_ok_on_all_canReach a cond ↔ (∀ b, b ∈ G.successors a -> G.cond_ok_on_all_canReach b cond) ∧ cond.true a := by
       constructor
-      . intro h
+      · intro h
         unfold cond_ok_on_all_canReach at h
         constructor
-        . intro b succ
+        · intro b succ
           unfold cond_ok_on_all_canReach
           intro c reach
           apply h
           rw [canReach_iff]
           apply Or.inr
           exists b
-        . apply h; apply canReach_refl; apply mem
-      . intro h
+        · apply h; apply canReach_refl; apply mem
+      · intro h
         unfold cond_ok_on_all_canReach
         intro c canReach
         rw [canReach_iff] at canReach
@@ -260,12 +260,12 @@ section Dfs
 
     lemma cond_ok_on_all_iff_ok_on_all_canReach (G : Graph A) (cond : NodeCondition A) : (∀ a, a ∈ G.vertices -> cond.true a) ↔ (∀ a, G.cond_ok_on_all_canReach a cond) := by
       constructor
-      . intro h a b reach
+      · intro h a b reach
         apply h
         unfold canReach at reach
         rcases reach with ⟨w, neq, head, _⟩
         apply w.prop.left; rw [← head]; apply List.head_mem
-      . intro h a mem
+      · intro h a mem
         apply h a
         apply canReach_refl; apply mem
 
@@ -276,18 +276,18 @@ section Dfs
         simp
         exists b
         constructor
-        . intro _
+        · intro _
           unfold Walk.appendSuccessor
           simp
-        . rw [Finset.insert_subset_iff]
+        · rw [Finset.insert_subset_iff]
           constructor
-          . simp
+          · simp
             constructor
-            . apply mem_of_is_succ; apply b_succ
-            . exact b_not_in_walk 
-          . apply Finset.sdiff_subset_sdiff
-            . simp
-            . rw [Finset.subset_iff]
+            · apply mem_of_is_succ; apply b_succ
+            · exact b_not_in_walk 
+          · apply Finset.sdiff_subset_sdiff
+            · simp
+            · rw [Finset.subset_iff]
               intro node mem_walk_a
               simp at mem_walk_a
               unfold Walk.appendSuccessor
@@ -322,14 +322,14 @@ section Dfs
       unfold verify_acyclicity_and_cond_via_dfs_step at h
       simp at h
       split at h
-      . injection h with h; rw [← h]; assumption
+      · injection h with h; rw [← h]; assumption
       split at h 
-      . contradiction
+      · contradiction
       split at h
-      . contradiction
+      · contradiction
       unfold Except.map at h
       split at h
-      . contradiction
+      · contradiction
       simp at h
       rw [← h]
       rw [HashSet.contains_insert]
@@ -342,22 +342,22 @@ section Dfs
       unfold verify_acyclicity_and_cond_via_dfs_step at h
       simp at h
       split at h
-      . injection h with h; rw [h]; apply HashSet.subset_refl
+      · injection h with h; rw [h]; apply HashSet.subset_refl
       split at h 
-      . contradiction
+      · contradiction
       split at h
-      . contradiction
+      · contradiction
       case isFalse succ_not_mem_walk =>
         unfold Except.map at h
         split at h
-        . contradiction
+        · contradiction
         case h_2 eq =>
           injection h with h
           rw [← h]
           simp
 
           apply HashSet.subset_trans
-          . apply (G.successors a).attach.foldl_except_is_superset_of_f_is_superset
+          · apply (G.successors a).attach.foldl_except_is_superset_of_f_is_superset
               (fun b succ => 
                 let walkToSucc : {w : Walk G // w.val.head? = some succ} := ⟨walkToA.val.appendSuccessor succ (by unfold Walk.successors; simp [walkToA.prop]; exact succ.prop), by (unfold Walk.appendSuccessor; simp)⟩
                 verify_acyclicity_and_cond_via_dfs_step G cond walkToSucc b
@@ -370,7 +370,7 @@ section Dfs
             apply dfs_step_extends_verified
             exact eq
             exact eq
-          . rw [HashSet.subset_iff]
+          · rw [HashSet.subset_iff]
             intro c c_contained
             rw [HashSet.contains_insert]
             apply Or.inl 
@@ -396,16 +396,16 @@ section Dfs
       unfold verify_acyclicity_and_cond_via_dfs_step at verifiedAfterIsResult
       simp at verifiedAfterIsResult
       split at verifiedAfterIsResult
-      . injection verifiedAfterIsResult with verifiedAfterIsResult; rw [← verifiedAfterIsResult]; assumption
+      · injection verifiedAfterIsResult with verifiedAfterIsResult; rw [← verifiedAfterIsResult]; assumption
       split at verifiedAfterIsResult
-      . contradiction
+      · contradiction
       case h_2 cond_a =>
         split at verifiedAfterIsResult
-        . contradiction
+        · contradiction
         case isFalse succ_not_mem_walk =>
           unfold Except.map at verifiedAfterIsResult
           split at verifiedAfterIsResult
-          . contradiction
+          · contradiction
           case h_2 foldl_result eq =>
             simp at verifiedAfterIsResult
 
@@ -444,7 +444,7 @@ section Dfs
               rw [← node_contained]
               rw [notReachesCycleIffSuccessorsNotReachCycle]
               rw [cond_ok_on_all_canReach_iff]
-              . unfold NodeCondition.true
+              · unfold NodeCondition.true
                 simp [cond_a]
                 rw [← forall_and]
                 intro c
@@ -452,17 +452,17 @@ section Dfs
                 intro c_succ
                 apply prop_holds_after_foldl 
                 apply (G.successors a).attach.foldl_except_contains_of_some_contains foldl_f verifiedNodes
-                . intro set res succ _
+                · intro set res succ _
                   apply dfs_step_extends_verified
-                . exists ⟨c, c_succ⟩ 
+                · exists ⟨c, c_succ⟩ 
                   constructor
-                  . simp
-                  . intro b res f_ok 
+                  · simp
+                  · intro b res f_ok 
                     apply dfs_step_result_contains_a
                     simp only [foldl_f] at f_ok
                     exact f_ok
-                . exact eq
-              . apply walkToA.val.prop.left
+                · exact eq
+              · apply walkToA.val.prop.left
                 apply List.mem_of_mem_head?
                 rw [walkToA.prop]
                 simp
@@ -479,7 +479,7 @@ section Dfs
           G.cond_ok_on_all_canReach node cond)
       ) : (G.verify_acyclicity_and_cond_via_dfs_step cond walkToA verifiedNodes).isOk ↔ (¬ G.reachesCycle a ∧ G.cond_ok_on_all_canReach a cond) := by 
       constructor
-      . intro check_ok
+      · intro check_ok
         cases eq : G.verify_acyclicity_and_cond_via_dfs_step cond walkToA verifiedNodes with 
         | error _ => rw [eq] at check_ok; simp [Except.isOk, Except.toBool] at check_ok
         | ok verifiedAfter => 
@@ -488,7 +488,7 @@ section Dfs
       unfold verify_acyclicity_and_cond_via_dfs_step
       simp
       split
-      . simp [Except.isOk, Except.toBool]
+      · simp [Except.isOk, Except.toBool]
       split
       case h_1 heq => 
         simp [Except.isOk, Except.toBool]
@@ -523,15 +523,15 @@ section Dfs
 
           exists cycle
           constructor
-          . apply walkToSucc.val.isCycle_of_head_in_tail
+          · apply walkToSucc.val.isCycle_of_head_in_tail
             exact h
-          . exists succ 
+          · exists succ 
             constructor
-            . apply List.mem_of_mem_head?
+            · apply List.mem_of_mem_head?
               simp [cycle]
               unfold Walk.appendSuccessor
               simp
-            . apply canReach_succ
+            · apply canReach_succ
               exact is_succ
         case isFalse succ_not_mem_walk =>
           unfold Except.map
@@ -562,15 +562,15 @@ section Dfs
     
             exists succ
             constructor
-            . simp [succ]; apply List.get_mem
+            · simp [succ]; apply List.get_mem
             intro cond_succ
             let walkToSucc : {w : Walk G // w.val.head? = some succ } := ⟨walkToA.val.appendSuccessor succ (by unfold Walk.successors; simp [walkToA.prop]; simp [succ]; apply List.get_mem), by (unfold Walk.appendSuccessor; simp)⟩
             have : (G.verify_acyclicity_and_cond_via_dfs_step cond walkToSucc res).isOk := by
               have _termination := G.verify_acyclicity_and_cond_via_dfs_step_termination_aux walkToA (b := (G.successors a).get ⟨i, by have isLt := i.isLt; simp at isLt; exact isLt⟩) (by apply List.get_mem) (by simp at succ_not_mem_walk; apply succ_not_mem_walk; exact (by apply List.get_mem))
               rw [dfs_step_semantics]
               constructor
-              . apply succ_not_reach_cycle; simp [succ]; apply List.get_mem
-              . exact cond_succ
+              · apply succ_not_reach_cycle; simp [succ]; apply List.get_mem
+              · exact cond_succ
 
               have foldl_preserves := List.foldl_except_preserves_prop 
                 ((G.successors a).attach.take i) 
@@ -596,12 +596,12 @@ section Dfs
             split at this
             case h_1 heq => 
               simp [walkToSucc, succ] at heq; rw [heq] at foldl_cond; simp at foldl_cond
-            . contradiction
-            . apply walkToA.val.prop.left
+            · contradiction
+            · apply walkToA.val.prop.left
               apply List.mem_of_mem_head?
               rw [walkToA.prop]
               simp
-          . simp [Except.isOk, Except.toBool]
+          · simp [Except.isOk, Except.toBool]
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkToA.val.val)
 
     def verify_acyclicity_and_cond_via_dfs (G : Graph A) (cond : NodeCondition A) : Except String Unit := 
@@ -667,7 +667,7 @@ section Dfs
         cases Decidable.em (a ∈ G.vertices) with 
         | inr a_not_in_G => 
           constructor
-          . unfold reachesCycle
+          · unfold reachesCycle
             intro contra
             rcases contra with ⟨_, _, _, _, reach⟩
             unfold canReach at reach
@@ -676,7 +676,7 @@ section Dfs
             apply w.prop.left
             rw [List.getLast_eq_get]
             apply List.get_mem
-          . unfold cond_ok_on_all_canReach
+          · unfold cond_ok_on_all_canReach
             intro b h
             rw [canReach_iff] at h
             cases h with 
@@ -709,7 +709,7 @@ section Dfs
           
           split at f_ok
           case h_1 heq => simp [f] at heq; simp [walkToA]; simp [← this]; rw [heq]; simp [Except.isOk, Except.toBool]
-          . contradiction
+          · contradiction
 
           have foldl_preserves := List.foldl_except_preserves_prop 
             (G.vertices.attach.take i) 

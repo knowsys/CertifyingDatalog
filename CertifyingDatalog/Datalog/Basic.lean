@@ -104,8 +104,8 @@ section Methods
         use a
         simp at x_mem
         constructor 
-        . exact h 
-        . exact x_mem
+        · exact h 
+        · exact x_mem
       apply subs
 
     def isSafe (r: Rule τ) : Prop := r.head.vars ⊆ List.foldl_union Atom.vars ∅ r.body

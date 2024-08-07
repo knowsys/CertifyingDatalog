@@ -43,14 +43,14 @@ namespace Array
       apply Eq.symm
       apply get_i
 
-  lemma mem_set (as: Array A) (i: Fin as.size) (a d: A): a ∈ as.set i d ↔ a = d ∨ ∃ (j: Fin as.size), j ≠ i ∧ a = as[j] :=
+  lemma mem_set_iff (as: Array A) (i: Fin as.size) (a d: A): a ∈ as.set i d ↔ a = d ∨ ∃ (j: Fin as.size), j ≠ i ∧ a = as[j] :=
   by
     cases as with
     | mk data =>
       unfold set
       rw [mem_def]
       simp
-      rw [List.mem_set]
+      rw [List.mem_set_iff]
       tauto
 
   lemma foldl_union [DecidableEq B] (as: Array A) (f: A → Finset B) (S: Finset B) (b: B):  b ∈ (foldl (fun x y => x ∪ f y) S as) ↔ b ∈ S ∨ ∃ (a: A), a ∈ as ∧ b ∈ f a :=

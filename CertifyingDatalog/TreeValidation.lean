@@ -19,11 +19,6 @@ namespace Rule
     unfold Substitution.applyAtom
     unfold symbolSequence
     simp
-    apply List.ext_get
-    . rw [List.length_map, List.length_map]
-    . intro n h1 h2
-      rw [List.get_map, List.get_map]
-      simp
 
   lemma ne_of_symbolSequence_ne (r1 r2 : Rule τ) (h : r1.symbolSequence ≠ r2.symbolSequence) : ∀ (s : Substitution τ), s.applyRule r1 ≠ r2 := by 
     intro s apply_s
@@ -34,11 +29,6 @@ namespace Rule
     unfold Substitution.applyRule
     unfold Substitution.applyAtom
     simp
-    apply List.ext_get
-    . rw [List.length_map, List.length_map]
-    . intros
-      rw [List.get_map, List.get_map]
-      simp
 
   lemma body_length_eq_of_symbolSequence_eq (r1 r2: Rule τ) (h: r1.symbolSequence = r2.symbolSequence): r1.body.length = r2.body.length := by
     unfold symbolSequence at h
@@ -69,11 +59,11 @@ namespace Program
       simp
       rw [ih]
       by_cases l_symb: l = rule.symbolSequence
-      . simp [l_symb]
+      · simp [l_symb]
         tauto
-      . simp [l_symb]
+      · simp [l_symb]
         constructor
-        . intro h
+        · intro h
           cases h with
           | inl h =>
             left
@@ -82,7 +72,7 @@ namespace Program
             right
             simp [h]
 
-        . intro h
+        · intro h
           cases h with
           | inl h =>
             left
@@ -137,6 +127,7 @@ by
   | inl eq => 
     simp [rP, eq] at symbolSequenceMatch
     apply Substitution.matchRuleUnsuccessfulThenNoSubstitution
+    simp
     apply symbolSequenceMatch
   | inr neq => 
     apply Rule.ne_of_symbolSequence_ne
@@ -167,9 +158,9 @@ namespace ProofTreeSkeleton
       unfold checkValidity
       unfold isValid
       by_cases emptyL: l.isEmpty
-      . rw [if_pos emptyL]
+      · rw [if_pos emptyL]
         by_cases contains_a: kb.db.contains a
-        . rw [if_pos contains_a]
+        · rw [if_pos contains_a]
           constructor
           intro _
           right
@@ -178,7 +169,7 @@ namespace ProofTreeSkeleton
           exact emptyL
           exact contains_a
           simp
-        . rw [if_neg contains_a]
+        · rw [if_neg contains_a]
           split
           simp
           rename_i u checkRuleMatch
@@ -211,14 +202,14 @@ namespace ProofTreeSkeleton
           apply checkRuleMatch'
           simp [contains_a]
 
-      . simp[emptyL]
+      · simp[emptyL]
         split
-        . rename_i checkRuleMatchResult
+        · rename_i checkRuleMatchResult
           rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatchResult
           rcases checkRuleMatchResult with ⟨r,g,rP, rulegrounding⟩
           rw [List.mapExceptUnit_iff]
           constructor
-          . intro h
+          · intro h
             left
             use r
             constructor
@@ -241,7 +232,7 @@ namespace ProofTreeSkeleton
             specialize h t t_mem
             apply h
 
-          . intro h
+          · intro h
             simp
             intro t t_mem
             specialize ih t.height
@@ -261,7 +252,7 @@ namespace ProofTreeSkeleton
             specialize h t t_mem
             apply h
 
-        . rw [List.isEmpty_iff_eq_nil] at emptyL
+        · rw [List.isEmpty_iff_eq_nil] at emptyL
           simp [emptyL]
           rename_i checkRuleMatchResult
           have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
@@ -282,10 +273,10 @@ namespace ProofTreeSkeleton
     unfold checkValidityOfList
     rw [List.mapExceptUnit_iff]
     constructor
-    . intro h t t_l
+    · intro h t t_l
       rw [← checkValidityOkIffIsValid]
       apply h t t_l
-    . intro h t t_l
+    · intro h t t_l
       rw [checkValidityOkIffIsValid]
       apply h t t_l
     
@@ -302,13 +293,13 @@ namespace ProofTreeSkeleton
   lemma checkValidityOfListOkIffAllValidIffAllValidAndSubsetSemantics (l: List (ProofTreeSkeleton τ)) (kb : KnowledgeBase τ) : checkValidityOfList l kb = Except.ok () ↔ (∀ t, t ∈ l -> t.isValid kb) ∧ {ga | ∃ t, t ∈ l ∧ t.elem ga } ⊆ kb.proofTheoreticSemantics :=
   by
     constructor
-    . intro h
+    · intro h
       constructor
-      . rw [checkValidityOfListOkIffAllValid] at h
+      · rw [checkValidityOfListOkIffAllValid] at h
         apply h
-      . apply checkValidityOfImplSubsetSemantics
+      · apply checkValidityOfImplSubsetSemantics
         apply h
-    . intro h
+    · intro h
       rw [checkValidityOfListOkIffAllValid]
       apply h.left
 end ProofTreeSkeleton

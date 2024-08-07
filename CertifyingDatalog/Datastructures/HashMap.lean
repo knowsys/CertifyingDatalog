@@ -1,4 +1,5 @@
 import Mathlib.Data.Bool.AllAny
+import Batteries.Data.HashMap.WF
 
 import CertifyingDatalog.Datastructures.Array
 import CertifyingDatalog.Datastructures.AssocList
@@ -14,7 +15,7 @@ namespace Batteries.HashMap.Imp.Buckets
   lemma mem_update (buckets: Buckets A B) (i : USize) (d: AssocList A B) (h : USize.toNat i < Array.size buckets.1) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (buckets.update i d h).1 ∧ ab ∈ bkt.toList) ↔ ab ∈ d.toList ∨ ∃ (j: Fin buckets.1.size), j.1 ≠ i.toNat ∧ ab ∈ (buckets.1[j]).toList :=
   by
     unfold update
-    simp [Array.mem_set]
+    simp [Array.mem_set_iff]
     constructor
     intro g
     cases g with
@@ -258,7 +259,7 @@ namespace Batteries.HashMap.Imp
         specialize hash_self i.val i_len
         unfold AssocList.All at hash_self
         specialize hash_self ab
-        rw [← l_buckets] at hash_self
+        rw [l_buckets] at hash_self
         specialize hash_self ab_mem
         simp at ab_a
         rw [← ab_a]
@@ -266,7 +267,8 @@ namespace Batteries.HashMap.Imp
 
       simp [← i_val, ← l_buckets]
       simp at ab_a
-      rw [← ab_a]
+      simp [← ab_a]
+      rw [l_buckets]
       apply ab_mem
 
   lemma foldl_reinsertAux (source:(AssocList A B)) (target: Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (List.foldl (fun d x => reinsertAux d x.1 x.2) target (AssocList.toList source)).1 ∧ ab ∈ bkt.toList ) ↔ (∃ (bkt: AssocList A B),  bkt ∈ target.1 ∧ ab ∈ bkt.toList) ∨ ab ∈ source.toList := by
@@ -423,10 +425,10 @@ namespace Batteries.HashMap.Imp
 
         · rw [bkt_j]
           simp_rw [k_j]
-          have h': source.size = Array.size (Array.set source { val := i, isLt := h_i } AssocList.nil) := by
-            simp
-          simp_rw [h']
-          exact k.isLt
+        have h': source.size = Array.size (Array.set source { val := i, isLt := h_i } AssocList.nil) := by
+          simp
+        simp_rw [h']
+        exact k.isLt
         exact ab_mem
 
   lemma expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:A) (b:B): (∃ (bkt: AssocList A B),  bkt ∈ buckets.1 ∧ (a,b) ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B),  bkt ∈ (expand size buckets).buckets.1 ∧  (a,b) ∈ bkt.toList := by
@@ -455,7 +457,6 @@ namespace Batteries.HashMap.Imp
       simp at h
       rw [Array.mem_def] at h
       simp at h
-      rw [List.mem_replicate] at h
       rcases h with ⟨_, empty⟩
       rw [empty] at ab_mem
       unfold AssocList.toList at ab_mem
@@ -874,11 +875,11 @@ namespace Batteries.HashMap
       rw [contains_iff] 
       
       constructor
-      . intro h 
+      · intro h 
         cases h with | intro b hb => 
           apply Imp.Buckets.in_toList_means_in_list_at_index
           apply hb
-      . intro h 
+      · intro h 
         unfold keys' at h
         unfold Imp.keys' at h
         simp at h

@@ -8,7 +8,7 @@ import CertifyingDatalog.Datastructures.List
 import CertifyingDatalog.Datastructures.Tree
 
 namespace Nat
-  lemma pred_lt_of_lt (n m : ℕ) (h : n < m) : n.pred < m := by
+  lemma pred_lt_of_lt' (n m : ℕ) (h : n < m) : n.pred < m := by
     cases n with
     | zero =>
       unfold Nat.pred

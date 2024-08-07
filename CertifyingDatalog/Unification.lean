@@ -202,14 +202,14 @@ section AtomMatching
             simp [eq]
           simp
           constructor
-          . unfold matchTermList at h
+          · unfold matchTermList at h
             cases eq : s.matchTerm pair.fst pair.snd with 
             | none => simp [eq] at h
             | some s' =>
               apply subset_applyTerm_eq _ matchTermResult
               simp_rw [this]
               apply matchTermListSubset
-          . simp_rw [this]
+          · simp_rw [this]
             simp [List.map_map] at ih
             apply ih
 
@@ -254,7 +254,7 @@ section AtomMatching
           apply apply_t.left
         | some s'' => 
           simp [matchTermList, eq] at h
-          simp_rw [List.map_map] at ih
+          simp [List.map_map] at ih
           apply ih s'' h s' _ apply_t.right
           
           have isSome : (s.matchTerm pair.fst pair.snd).isSome := by simp [eq]
@@ -347,6 +347,7 @@ section AtomMatching
       simp [symb_eq] at h
       let term_list : List ((Term τ) × τ.constants) := a.atom_terms.zip ga.atom_terms
       apply s.matchTermListUnsuccessfulThenNoSubstitution term_list
+      simp
       apply h
       apply subset
       have fst : a.atom_terms = term_list.map Prod.fst := by 
@@ -404,14 +405,14 @@ section RuleMatching
             simp [eq]
           simp
           constructor
-          . unfold matchAtomList at h
+          · unfold matchAtomList at h
             cases eq : s.matchAtom pair.fst pair.snd with 
             | none => simp [eq] at h
             | some s' =>
               apply subset_applyAtom_eq _ matchAtomResult
               simp_rw [this]
               apply matchAtomListSubset
-          . simp_rw [this]
+          · simp_rw [this]
             simp [List.map_map] at ih
             apply ih
 
@@ -432,7 +433,7 @@ section RuleMatching
           apply apply_t.left
         | some s'' => 
           simp [matchAtomList, eq] at h
-          simp_rw [List.map_map] at ih
+          simp [List.map_map] at ih
           apply ih s'' h s' _ apply_t.right
           
           have isSome : (s.matchAtom pair.fst pair.snd).isSome := by simp [eq]
@@ -462,15 +463,15 @@ section RuleMatching
         unfold GroundRule.toRule
         simp
         constructor
-        . apply s.subset_applyAtom_eq
-          . unfold matchRule
+        · apply s.subset_applyAtom_eq
+          · unfold matchRule
             simp [eq, body_eq_len]
             apply matchAtomListSubset
-          . have : (empty.matchAtom r.head gr.head).isSome := by simp [eq]
+          · have : (empty.matchAtom r.head gr.head).isSome := by simp [eq]
             have : s = (empty.matchAtom r.head gr.head).get this := by simp [eq]
             rw [this]
             apply matchAtomYieldsSubstitution
-        . simp [matchRule, eq, body_eq_len]
+        · simp [matchRule, eq, body_eq_len]
           simp [matchRule, eq, body_eq_len] at h
           let atom_list := r.body.zip gr.body
           have match_a_list := s.matchAtomListYieldsSubstitution atom_list h
@@ -505,17 +506,17 @@ section RuleMatching
           have : (r.body.map s.applyAtom).length = (gr.body.map GroundAtom.toAtom).length := by rw [contra.right]
           rw [List.length_map, List.length_map] at this
           exact this
-        simp [eq, body_eq_len] at h
+        simp only [eq, body_eq_len] at h
         let atom_list := r.body.zip gr.body
         apply s'.matchAtomListUnsuccessfulThenNoSubstitution atom_list h
-        . have isSome : (empty.matchAtom r.head gr.head).isSome := by simp [eq]
+        · have isSome : (empty.matchAtom r.head gr.head).isSome := by simp [eq]
           have : s' = (empty.matchAtom r.head gr.head).get isSome := by simp [eq]
           rw [this]
           apply matchAtomIsMinimal
           constructor
           apply empty_isMinimal
           apply contra.left
-        . have fst : r.body = atom_list.map Prod.fst := by 
+        · have fst : r.body = atom_list.map Prod.fst := by 
             rw [List.map_fst_zip]
             apply Nat.le_of_eq
             rw [body_eq_len]

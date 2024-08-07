@@ -49,12 +49,12 @@ namespace ProofTree
           use r 
           use g
           constructor
-          . exact r_in_prog
+          · exact r_in_prog
           constructor
-          . unfold ProofTree.root at r_g_apply
+          · unfold ProofTree.root at r_g_apply
             rw [List.map_map]
             apply r_g_apply
-          . rw [List.forall_iff_forall_mem]
+          · rw [List.forall_iff_forall_mem]
             simp
             intro st _
             exact st.isValid
@@ -133,8 +133,8 @@ namespace KnowledgeBase
         exists rTree::rsTrees
         simp
         constructor
-        . exact h_rTree
-        . exact h_rsTrees
+        · exact h_rTree
+        · exact h_rsTrees
 
     rcases (h subs) with ⟨l, l_body⟩
     use ProofTree.node r.head l (by 
@@ -165,14 +165,14 @@ namespace KnowledgeBase
   theorem proofTheoreticSemanticsIsModel (kb: KnowledgeBase τ) : kb.proofTheoreticSemantics.models kb := by
     unfold Interpretation.models
     constructor
-    . intro r rGP
+    · intro r rGP
       unfold Interpretation.satisfiesRule
       intro h
       apply proofTreeForRule 
       apply rGP
       apply h
     
-    . intro a mem
+    · intro a mem
       apply dbElementsHaveProofTrees
       apply mem
 
@@ -292,9 +292,9 @@ namespace KnowledgeBase
 
   theorem modelAndProofTreeSemanticsEquivalent (kb: KnowledgeBase τ) : kb.proofTheoreticSemantics = kb.modelTheoreticSemantics := by
     apply Set.Subset.antisymm
-    . rw [Set.subset_def]
+    · rw [Set.subset_def]
       apply proofTreeAtomsInEveryModel
-    . apply modelTheoreticSemanticsSubsetOfEachModel
+    · apply modelTheoreticSemanticsSubsetOfEachModel
       apply proofTheoreticSemanticsIsModel
 end KnowledgeBase
 

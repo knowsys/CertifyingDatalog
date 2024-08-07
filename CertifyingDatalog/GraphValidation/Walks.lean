@@ -2,7 +2,7 @@ import CertifyingDatalog.GraphValidation.Basic
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 
-def List.isWalk (l : List A) (G: Graph A) : Prop := (∀ (a:A), a ∈ l → a ∈ G.vertices) ∧ ∀ (i: ℕ), i > 0 → ∀ (g: i < l.length), l.get (Fin.mk i.pred (Nat.pred_lt_of_lt i l.length g)) ∈ G.successors (l.get (Fin.mk i g))
+def List.isWalk (l : List A) (G: Graph A) : Prop := (∀ (a:A), a ∈ l → a ∈ G.vertices) ∧ ∀ i > 0, ∀ (g: i < l.length), l[i.pred]'(Nat.pred_lt_of_lt' i l.length g) ∈ G.successors l[i]
 
 def Walk (G : Graph A) := {l : List A // l.isWalk G}
 
@@ -10,9 +10,9 @@ namespace Walk
   def singleton (G : Graph A) (a:A) (mem: a ∈ G.vertices) : Walk G := ⟨[a], by 
     unfold List.isWalk
     constructor
-    . simp
+    · simp
       apply mem
-    . simp
+    · simp
       intro i i_gt_0 i_0
       simp [i_0] at i_gt_0
   ⟩  
@@ -83,7 +83,7 @@ namespace Walk
     unfold List.isWalk at walk_prop
     rcases walk_prop with ⟨subs,connected⟩
     constructor
-    . intro b
+    · intro b
       simp
       intro h
       cases h with
@@ -100,12 +100,12 @@ namespace Walk
         apply subs
         simp
         apply h
-    . intro i i_zero i_len
+    · intro i i_zero i_len
       cases i with
       | zero =>
         simp at i_zero
       | succ j =>
-        rw [List.get_cons_succ]
+        rw [List.getElem_cons_succ]
         cases j with
         | zero =>
           simp
@@ -116,7 +116,7 @@ namespace Walk
             simp [eq] at is_succ
             rw [List.head?_eq_head] at eq
             injection eq with eq
-            rw [List.get_mk_zero]
+            rw [List.getElem_zero]
             rw [eq]
             apply is_succ
         | succ k =>
@@ -128,10 +128,10 @@ namespace Walk
           apply connected
   ⟩ 
 
-  def prependPredecessor {G: Graph A} (walk: Walk G) (pred : A) (is_pred : pred ∈ walk.predecessors) : Walk G := ⟨walk.val++[pred], by 
+  def prependPredecessor {G: Graph A} (walk: Walk G) (pred : A) (is_pred : pred ∈ walk.predecessors) : Walk G := ⟨walk.val++[pred], by
     unfold List.isWalk
     constructor
-    . intro a a_elem
+    · intro a a_elem
       simp at a_elem
       cases a_elem with 
       | inl h => apply walk.prop.left; exact h
@@ -144,12 +144,13 @@ namespace Walk
           rw [h]
           apply List.mem_of_mem_filter 
           apply is_pred
-    . intro i i_zero i_len
+    · intro i i_zero i_len
       have prop := walk.prop.right
       cases Nat.lt_or_eq_of_le (Nat.le_pred_of_lt i_len) with 
       | inl i_lt => 
-        rw [List.get_append]
-        rw [List.get_append]
+        simp
+        rw [List.getElem_append]
+        rw [List.getElem_append]
         apply prop
         apply i_zero
         simp at i_lt
@@ -164,9 +165,9 @@ namespace Walk
           rw [List.mem_filter] at is_pred
           have ⟨_, last_succ_of_pred⟩ := is_pred 
           simp at last_succ_of_pred
-          rw [List.get_append]
-          rw [List.get_append_right]
           simp
+          rw [List.getElem_append]
+          rw [List.getElem_append_right]
           have : walk.val ≠ [] := by 
             intro contra
             simp [contra] at eq
@@ -174,6 +175,7 @@ namespace Walk
           injection eq with eq
           rw [List.getLast_eq_get] at eq
           simp [i_eq]
+          simp at eq
           rw [eq]
           apply last_succ_of_pred
           rw [← i_eq]
@@ -182,7 +184,7 @@ namespace Walk
           rw [i_eq]
           simp
           rw [← i_eq]
-          apply Nat.pred_lt'
+          apply Nat.pred_lt_of_lt
           apply i_zero
   ⟩ 
 
@@ -197,11 +199,11 @@ namespace Walk
     unfold List.isWalk at *
     rcases prop with ⟨subs, conn⟩
     constructor
-    . intro a a_mem
+    · intro a a_mem
       apply subs
       apply List.mem_of_mem_tail
       exact a_mem
-    . intro i i_gt_0 i_lt_len
+    · intro i i_gt_0 i_lt_len
       specialize conn (Nat.succ i)
       simp at conn
       simp at i_lt_len
@@ -210,13 +212,13 @@ namespace Walk
         apply i_gt_0
         apply Nat.lt_of_lt_pred
         apply i_lt_len
-      rw [walk.val.tail_get this ⟨i.pred, _⟩]
-      rw [walk.val.tail_get this ⟨i, _⟩]
+      rw [walk.val.tail_getElem this i.pred]
+      rw [walk.val.tail_getElem this i]
       simp [Nat.sub_one_add_one_eq_of_pos i_gt_0]
       apply conn
       apply i_lt_len
       apply lt_trans
-      apply Nat.pred_lt'
+      apply Nat.pred_lt_of_lt
       apply i_gt_0
       apply i_lt_len
   ⟩  
@@ -227,10 +229,10 @@ namespace Walk
     simp
     have : 0 < w.val.length := by apply Decidable.by_contra; intro contra; simp at contra; rw [contra] at neq; simp at neq
     have this2 : 0 < w.tail.val.length := by apply Decidable.by_contra; intro contra; simp at contra; unfold tail at contra; simp at contra; rw [contra] at neq; simp at neq
-    rw [← List.get_mk_zero this]
-    rw [← List.get_mk_zero this2]
+    rw [← List.getElem_zero this]
+    rw [← List.getElem_zero this2]
     unfold Walk.tail
-    rw [List.tail_get w.val this ⟨0, _⟩]
+    rw [List.tail_getElem w.val this 0]
     apply w.prop.right 1 (by simp)
     rw [← List.length_tail]
     unfold tail at this2
@@ -241,13 +243,13 @@ namespace Walk
     unfold List.isWalk at *
     rcases prop with ⟨subs, conn⟩
     constructor
-    . intro a a_in_take
+    · intro a a_in_take
       apply subs
       apply List.mem_of_mem_take
       exact a_in_take
-    . intro i i_gt_0 i_lt_len
-      rw [List.get_take'] 
-      rw [List.get_take'] 
+    · intro i i_gt_0 i_lt_len
+      rw [List.getElem_take'] 
+      rw [List.getElem_take'] 
       apply conn
       apply i_gt_0
   ⟩ 
@@ -276,9 +278,9 @@ namespace Walk
 
   lemma takeUntil_getLast_is_target {G : Graph A} (w : Walk G) (a : A) (mem : a ∈ w.val) : (w.takeUntil a).val.getLast (by apply takeUnil_ne_of_ne; intro contra; rw [contra] at mem; simp at mem) = a := by 
     unfold takeUntil
-    rw [List.getLast_eq_get]
+    rw [List.getLast_eq_get, List.get_eq_getElem]
     unfold Walk.take
-    rw [List.get_take'] 
+    rw [List.getElem_take'] 
     simp [List.length_take_of_le (by 
       show w.val.indexOf a + 1 ≤ w.val.length
       apply Nat.succ_le_of_lt
@@ -291,16 +293,16 @@ namespace Walk
     have ⟨subs2, conn2⟩ := w2.prop
     unfold List.isWalk
     constructor
-    . intro a a_in_append
+    · intro a a_in_append
       simp at a_in_append
       cases a_in_append
-      . apply subs2; assumption
-      . apply subs1; assumption
-    . intro i i_gt_0 i_lt_len
+      · apply subs2; assumption
+      · apply subs1; assumption
+    · intro i i_gt_0 i_lt_len
       cases Decidable.em (i < w2.val.length) with 
       | inl w2_case =>
-        rw [List.get_append_left _ _ w2_case]
-        rw [List.get_append_left _ _ (by apply lt_trans; apply Nat.pred_lt'; apply i_gt_0; exact w2_case)]
+        rw [List.getElem_append_left _ _ w2_case]
+        rw [List.getElem_append_left _ _ (by apply lt_trans; apply Nat.pred_lt_of_lt; apply i_gt_0; exact w2_case)]
         apply conn2
         exact i_gt_0
       | inr w1_case =>
@@ -312,8 +314,8 @@ namespace Walk
           simp [j]
         cases eq : j with 
         | succ k => 
-          rw [List.get_append_right _ _ w1_case]
-          rw [List.get_append_right _ _ (by 
+          rw [List.getElem_append_right _ _ w1_case]
+          rw [List.getElem_append_right _ _ (by 
             apply Nat.not_lt_of_ge
             rw [i_j_eq]
             rw [eq]
@@ -326,7 +328,7 @@ namespace Walk
           simp
           rw [Nat.sub_lt_iff_lt_add]
           rw [List.length_append] at i_lt_len
-          apply lt_trans; apply Nat.pred_lt'; apply i_gt_0; apply i_lt_len
+          apply lt_trans; apply Nat.pred_lt_of_lt; apply i_gt_0; apply i_lt_len
           rw [i_j_eq]
           rw [eq]
           simp
@@ -340,24 +342,20 @@ namespace Walk
           | inl w1_len_gt_one =>
             simp [eq] at i_j_eq
             simp [i_j_eq]
-            rw [List.get_append_left _ _ (by rw [← Nat.pred_eq_sub_one]; apply Nat.pred_lt'; rw [← i_j_eq]; apply i_gt_0)]
-            rw [List.get_append_right _ _ (by simp)]
+            rw [@List.getElem_append_left _ _ w2.val w1.val.tail (by rw [← Nat.pred_eq_sub_one]; apply Nat.pred_lt_of_lt; rw [← i_j_eq]; apply i_gt_0) (by  rw [← i_j_eq]; apply lt_trans; apply Nat.pred_lt_self; apply i_gt_0; apply i_lt_len)]
+            rw [@List.getElem_append_right _ _ w2.val w1.val.tail (by simp) (by rw [← i_j_eq]; exact i_lt_len) (by simp; apply Nat.lt_pred_of_succ_lt; apply w1_len_gt_one)]
             simp
-            rw [← List.getLast_eq_get]
+            rw [List.getLast_eq_get, List.get_eq_getElem] at h
             rw [h]
-            rw [← List.get_mk_zero]
+            rw [← List.getElem_zero]
             have ⟨_, w1_prop⟩ := w1.prop
             have : 0 < w1.val.length - 1 := by 
               apply Nat.lt_sub_of_add_lt
               simp
               apply w1_len_gt_one
-            rw [List.tail_get w1.val (by cases eq2 : w1.val; simp [eq2] at w1_neq; simp) ⟨0, this⟩]
+            rw [List.tail_getElem w1.val (by cases eq2 : w1.val; simp [eq2] at w1_neq; simp) 0 this]
             specialize w1_prop 1 (by simp) (by apply w1_len_gt_one)
             apply w1_prop
-            simp
-            apply Nat.lt_sub_of_add_lt
-            simp
-            apply w1_len_gt_one
           | inr w1_len_leq_one => 
             have : w1.val.tail = [] := by 
               simp at w1_len_leq_one
@@ -366,7 +364,7 @@ namespace Walk
               | nil => simp
               | cons head tail => simp; rw [eq2] at w1_len_leq_one; simp at w1_len_leq_one; exact w1_len_leq_one
             have : w2.val ++ w1.val.tail = w2.val := by rw [this]; simp
-            have : ∀ i, (w2.val ++ w1.val.tail).get i = w2.val.get ⟨i, (by have isLt := i.isLt; simp [this] at isLt; exact isLt)⟩ := by intro i; apply List.get_of_eq; exact this
+            have : ∀ (i) (g : i < (w2.val ++ w1.val.tail).length), (w2.val ++ w1.val.tail)[i] = w2.val[i]'(by simp [this] at g; exact g) := by intro i; apply List.getElem_of_eq; exact this
             rw [this]
             rw [this]
             apply conn2
@@ -400,12 +398,12 @@ namespace Walk
         apply List.length_pos_of_ne_nil
         apply takeUnil_ne_of_ne
         intro contra; rw [contra] at h; simp at h
-      have get_cons := @List.get_cons_succ _ ((w.tail.takeUntil (w.val.head neq)).val.length - 1) (w.val.head neq) (w.tail.takeUntil (w.val.head neq)).val (by rw [this]; simp)
+      have get_cons := @List.getElem_cons_succ _ (w.val.head neq) (w.tail.takeUntil (w.val.head neq)).val ((w.tail.takeUntil (w.val.head neq)).val.length - 1) (by rw [this]; simp)
       simp only [this] at get_cons
       rw [get_cons]
-      rw [← List.getLast_eq_get]
-      rw [takeUntil_getLast_is_target]
-      exact h
+      have applied_takeUntil_getLast_is_target := w.tail.takeUntil_getLast_is_target (w.val.head neq) h
+      rw [List.getLast_eq_get, List.get_eq_getElem] at applied_takeUntil_getLast_is_target
+      rw [applied_takeUntil_getLast_is_target]
 end Walk
 
 namespace Graph
@@ -441,10 +439,10 @@ namespace Graph
       exact w_b_c_neq
     )
     constructor
-    . unfold Walk.concat
+    · unfold Walk.concat
       rw [List.head_append _ _ w_b_c_neq]
       exact w_head_c
-    . cases Decidable.em (w_a_b.val.tail = []) with
+    · cases Decidable.em (w_a_b.val.tail = []) with
       | inl eq =>
         have : w_a_b = Walk.singleton G a (by apply Walk.isSubsetOfVertices; rw [← w_last_a]; apply List.getLast_mem) := by 
           unfold Walk.singleton
@@ -481,22 +479,22 @@ namespace Graph
       simp
       rw [List.mem_filter]
       constructor
-      . apply mem_of_has_succ
+      · apply mem_of_has_succ
         apply b_succ
-      . simp
+      · simp
         rw [get_b]
         exact b_succ
     )
     unfold Walk.prependPredecessor
     exists (by simp)
     constructor
-    . rw [← get_c]
+    · rw [← get_c]
       rw [List.head_append]
-    . simp
+    · simp
 
   lemma canReach_iff (G : Graph A) (a c : A) : G.canReach a c ↔ (a ∈ G.vertices ∧ a = c) ∨ ∃ b, b ∈ G.successors a ∧ G.canReach b c := by 
     constructor
-    . intro h 
+    · intro h 
       unfold canReach at h
       rcases h with ⟨w, neq, head, last⟩
       cases eq : w.val with 
@@ -508,37 +506,37 @@ namespace Graph
           simp [eq] at head
           simp [eq] at last
           constructor
-          . apply w.prop.left
+          · apply w.prop.left
             rw [eq]
             rw [last]
             simp
-          . rw [← head]
+          · rw [← head]
             rw [last]
         | cons _ _ => 
           apply Or.inr
           have : 0 < w.val.length - 1 := by rw [eq]; simp
-          exists w.val.get ⟨w.val.length.pred.pred, by apply Nat.lt_of_lt_of_le; apply Nat.pred_lt'; apply this; apply Nat.pred_le⟩ 
+          exists w.val.get ⟨w.val.length.pred.pred, by apply Nat.lt_of_lt_of_le; apply Nat.pred_lt_of_lt; apply this; apply Nat.pred_le⟩ 
           constructor
-          . rw [← last]; rw [List.getLast_eq_get]; apply w.prop.right; simp; exact this
-          . unfold canReach
+          · rw [← last]; rw [List.getLast_eq_get]; apply w.prop.right; simp; exact this
+          · unfold canReach
             exists w.take (w.val.length - 1)
             exists (by intro contra; unfold Walk.take at contra; rw [List.take_eq_nil_iff] at contra; cases contra; contradiction; case inr h => rw [h] at this; contradiction)
             constructor
-            . unfold Walk.take
+            · unfold Walk.take
               rw [List.take_head w.val neq _ this]
               exact head
-            . unfold Walk.take
-              rw [List.take_getLast w.val neq ⟨w.val.length - 1, by apply Nat.lt_succ_of_lt; apply Nat.pred_lt'; apply Nat.lt_of_lt_pred; apply this⟩ this]
+            · unfold Walk.take
+              rw [List.take_getLast w.val neq ⟨w.val.length - 1, by apply Nat.lt_succ_of_lt; apply Nat.pred_lt_of_lt; apply Nat.lt_of_lt_pred; apply this⟩ this]
               simp
-    . intro h 
+    · intro h 
       cases h with 
       | inl h => rw [← h.right]; apply canReach_refl; apply h.left
       | inr h => 
         rcases h with ⟨b, succ, reach⟩ 
         apply canReach_trans
         constructor
-        . apply canReach_succ; apply succ
-        . exact reach
+        · apply canReach_succ; apply succ
+        · exact reach
 
   -- TODO: it should be possible to make this computable
   noncomputable def reachableFrom (G: Graph A) (a : A) : Finset A := Finset.filter_nc (fun b => G.canReach a b) G.vertices.toFinset
@@ -561,10 +559,10 @@ namespace Graph
     intro ⟨reach, mem⟩
     rw [Finset.mem_filter_nc]
     constructor
-    . apply G.canReachWhenCanReachFromSucc a c b b_succ reach
-    . exact mem
+    · apply G.canReachWhenCanReachFromSucc a c b b_succ reach
+    · exact mem
   
-  lemma succCannotReachSelfIfAcyclic (G : Graph A) (acyclic : G.isAcyclic) (a : A) : ∀ b, b ∈ G.successors a -> ¬ G.canReach b a := by 
+  lemma succCannotReachSelfIfAcyclic (G : Graph A) (acyclic : G.isAcyclic) (a : A) : ∀ b, b ∈ G.successors a -> ¬ G.canReach b a := by
     intro b b_succ contra
     unfold canReach at contra
     rcases contra with ⟨w, neq, get_c, get_b⟩
@@ -577,9 +575,9 @@ namespace Graph
         simp
         rw [List.mem_filter]
         constructor
-        . apply mem_of_has_succ
+        · apply mem_of_has_succ
           apply b_succ
-        . simp
+        · simp
           rw [get_b]
           exact b_succ
       ))
@@ -593,14 +591,14 @@ namespace Graph
       case isFalse h =>
         simp
         unfold Walk.prependPredecessor
-        rw [List.get_append_left]
-        rw [List.get_append_right]
+        rw [List.getElem_append_left]
+        rw [List.getElem_append_right]
         simp
         rw [← get_c]
         apply List.get_mk_zero
         simp [eq]
         simp
-        simp
+        simp [eq]
 
   lemma selfNotReachableFromSuccIfAcyclic (G : Graph A) (acyclic : G.isAcyclic) (a : A) : ∀ b, b ∈ G.successors a -> ¬ a ∈ G.reachableFrom b := by 
     intro b b_succ contra
@@ -613,8 +611,8 @@ namespace Graph
     intro b b_succ
     rw [Finset.ssubset_def]
     constructor
-    . apply G.reachableFromSupersetReachableFromSucc a b b_succ
-    . intro contra
+    · apply G.reachableFromSupersetReachableFromSucc a b b_succ
+    · intro contra
       rw [Finset.subset_iff] at contra
       apply G.selfNotReachableFromSuccIfAcyclic acyclic a b b_succ
       apply contra
@@ -627,21 +625,21 @@ namespace Graph
   lemma notReachesCycleIffSuccessorsNotReachCycle (G: Graph A) (a : A) : ¬ G.reachesCycle a ↔ ∀ (b : A), b ∈ G.successors a → ¬ G.reachesCycle b :=
   by
     constructor
-    . intro a_not_reach b b_succ b_reach
+    · intro a_not_reach b b_succ b_reach
       apply a_not_reach
       unfold reachesCycle at *
       rcases b_reach with ⟨w, w_cycle, b', b'_in_w, b_reach_b'⟩
       exists w
       constructor
-      . exact w_cycle
-      . exists b'
+      · exact w_cycle
+      · exists b'
         constructor
-        . exact b'_in_w
-        . apply canReach_trans
+        · exact b'_in_w
+        · apply canReach_trans
           constructor
-          . apply canReach_succ; apply b_succ
-          . exact b_reach_b'
-    . intro h contra
+          · apply canReach_succ; apply b_succ
+          · exact b_reach_b'
+    · intro h contra
       unfold reachesCycle at contra
       rcases contra with ⟨cyc, cyc_isCycle, b, b_mem_cyc, reach⟩ 
       unfold canReach at reach
@@ -655,11 +653,11 @@ namespace Graph
         unfold reachesCycle
         exists cyc
         constructor
-        . exact cyc_isCycle
-        . exists next_after_next
+        · exact cyc_isCycle
+        · exists next_after_next
           constructor
-          . apply Walk.nextInCycleIsInCycle
-          . apply canReach_succ; apply Walk.nextInCycleIsSucc; apply Walk.nextInCycleIsInCycle
+          · apply Walk.nextInCycleIsInCycle
+          · apply canReach_succ; apply Walk.nextInCycleIsSucc; apply Walk.nextInCycleIsInCycle
       | inr nmem =>
         have : 0 < w.val.length - 1 := by
           apply Decidable.by_contra
@@ -678,28 +676,28 @@ namespace Graph
             rw [w_a] at w_b
             apply nmem
             apply w_b
-        have this2 : w.val.length - 1 < w.val.length := by apply Nat.pred_lt'; apply Nat.lt_of_lt_pred; apply this 
+        have this2 : w.val.length - 1 < w.val.length := by apply Nat.pred_lt_of_lt; apply Nat.lt_of_lt_pred; apply this 
         apply h (w.val.get ⟨w.val.length - 2, by apply Nat.lt_of_le_of_lt; apply Nat.pred_le; exact this2⟩)
         have prop := w.prop.right (w.val.length - 1) (by apply this) this2
-        rw [List.getLast_eq_get] at w_a
+        rw [List.getLast_eq_get, List.get_eq_getElem] at w_a
         rw [w_a] at prop
         apply prop
         unfold reachesCycle
         exists cyc
         constructor
-        . exact cyc_isCycle
-        . exists b
+        · exact cyc_isCycle
+        · exists b
           constructor
-          . exact b_mem_cyc
-          . unfold canReach
+          · exact b_mem_cyc
+          · unfold canReach
             exists w.take (w.val.length - 1)
             exists (by unfold Walk.take; intro contra; rw [List.take_eq_nil_iff] at contra; cases contra; contradiction; case inr h => rw [h] at this; contradiction)
             constructor
-            . unfold Walk.take
+            · unfold Walk.take
               rw [List.take_head w.val w_neq]
               apply w_b
               exact this
-            . unfold Walk.take
+            · unfold Walk.take
               rw [List.take_getLast w.val w_neq ⟨w.val.length - 1, by apply Nat.lt_succ_of_lt; exact this2⟩]
               simp
               have this3 : w.val.length - 1 - 1 = w.val.length - 2 := by tauto
@@ -709,13 +707,13 @@ namespace Graph
 
   lemma acyclicIffAllNotReachCycle (G: Graph A): isAcyclic G ↔ ∀ (a:A), ¬ G.reachesCycle a := by 
     constructor
-    . intro acyclic a contra
+    · intro acyclic a contra
       unfold reachesCycle at contra
       unfold isAcyclic at acyclic
       rcases contra with ⟨_, cyc, _⟩
       apply acyclic
       apply cyc
-    . intro h
+    · intro h
       unfold isAcyclic
       intro w cyc
       let head := (w.val.head (by intro contra; unfold Walk.isCycle at cyc; simp [contra] at cyc))
@@ -723,10 +721,10 @@ namespace Graph
       unfold reachesCycle
       exists w
       constructor
-      . exact cyc
-      . exists head
+      · exact cyc
+      · exists head
         have : head ∈ w.val := by apply List.head_mem
         constructor
-        . exact this
-        . apply canReach_refl; apply w.prop.left; exact this
+        · exact this
+        · apply canReach_refl; apply w.prop.left; exact this
 end Graph

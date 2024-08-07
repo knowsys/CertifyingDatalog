@@ -82,8 +82,8 @@ namespace List
     | cons hd tl ih =>
       simp
       apply Finset.Subset.trans (s₂ := init ∪ f hd)
-      . apply Finset.subset_union_left
-      . apply ih
+      · apply Finset.subset_union_left
+      · apply ih
 
   lemma subset_result_foldl_union {A : Type u} {B : Type v} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (a:A) (mem: a ∈ l): f a ⊆ foldl_union f init l := by
     unfold foldl_union
@@ -96,8 +96,8 @@ namespace List
       | inl a_hd =>
         rw [a_hd]
         apply Finset.Subset.trans (s₂ := init ∪ f hd)
-        . apply Finset.subset_union_right
-        . apply subset_foldl_union
+        · apply Finset.subset_union_right
+        · apply subset_foldl_union
       | inr a_tl =>
         apply ih
         exact a_tl
@@ -185,7 +185,7 @@ namespace List
       aesop
       aesop
 
-  lemma mem_set (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a = d ∨ ∃ (j: Fin l.length), j ≠ i ∧ a = l[j] := by
+  lemma mem_set_iff (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a = d ∨ ∃ (j: Fin l.length), j ≠ i ∧ a = l[j] := by
     simp
     induction l with
     | nil =>
@@ -218,6 +218,8 @@ namespace List
             simp
           rw [← get_a]
           rw [← List.get_cons_succ (a:=hd)]
+          simp
+          exact isLt_k
 
         intro h
         cases h with
@@ -240,9 +242,9 @@ namespace List
               rw [Fin.ext_iff]
               simp
               apply hj
-            rw [hj', List.get_cons_succ]
+            rw [hj'] 
+            simp
       | succ m =>
-        rw [List.set_succ]
         simp
         have isLt_m: m < tl.length := by
           rw [← Nat.succ_lt_succ_iff, Nat.succ_eq_add_one, ← hi]
@@ -276,7 +278,6 @@ namespace List
             simp at j_i
             rw [Ne.eq_def]
             apply j_i
-
             simp
             apply get_j
 
@@ -293,7 +294,8 @@ namespace List
             have j_zero: j = 0 := by
               rw [Fin.ext_iff]
               apply hj
-            rw [j_zero, List.get_cons_zero]
+            rw [j_zero]
+            simp
           | succ n =>
             right
             right
@@ -306,10 +308,7 @@ namespace List
             rw [← Ne.eq_def, ← Nat.succ_ne_succ, Nat.succ_eq_add_one, ← hj, Nat.succ_eq_add_one, ← hi]
             rw [Fin.val_ne_iff]
             apply j_i
-            have isLt_succ_n: n + 1 < (hd::tl).length := by simp; apply isLt_n
-            rw [get_j, ← List.get_cons_succ (a:=hd) (h:= isLt_succ_n)]
-            congr
-            rw [Fin.ext_iff]
+            rw [get_j]
             simp [hj]
 
   lemma replaceF_distinct_mem [DecidableEq A] (l: List (A × B)) (dist: List.Pairwise (fun x y => ¬ x.1 = y.1) l) (a: A) (ab ab': A × B) (mem: ∃ (c: A × B), c ∈ l ∧ c.1 = a): ab ∈  List.replaceF (fun x => if x.1 == a then some ab' else none) l ↔ (ab ∈ l ∧ ab.1 ≠ a) ∨ ab = ab' := by
@@ -371,16 +370,11 @@ namespace List
         tauto
       rw [h]
 
-  lemma tail_get (l : List A) (h : 0 < l.length) : ∀ i : Fin (l.length - 1), 
-    l.tail.get ⟨i.val, by rw [length_tail]; exact i.isLt⟩ = 
-    l.get ⟨i.val.succ, by 
-      have isLt := Nat.succ_lt_succ i.isLt; 
-      conv at isLt => right; rw [Nat.succ_eq_add_one]
-      rw [Nat.sub_one_add_one_eq_of_pos h] at isLt
-      apply isLt⟩ := by 
-        cases l with 
-        | nil => contradiction
-        | cons a as => simp
+  lemma tail_getElem (l : List A) (h : 0 < l.length) : ∀ (i) (g : i < l.length - 1), 
+    l.tail[i]'(by simp; exact g) = l[i.succ] := by 
+      cases l with 
+      | nil => contradiction
+      | cons a as => simp
 
   lemma tail_getLast (l : List A) (h : l.tail ≠ []) : l.tail.getLast h = l.getLast (by intro contra; simp [contra] at h) := by 
     cases l with 
@@ -409,6 +403,6 @@ namespace List
   lemma take_getLast (l : List A) (ne : l ≠ []) (n : Fin (l.length + 1)) (h : 0 < n.val) : (l.take n.val).getLast (by intro contra; simp at contra; cases contra; contradiction; case inr h' => rw [h'] at h; contradiction) = l.get ⟨n.val - 1, by apply Nat.sub_lt_right_of_lt_add; apply Nat.le_of_pred_lt; apply h; apply n.isLt⟩ := by 
     have : (l.take n.val).length = n.val := by simp; apply Nat.le_of_lt_succ; apply n.isLt
     rw [List.getLast_eq_get]
-    simp only [this]
-    rw [List.get_take']
+    simp [this]
+    rw [List.getElem_take']
 end List

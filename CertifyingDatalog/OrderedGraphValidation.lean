@@ -94,13 +94,13 @@ namespace OrderedProofGraph
         simp
         exists ⟨n, h⟩
         constructor
-        . simp
+        · simp
         rw [← checkAtIndexOkIffLocallyValid]
         rw [heq]
         simp
       case h_2 heq =>
         constructor
-        . intro next_ok i n_leq_i
+        · intro next_ok i n_leq_i
           cases eq : i.val - n with
           | zero => 
             rw [← checkAtIndexOkIffLocallyValid]
@@ -155,16 +155,15 @@ namespace OrderedProofGraph
       exists r 
       exists g
       constructor
-      . exact r_mem
+      · exact r_mem
       constructor
-      . rw [r_apply]
+      · rw [r_apply]
         simp
-        rw [List.map_eq_map_iff]
         intro a _
         simp [Tree.root]
         unfold toProofTreeSkeleton
         simp
-      . rw [List.forall_iff_forall_mem]
+      · rw [List.forall_iff_forall_mem]
         simp
         intro t j j_mem next_tree
         rw [← next_tree]

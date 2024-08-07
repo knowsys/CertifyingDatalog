@@ -172,9 +172,8 @@ namespace Grounding
     rw [GroundAtom.ext_iff]
     simp [GroundAtom.toAtom]
     apply List.ext_get
-    . rw [List.length_map]
-    . intro _ _ _
-      rw [List.get_map]
+    · rw [List.length_map]
+    · intro _ _ _
       simp
       rw [applyTerm'_on_constant_unchanged]
 

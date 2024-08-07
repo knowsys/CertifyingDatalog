@@ -423,9 +423,9 @@ namespace Graph
     unfold vertices
     rw [PreGraph.in_vertices_iff_contains]
     apply g.property
-    . rw [← PreGraph.in_vertices_iff_contains]
+    · rw [← PreGraph.in_vertices_iff_contains]
       apply ha
-    . unfold successors at hb
+    · unfold successors at hb
       apply hb
 
   def from_vertices (vs : List A) : Graph A :=

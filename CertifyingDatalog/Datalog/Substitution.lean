@@ -42,11 +42,10 @@ namespace Substitution
     unfold applyTerm at c_prop
     simp at c_prop
     by_cases p: Option.isSome (s v) = true
-    . unfold domain
+    · unfold domain
       rw [Set.mem_setOf]
       apply p
-    . simp at p
-      rw [Option.isNone_iff_eq_none] at p
+    · simp at p
       simp [p] at c_prop
 
   lemma applyAtom_isGround_impl_varsSubsetDomain {a: Atom τ} {s: Substitution τ} (subs_ground: ∃ (a': GroundAtom τ), s.applyAtom a = a'): ↑ a.vars ⊆ s.domain :=
@@ -79,8 +78,8 @@ namespace Substitution
         apply v_pos_a
       use List.get a'.atom_terms {val:= v_pos, isLt:= v_pos_a'}
       have get_of_terms_eq := List.get_of_eq terms_eq ⟨v_pos, by rw [List.length_map]; exact v_pos_a⟩
-      rw [List.get_map] at get_of_terms_eq
-      rw [List.get_map] at get_of_terms_eq
+      simp at get_of_terms_eq
+      simp
       rw [get_of_terms_eq]
 
   lemma applyRule_isGround_impl_varsSubsetDomain {r: Rule τ} {s: Substitution τ} (subs_ground: ∃ (r': GroundRule τ), s.applyRule r = r'): ↑ r.vars ⊆ s.domain :=
@@ -118,8 +117,8 @@ namespace Substitution
       rw [List.length_map]
       apply a_pos_proof
     have get_of_right := List.get_of_eq right ⟨a_pos, h⟩
-    rw [List.get_map] at get_of_right
-    rw [List.get_map] at get_of_right
+    simp at get_of_right
+    simp
     rw [get_of_right]
 
   def toGrounding [ex: Inhabited τ.constants] (s: Substitution τ): Grounding τ := fun t => match s t with 
@@ -150,14 +149,10 @@ namespace Substitution
     unfold applyAtom
     rw [Atom.ext_iff]
     simp
-
-    apply List.ext_get
-    rw [List.length_map, List.length_map]
-    intro n h1 h2
-    simp
+    intro n h'
     apply toGrounding_applyTerm_eq
     apply Atom.vars_subset_impl_term_vars_subset
-    apply List.get_mem
+    exact h'
     exact h
 
   lemma toGrounding_applyRule_eq [Inhabited τ.constants] (r: Rule τ) (s: Substitution τ) (h: ↑ r.vars ⊆ s.domain): (s.toGrounding.applyRule' r).toRule = s.applyRule r := by
@@ -172,16 +167,12 @@ namespace Substitution
     left
     rfl
     apply h
-
-    apply List.ext_get
-    rw [List.length_map, List.length_map]
-    intro n h1 h2
-    simp
+    intro n h'
     apply toGrounding_applyAtom_eq
     apply Rule.vars_subset_impl_atom_vars_subset (r:=r)
     right
-    apply List.get_mem
-    apply h
+    exact h'
+    exact h
 
   def empty : Substitution τ := (fun _ => none)
 
@@ -333,7 +324,6 @@ namespace Substitution
         simp
         intro h' p
         rw [p] at h'
-        rw [Option.isNone_iff_eq_none] at h'
         rw [eq] at h'
         contradiction
       | none =>
@@ -344,7 +334,6 @@ namespace Substitution
         unfold domain
         simp
         rw [h', eq]
-        simp
 
   lemma applyAtom_remainingVarsNotInDomain (a: Atom τ) (s: Substitution τ): (s.applyAtom a).vars = a.vars.filter_nc (fun x => ¬ x ∈ s.domain)  := by
     apply Finset.ext
@@ -378,10 +367,7 @@ namespace Grounding
 
     unfold GroundAtom.toAtom
     simp
-    apply List.ext_get
-    rw [List.length_map, List.length_map]
-    intro n h1 h2
-    simp
+    intros
     rw [toSubsitution_applyTerm_eq]
 
   lemma toSubsitution_applyRule_eq (r: Rule τ) (g: Grounding τ): g.applyRule' r = g.toSubstitution.applyRule r := by
@@ -395,11 +381,7 @@ namespace Grounding
     apply toSubsitution_applyAtom_eq
 
     simp
-    apply List.ext_get
-    rw [List.length_map, List.length_map]
-    intro n h1 h2
-    rw [List.get_map]
-    simp
+    intros
     rw [toSubsitution_applyAtom_eq]
 end Grounding
 
