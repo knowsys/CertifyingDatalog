@@ -7,12 +7,12 @@ namespace PreGraph
   variable {A: Type u} [DecidableEq A] [Hashable A]
 
   def vertices (g : PreGraph A) : List A := g.toList.map Prod.fst
-  def successors (g : PreGraph A) (a : A) : List A := g.findD a []
+  def predecessors (g : PreGraph A) (a : A) : List A := g.findD a []
 
-  def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.successors a) → pg.contains a'
+  def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.predecessors a) → pg.contains a'
 
   theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Batteries.HashMap.in_projection_of_toList_iff_contains
-  theorem in_successors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.successors a ↔ b ∈ (pg.findD a []) := by unfold successors; intros; rfl
+  theorem in_predecessors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.findD a []) := by unfold predecessors; intros; rfl
 
   def from_vertices (vs : List A) : PreGraph A := Batteries.HashMap.ofList (vs.map (fun v => (v, [])))
 
@@ -109,9 +109,9 @@ namespace PreGraph
       rw [Batteries.HashMap.findD_insert]
       assumption
 
-  def add_vertex_with_successors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
-    let pg_with_added_successors := if pg.contains v then pg.insert v ((pg.successors v) ++ vs) else pg.insert v vs
-    PreGraph.add_vertices pg_with_added_successors vs
+  def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
+    let pg_with_added_predecessors := if pg.contains v then pg.insert v ((pg.predecessors v) ++ vs) else pg.insert v vs
+    PreGraph.add_vertices pg_with_added_predecessors vs
 
   theorem from_vertices_contains_exactly_the_passed_vertices (vs : List A) : ∀ v, v ∈ (PreGraph.from_vertices vs).vertices ↔ v ∈ vs := by
     unfold vertices
@@ -119,7 +119,7 @@ namespace PreGraph
     intro v
     rw [Batteries.HashMap.in_projection_of_toList_iff_contains, Batteries.HashMap.ofList_mapped_to_pair_contains_iff_list_elem]
 
-  theorem from_vertices_no_vertex_has_successors (vs : List A) : ∀ v, (PreGraph.from_vertices vs).findD v [] = [] := by
+  theorem from_vertices_no_vertex_has_predecessors (vs : List A) : ∀ v, (PreGraph.from_vertices vs).findD v [] = [] := by
     intro needle
     unfold from_vertices
     rw [Batteries.HashMap.findD_ofList_is_list_find_getD]
@@ -142,15 +142,15 @@ namespace PreGraph
     let pg := PreGraph.from_vertices vs
     have : ∀ v, pg.findD v [] = [] := by
       intro v
-      apply from_vertices_no_vertex_has_successors
+      apply from_vertices_no_vertex_has_predecessors
     intro a ha b hb
     rw [← in_vertices_iff_contains] at ha
-    unfold successors at hb
+    unfold predecessors at hb
     rw [this a] at hb
     contradiction
 
-  theorem add_vertex_with_successors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_successors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by
-    unfold add_vertex_with_successors
+  theorem add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_predecessors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by
+    unfold add_vertex_with_predecessors
     simp
     intro a
     rw [add_vertices_contains_iff_contains_or_in_list]
@@ -305,44 +305,44 @@ namespace PreGraph
         contradiction
       exact hlr.right.right
 
-  theorem add_vertex_with_successors_findD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : (pg.add_vertex_with_successors v vs).findD a [] = (pg.successors v) ++ vs := by
-    unfold add_vertex_with_successors
+  theorem add_vertex_with_predecessors_findD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : (pg.add_vertex_with_predecessors v vs).findD a [] = (pg.predecessors v) ++ vs := by
+    unfold add_vertex_with_predecessors
     simp
     rw [add_vertices_findD_semantics]
     rw [← h.right]
     simp [h.left]
     rw [Batteries.HashMap.findD_insert']
 
-  theorem add_vertex_with_successors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : (pg.add_vertex_with_successors v vs).findD a [] = (pg.successors a) := by
-    unfold add_vertex_with_successors
+  theorem add_vertex_with_predecessors_findD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : (pg.add_vertex_with_predecessors v vs).findD a [] = (pg.predecessors a) := by
+    unfold add_vertex_with_predecessors
     simp
     rw [add_vertices_findD_semantics]
     split
     rw [Batteries.HashMap.findD_insert'']
-    unfold successors
+    unfold predecessors
     rfl
     have contra := h.right
     intro contra'
     rw [contra'] at contra
     contradiction
     rw [Batteries.HashMap.findD_insert'']
-    unfold successors
+    unfold predecessors
     rfl
     have contra := h.right
     intro contra'
     rw [contra'] at contra
     contradiction
 
-  theorem add_vertex_with_successors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : (pg.add_vertex_with_successors v vs).findD a [] = vs := by
-    unfold add_vertex_with_successors
+  theorem add_vertex_with_predecessors_findD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : (pg.add_vertex_with_predecessors v vs).findD a [] = vs := by
+    unfold add_vertex_with_predecessors
     simp
     rw [add_vertices_findD_semantics]
     rw [← h.right]
     simp [h.left]
     rw [Batteries.HashMap.findD_insert']
 
-  theorem add_vertex_with_successors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v) : (pg.add_vertex_with_successors v vs).findD a [] = [] := by
-    unfold add_vertex_with_successors
+  theorem add_vertex_with_predecessors_findD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v) : (pg.add_vertex_with_predecessors v vs).findD a [] = [] := by
+    unfold add_vertex_with_predecessors
     simp
     rw [add_vertices_findD_semantics]
     split
@@ -361,16 +361,16 @@ namespace PreGraph
     rw [contra'] at contra
     contradiction
 
-  theorem add_vertex_with_successors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_successors v vs).complete := by
+  theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by
     unfold complete
-    unfold successors
+    unfold predecessors
     intro a ha
-    rw [add_vertex_with_successors_contains_iff_contains_or_in_new_vertices] at ha
+    rw [add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices] at ha
     intro a' ha'
-    rw [add_vertex_with_successors_contains_iff_contains_or_in_new_vertices]
+    rw [add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices]
     cases ha with
     | inl contains_and_eq =>
-      rw [add_vertex_with_successors_findD_semantics_1 pg v a _ contains_and_eq] at ha'
+      rw [add_vertex_with_predecessors_findD_semantics_1 pg v a _ contains_and_eq] at ha'
       rw [List.mem_append_eq] at ha'
       cases ha' with
       | inl ha' =>
@@ -389,13 +389,13 @@ namespace PreGraph
           | inr hrr => apply Or.inr; apply Or.inr; apply Or.inr; constructor; exact hrr; constructor; exact hr; exact ha'
     | inr rest => cases rest with
     | inl contains_and_neq =>
-      rw [add_vertex_with_successors_findD_semantics_2 pg v a _ contains_and_neq] at ha'
+      rw [add_vertex_with_predecessors_findD_semantics_2 pg v a _ contains_and_neq] at ha'
       cases Decidable.em (a' = v) with
       | inl hl => apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; apply ha'; exact hl
       | inr hr => apply Or.inr; apply Or.inl; constructor; apply pg_is_complete; exact contains_and_neq.left; apply ha'; exact hr
     | inr rest => cases rest with
     | inl not_contains_and_eq =>
-      rw [add_vertex_with_successors_findD_semantics_3 pg v a _ not_contains_and_eq] at ha'
+      rw [add_vertex_with_predecessors_findD_semantics_3 pg v a _ not_contains_and_eq] at ha'
       cases Decidable.em (a' = v) with
       | inl hl =>
         cases Decidable.em (pg.contains a') with
@@ -406,7 +406,7 @@ namespace PreGraph
         | inl hrl => apply Or.inr; apply Or.inl; constructor; exact hrl; exact hr
         | inr hrr => apply Or.inr; apply Or.inr; apply Or.inr; constructor; exact hrr; constructor; exact hr; exact ha'
     | inr not_contains_and_neq =>
-      rw [add_vertex_with_successors_findD_semantics_4 pg v a _ (⟨not_contains_and_neq.left, not_contains_and_neq.right.left⟩)] at ha'
+      rw [add_vertex_with_predecessors_findD_semantics_4 pg v a _ (⟨not_contains_and_neq.left, not_contains_and_neq.right.left⟩)] at ha'
       contradiction
 end PreGraph
 
@@ -416,16 +416,16 @@ namespace Graph
   variable {A: Type u} [DecidableEq A] [Hashable A] 
 
   def vertices (g : Graph A) : List A := g.val.vertices
-  def successors (g : Graph A) (a : A) : List A := g.val.successors a
+  def predecessors (g : Graph A) (a : A) : List A := g.val.predecessors a
 
-  theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.successors a → a' ∈ g.vertices := by
+  theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.predecessors a → a' ∈ g.vertices := by
     intro a ha b hb
     unfold vertices
     rw [PreGraph.in_vertices_iff_contains]
     apply g.property
     · rw [← PreGraph.in_vertices_iff_contains]
       apply ha
-    · unfold successors at hb
+    · unfold predecessors at hb
       apply hb
 
   def from_vertices (vs : List A) : Graph A :=
@@ -434,35 +434,36 @@ namespace Graph
       property := by apply PreGraph.from_vertices_is_complete
     }
 
-  def add_vertex_with_successors (g : Graph A) (v : A) (vs : List A) : Graph A :=
+  def add_vertex_with_predecessors (g : Graph A) (v : A) (vs : List A) : Graph A :=
     {
-      val := g.val.add_vertex_with_successors v vs
-      property := by apply PreGraph.add_vertex_with_successors_still_complete; apply g.property
+      val := g.val.add_vertex_with_predecessors v vs
+      property := by apply PreGraph.add_vertex_with_predecessors_still_complete; apply g.property
     }
 
-  theorem mem_of_has_succ (G : Graph A) (a b : A) : b ∈ G.successors a -> a ∈ G.vertices := by 
-    intro b_succ
-    unfold successors at b_succ
-    rw [PreGraph.in_successors_iff_found] at b_succ
-    rw [Batteries.HashMap.findD_eq_find?] at b_succ
+  theorem mem_of_has_pred (G : Graph A) (a b : A) : b ∈ G.predecessors a -> a ∈ G.vertices := by 
+    intro b_pred
+    unfold predecessors at b_pred
+    rw [PreGraph.in_predecessors_iff_found] at b_pred
+    rw [Batteries.HashMap.findD_eq_find?] at b_pred
     cases eq : Batteries.HashMap.find? G.val a with
-    | none => simp [eq] at b_succ
+    | none => simp [eq] at b_pred
     | some _ =>
       unfold vertices
       rw [PreGraph.in_vertices_iff_contains]
       apply Batteries.HashMap.contains_of_find?
       exact eq
 
-  theorem mem_of_is_succ (G : Graph A) (a b : A) : b ∈ G.successors a -> b ∈ G.vertices := by 
-    intro b_succ
-    unfold successors at b_succ
-    rw [PreGraph.in_successors_iff_found] at b_succ
-    rw [Batteries.HashMap.findD_eq_find?] at b_succ
+  theorem mem_of_is_pred (G : Graph A) (a b : A) : b ∈ G.predecessors a -> b ∈ G.vertices := by 
+    intro b_pred
+    unfold predecessors at b_pred
+    rw [PreGraph.in_predecessors_iff_found] at b_pred
+    rw [Batteries.HashMap.findD_eq_find?] at b_pred
     cases eq : Batteries.HashMap.find? G.val a with
-    | none => simp [eq] at b_succ
+    | none => simp [eq] at b_pred
     | some _ =>
       apply complete
-      apply mem_of_has_succ
-      apply b_succ
-      apply b_succ
+      apply mem_of_has_pred
+      apply b_pred
+      apply b_pred
 end Graph
+

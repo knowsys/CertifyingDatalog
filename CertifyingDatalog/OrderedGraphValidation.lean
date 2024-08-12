@@ -33,9 +33,9 @@ namespace OrderedProofGraph
     ∀ i : Fin G.val.size, G.locallyValid kb i
 
   def checkAtIndex (G : OrderedProofGraph τ) (m : SymbolSequenceMap τ) (d : Database τ) (index : Fin G.val.size) : Except String Unit :=  
-    let successors := (G.val.get index).snd
+    let predecessors := (G.val.get index).snd
 
-    if successors.isEmpty 
+    if predecessors.isEmpty 
       then if d.contains (G.val.get index).fst then Except.ok () else checkRuleMatch m { head := (G.val.get index).fst, body := [] }
       else checkRuleMatch m { 
         head := (G.val.get index).fst
@@ -56,7 +56,7 @@ namespace OrderedProofGraph
           constructor; rw [List.isEmpty_iff_eq_nil] at h; exact h; exact h'
         case isFalse h' =>
           rw [List.isEmpty_iff_eq_nil] at h
-          rw [checkRuleMatchOkIffExistsRuleForGroundRule]
+          rw [checkRuleMatchOkIffExistsRule]
           unfold locallyValid
           simp [h]
           rw [← List.attach_eq_nil] at h
@@ -66,7 +66,7 @@ namespace OrderedProofGraph
           contradiction
       case isFalse h =>
         rw [List.isEmpty_iff_eq_nil] at h
-        rw [checkRuleMatchOkIffExistsRuleForGroundRule]
+        rw [checkRuleMatchOkIffExistsRule]
         unfold locallyValid
         simp
         intro contra 

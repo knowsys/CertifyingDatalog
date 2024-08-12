@@ -219,7 +219,7 @@ end TreeVerificationProblem
 
 structure InputEdge where 
   vertex : InputAtom
-  successors : List InputAtom
+  predecessors : List InputAtom
 deriving DecidableEq, Lean.FromJson, Lean.ToJson
 
 structure InputGraph where 
@@ -232,8 +232,8 @@ namespace InputGraph
       match edge.vertex.toGroundAtom helper with 
       | .error err => Except.error err
       | .ok v =>
-        (edge.successors.mapExcept (InputAtom.toGroundAtom helper)).map (fun succs =>
-          graph.add_vertex_with_successors v succs
+        (edge.predecessors.mapExcept (InputAtom.toGroundAtom helper)).map (fun preds =>
+          graph.add_vertex_with_predecessors v preds
         )
     ) (Except.ok (Graph.from_vertices []))
 end InputGraph

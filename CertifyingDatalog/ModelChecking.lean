@@ -109,7 +109,7 @@ namespace CheckableModel
     rcases s_mem with ⟨ga, _, ga_eq⟩
     have : s = (Substitution.empty.matchAtom a ga).get (by simp [ga_eq]) := by simp [ga_eq]
     rw [this]
-    rw [Substitution.matchAtomYieldsSubstitution]
+    rw [Substitution.matchAtomYieldsSubs]
     exact ga.vars_empty
 
   lemma substitutionsForAtom_application_in_model (m : CheckableModel τ) (a : Atom τ) : ∀ (h : s ∈ m.substitutionsForAtom a), (s.applyAtom a).toGroundAtom (m.noVars_after_applying_substitutionsForAtom a s h) ∈ m := by 
@@ -119,7 +119,7 @@ namespace CheckableModel
     rcases h with ⟨ga, ga_mem, ga_eq⟩
     have : s = (Substitution.empty.matchAtom a ga).get (by simp [ga_eq]) := by simp [ga_eq]
     simp [this]
-    simp [Substitution.matchAtomYieldsSubstitution]
+    simp [Substitution.matchAtomYieldsSubs]
     have : ga = ga.toAtom.toGroundAtom ga.vars_empty := by rw [GroundAtom.eq_iff_toAtom_eq]; rw [← ga.toAtom.toGroundAtom_isSelf]
     rw [← this]
     exact ga_mem
@@ -145,7 +145,7 @@ namespace CheckableModel
       apply Substitution.matchAtomIsMinimal
       constructor
       · apply Substitution.empty_isMinimal
-      · rw [eq, this]; rw [Substitution.matchAtomYieldsSubstitution] 
+      · rw [eq, this]; rw [Substitution.matchAtomYieldsSubs] 
     · intro h
       rcases h with ⟨ga, mem, ga_eq, minimal⟩ 
       unfold substitutionsForAtom
@@ -156,7 +156,7 @@ namespace CheckableModel
       · cases eq : Substitution.empty.matchAtom a ga with 
         | none => 
           simp
-          apply @Substitution.matchAtomUnsuccessfulThenNoSubstitution τ 
+          apply @Substitution.matchAtomNoneThenNoSubs τ 
           rw [eq]
           simp
           apply Substitution.empty_isMinimal
@@ -172,7 +172,7 @@ namespace CheckableModel
             · exact ga_eq 
           · apply minimal
             rw [this]
-            apply Substitution.matchAtomYieldsSubstitution
+            apply Substitution.matchAtomYieldsSubs
 
   def checkSatisfactionOfPartialGroundRule (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) : Except String Unit := 
     match eq : pgr.ungroundedBody with 

@@ -103,7 +103,7 @@ def checkRuleMatch (m: SymbolSequenceMap τ) (gr: GroundRule τ): Except String 
   then Except.ok ()
   else Except.error ("No match for " ++ ToString.toString gr)
 
-lemma checkRuleMatchOkIffExistsRuleForGroundRule (p: Program τ) (gr: GroundRule τ): checkRuleMatch p.toSymbolSequenceMap gr = Except.ok () ↔ ∃ (r: Rule τ) (g: Grounding τ), r ∈ p ∧ g.applyRule' r = gr :=
+lemma checkRuleMatchOkIffExistsRule (p: Program τ) (gr: GroundRule τ): checkRuleMatch p.toSymbolSequenceMap gr = Except.ok () ↔ ∃ (r: Rule τ) (g: Grounding τ), r ∈ p ∧ g.applyRule' r = gr :=
 by
   simp [grounding_substitution_equiv]
   unfold checkRuleMatch
@@ -116,7 +116,7 @@ by
   use r
   simp [h]
   use (Substitution.matchRule r gr).get s
-  apply Substitution.matchRuleYieldsSubstitution
+  apply Substitution.matchRuleYieldsSubs
 
   rename_i symbolSequenceMatch
   simp at *
@@ -126,7 +126,7 @@ by
   cases (Decidable.em (r.symbolSequence = gr.toRule.symbolSequence)) with 
   | inl eq => 
     simp [rP, eq] at symbolSequenceMatch
-    apply Substitution.matchRuleUnsuccessfulThenNoSubstitution
+    apply Substitution.matchRuleNoneThenNoSubs
     simp
     apply symbolSequenceMatch
   | inr neq => 
@@ -141,12 +141,12 @@ namespace ProofTreeSkeleton
       then  if d.contains a
             then Except.ok ()
             else
-              match checkRuleMatch m {head:= a, body := List.map Tree.root l} with
+              match checkRuleMatch m {head:= a, body := []} with
               | Except.ok _ => Except.ok ()
               | Except.error msg => Except.error msg
       else
-        match checkRuleMatch m {head:= a, body := List.map Tree.root l} with
-        | Except.ok _ => List.mapExceptUnit l.attach (fun ⟨t, _h⟩ => checkValidity t m d)
+        match checkRuleMatch m {head:= a, body := l.map Tree.root} with
+        | Except.ok _ => l.attach.mapExceptUnit (fun ⟨t, _h⟩ => checkValidity t m d)
         | Except.error msg => Except.error msg
   termination_by sizeOf t
 
@@ -173,7 +173,7 @@ namespace ProofTreeSkeleton
           split
           simp
           rename_i u checkRuleMatch
-          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch
+          rw [checkRuleMatchOkIffExistsRule] at checkRuleMatch
           left
           rw [List.isEmpty_iff_eq_nil] at emptyL
           rcases checkRuleMatch with ⟨r, g, rP, apply_g⟩
@@ -183,6 +183,10 @@ namespace ProofTreeSkeleton
           constructor
           use g
           rw [emptyL]
+          simp 
+          exact apply_g
+
+          rw [emptyL]
           unfold List.Forall
           simp
 
@@ -190,22 +194,21 @@ namespace ProofTreeSkeleton
           rename_i checkRuleMatchResult
           rw [List.isEmpty_iff_eq_nil] at emptyL
 
-          have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
+          have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := [] } = Except.ok () := by
             rw [checkRuleMatchResult]
             simp
-          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
+          rw [checkRuleMatchOkIffExistsRule] at checkRuleMatch'
           simp at checkRuleMatch'
           constructor
           rw [emptyL]
           simp
-          rw [emptyL] at checkRuleMatch'
           apply checkRuleMatch'
           simp [contains_a]
 
       · simp[emptyL]
         split
         · rename_i checkRuleMatchResult
-          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatchResult
+          rw [checkRuleMatchOkIffExistsRule] at checkRuleMatchResult
           rcases checkRuleMatchResult with ⟨r,g,rP, rulegrounding⟩
           rw [List.mapExceptUnit_iff]
           constructor
@@ -258,7 +261,7 @@ namespace ProofTreeSkeleton
           have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
             rw [checkRuleMatchResult]
             simp
-          rw [checkRuleMatchOkIffExistsRuleForGroundRule] at checkRuleMatch'
+          rw [checkRuleMatchOkIffExistsRule] at checkRuleMatch'
           simp at checkRuleMatch'
           intro r rP g ground
           specialize checkRuleMatch' r rP g
