@@ -174,7 +174,7 @@ namespace CheckableModel
             rw [this]
             apply Substitution.matchAtomYieldsSubs
 
-  def checkSatisfactionOfPartialGroundRule (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) : Except String Unit := 
+  def checkPGR (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) : Except String Unit := 
     match eq : pgr.ungroundedBody with 
     | .nil => if pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe eq) ∈ m 
       then Except.ok ()
@@ -188,7 +188,7 @@ namespace CheckableModel
         }
 
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [eq]; simp
-        m.checkSatisfactionOfPartialGroundRule adjustedRule (by 
+        m.checkPGR adjustedRule (by 
           unfold PartialGroundRule.isSafe
           intro v v_in_adj_head
           simp at v_in_adj_head
@@ -233,8 +233,8 @@ namespace CheckableModel
       )
   termination_by pgr.ungroundedBody.length
 
-  lemma checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) (active : pgr.isActive m.toSet) : m.checkSatisfactionOfPartialGroundRule pgr safe = Except.ok () ↔ pgr.isSatisfied m.toSet := by 
-    unfold checkSatisfactionOfPartialGroundRule
+  lemma checkPGRIsOkIffRuleIsSatisfied (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) (active : pgr.isActive m.toSet) : m.checkPGR pgr safe = Except.ok () ↔ pgr.isSatisfied m.toSet := by 
+    unfold checkPGR
     split
     case h_1 heq =>
       have : ∀ g : Grounding τ, g.applyAtom' pgr.head = pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe heq) := by 
@@ -381,7 +381,7 @@ namespace CheckableModel
               rw [s'_apply_also_ground]
         )
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
-        rw [m.checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied _ _ (by 
+        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by 
           unfold PartialGroundRule.isActive
           unfold List.toSet
           simp
@@ -433,7 +433,7 @@ namespace CheckableModel
       · intro grounding_works
         intro subs subs_mem
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
-        rw [m.checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied _ _ (by 
+        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by 
           unfold PartialGroundRule.isActive
           unfold List.toSet
           simp
@@ -506,30 +506,30 @@ namespace CheckableModel
         exact a_mem
   termination_by pgr.ungroundedBody.length
 
-  def checkSatisfactionOfProgram (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : Except String Unit := 
-    p.attach.mapExceptUnit (fun ⟨r, r_mem⟩ => m.checkSatisfactionOfPartialGroundRule (PartialGroundRule.fromRule r) (by 
+  def checkProgram (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : Except String Unit := 
+    p.attach.mapExceptUnit (fun ⟨r, r_mem⟩ => m.checkPGR (PartialGroundRule.fromRule r) (by 
       rw [PartialGroundRule.fromRule_safe_iff_rule_safe]
       unfold Program.isSafe at safe
       apply safe 
       exact r_mem
     ))
 
-  theorem checkSatisfactionOfProgramIsOkIffAllRulesAreSatisfied (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : 
-    m.checkSatisfactionOfProgram p safe = Except.ok () ↔ ∀ r ∈ p.groundProgram, Interpretation.satisfiesRule m.toSet r := by 
-      unfold checkSatisfactionOfProgram
+  theorem checkProgramIsOkIffAllRulesAreSatisfied (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : 
+    m.checkProgram p safe = Except.ok () ↔ ∀ r ∈ p.groundProgram, Interpretation.satisfiesRule m.toSet r := by 
+      unfold checkProgram
       rw [List.mapExceptUnit_iff]
       unfold Program.groundProgram
       simp
       constructor
       · intro h gr r r_mem g eq
         specialize h r r_mem
-        rw [m.checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)] at h
+        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)] at h
         unfold PartialGroundRule.isSatisfied at h
         rw [PartialGroundRule.toRule_inv_fromRule] at h
         rw [eq] 
         apply h
       · intro h r r_mem
-        rw [m.checkSatisfactionOfPartialGroundRuleIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)]
+        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)]
         unfold PartialGroundRule.isSatisfied
         rw [PartialGroundRule.toRule_inv_fromRule]
         intro g

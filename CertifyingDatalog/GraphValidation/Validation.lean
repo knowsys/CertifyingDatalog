@@ -106,7 +106,7 @@ namespace Graph
     rw [toTree_root_is_root]
 
   def checkValidity (G : Graph (GroundAtom τ)) (m : SymbolSequenceMap τ) (d : Database τ) : Except String Unit := 
-    G.verify_acyclicity_and_cond_via_dfs (fun node => G.check_local_validity m d node)
+    G.verify_via_dfs (fun node => G.check_local_validity m d node)
 
   theorem checkValidityIsOkIffAcyclicAndAllValid (G : Graph (GroundAtom τ)) (kb : KnowledgeBase τ) :
     G.checkValidity kb.prog.toSymbolSequenceMap kb.db = Except.ok () ↔ G.isAcyclic ∧ ∀ a ∈ G.vertices, G.locallyValid_for_kb kb a := by 

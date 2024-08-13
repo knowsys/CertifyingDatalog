@@ -41,7 +41,7 @@ section TreeListValidity
     match checkTreeListValidityWithUnivDatabase problem with
     | Except.error e => Except.error e
     | Except.ok () =>
-      model.checkSatisfactionOfProgram problem.program safe
+      model.checkProgram problem.program safe
 
   lemma checkTreeListWithUnivDatabaseUnitIffSolution (problem: TreeVerificationProblem) (safe: problem.program.isSafe) : 
     checkTreeListWithUnivDatabase problem safe = Except.ok () ↔ 
@@ -62,7 +62,7 @@ section TreeListValidity
       rw [← checkTreeListValidityWithUnivDatabaseUnitIffAllTreesValid]
       rw [heq]
       simp
-      rw [CheckableModel.checkSatisfactionOfProgramIsOkIffAllRulesAreSatisfied]
+      rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
       unfold Interpretation.models
       simp
 end TreeListValidity
@@ -88,7 +88,7 @@ section DagValidity
     match checkDagValidityWithUnivDatabase problem with
     | Except.error e => Except.error e
     | Except.ok () =>
-      model.checkSatisfactionOfProgram problem.program safe
+      model.checkProgram problem.program safe
 
   lemma checkDagWithUnivDatabaseUnitIffSolution (problem: GraphVerificationProblem) (safe: problem.program.isSafe) : 
     checkDagWithUnivDatabase problem safe = Except.ok () ↔ 
@@ -109,7 +109,7 @@ section DagValidity
       rw [← checkDagValidityWithUnivDatabaseUnitIffAcyclicAndAllValid]
       rw [heq]
       simp
-      rw [CheckableModel.checkSatisfactionOfProgramIsOkIffAllRulesAreSatisfied]
+      rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
       unfold Interpretation.models
       simp
 end DagValidity
@@ -135,7 +135,7 @@ section OrderedProofGraphValidity
     match checkOrderedGraphValidityWithUnivDatabase problem with
     | Except.error e => Except.error e
     | Except.ok () =>
-      model.checkSatisfactionOfProgram problem.program safe
+      model.checkProgram problem.program safe
 
   lemma checkOrderedWithUnivDatabaseUnitIffSolution (problem: OrderedGraphVerificationProblem) (safe: problem.program.isSafe) : 
     checkOrderedGraphWithUnivDatabase problem safe = Except.ok () ↔ 
@@ -156,7 +156,7 @@ section OrderedProofGraphValidity
       rw [← checkOrderedGraphValidityWithUnivDatabaseUnitIffValid]
       rw [heq]
       simp
-      rw [CheckableModel.checkSatisfactionOfProgramIsOkIffAllRulesAreSatisfied]
+      rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
       unfold Interpretation.models
       simp
 end OrderedProofGraphValidity

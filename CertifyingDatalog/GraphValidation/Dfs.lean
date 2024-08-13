@@ -266,7 +266,7 @@ section Dfs
         apply h a
         apply canReach_refl; apply mem
 
-    lemma verify_acyclicity_and_cond_via_dfs_step_termination_aux {a b : A} (G : Graph A) (walkFromA : {w : Walk G // w.val.head? = some a}) (b_pred : b ∈ G.predecessors a) (b_not_in_walk : b ∉ walkFromA.val.val) : 
+    lemma verify_via_dfs_step_termination_aux {a b : A} (G : Graph A) (walkFromA : {w : Walk G // w.val.head? = some a}) (b_pred : b ∈ G.predecessors a) (b_not_in_walk : b ∉ walkFromA.val.val) : 
       (G.vertices.toFinset \ (⟨walkFromA.val.prependPredecessor b (by unfold Walk.predecessors; simp [walkFromA.prop]; exact b_pred), by (unfold Walk.prependPredecessor; simp)⟩ : {w : Walk G // w.val.head? = some b}).val.val.toFinset).card < (G.vertices.toFinset \ walkFromA.val.val.toFinset).card := by 
         apply Finset.card_lt_card
         rw [Finset.ssubset_iff]
@@ -291,7 +291,7 @@ section Dfs
               simp
               apply Or.inr; exact mem_walk_a
 
-    def verify_acyclicity_and_cond_via_dfs_step {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) : Except String (HashSet A) := 
+    def verify_via_dfs_step {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) : Except String (HashSet A) := 
       if verifiedNodes.contains a then Except.ok verifiedNodes
       else match cond a with 
         | Except.error msg => Except.error msg
@@ -302,9 +302,9 @@ section Dfs
             let verifiedAfterRecursion := 
               (G.predecessors a).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
                 let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact mem), by (unfold Walk.prependPredecessor; simp)⟩
-                have _termination := G.verify_acyclicity_and_cond_via_dfs_step_termination_aux walkFromA mem (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact mem)
+                have _termination := G.verify_via_dfs_step_termination_aux walkFromA mem (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact mem)
                     
-                G.verify_acyclicity_and_cond_via_dfs_step 
+                G.verify_via_dfs_step 
                   cond 
                   walkFromPred
                   verified 
@@ -314,9 +314,9 @@ section Dfs
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
     lemma dfs_step_result_contains_a {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) : 
-      verify_acyclicity_and_cond_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedAfter.contains a := by 
+      verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedAfter.contains a := by 
       intro h
-      unfold verify_acyclicity_and_cond_via_dfs_step at h
+      unfold verify_via_dfs_step at h
       simp at h
       split at h
       · injection h with h; rw [← h]; assumption
@@ -334,9 +334,9 @@ section Dfs
       rfl
 
     lemma dfs_step_extends_verified {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) : 
-      verify_acyclicity_and_cond_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedNodes ⊆ verifiedAfter := by 
+      verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedNodes ⊆ verifiedAfter := by 
       intro h
-      unfold verify_acyclicity_and_cond_via_dfs_step at h
+      unfold verify_via_dfs_step at h
       simp at h
       split at h
       · injection h with h; rw [h]; apply HashSet.subset_refl
@@ -357,13 +357,13 @@ section Dfs
           · apply (G.predecessors a).attach.foldl_except_is_superset_of_f_is_superset
               (fun b pred => 
                 let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                verify_acyclicity_and_cond_via_dfs_step G cond walkFromPred b
+                verify_via_dfs_step G cond walkFromPred b
               )
               verifiedNodes
 
             intro set res pred _ eq
 
-            have _termination := G.verify_acyclicity_and_cond_via_dfs_step_termination_aux walkFromA pred.prop (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred.prop)
+            have _termination := G.verify_via_dfs_step_termination_aux walkFromA pred.prop (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred.prop)
             apply dfs_step_extends_verified
             exact eq
             exact eq
@@ -381,14 +381,14 @@ section Dfs
       (walkFromA : {w : Walk G // w.val.head? = some a}) 
       (verifiedNodes : HashSet A) 
       (verifiedAfter : HashSet A) 
-      (verifiedAfterIsResult : verify_acyclicity_and_cond_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter)
+      (verifiedAfterIsResult : verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter)
       (verifiedNodesValid : ∀ node, verifiedNodes.contains node -> 
         (¬ G.reachableFromCycle node ∧ 
           G.cond_ok_on_all_canReach node cond)
       ) : (∀ node, verifiedAfter.contains node -> 
         (¬ G.reachableFromCycle node ∧ 
           G.cond_ok_on_all_canReach node cond)) := by
-      unfold verify_acyclicity_and_cond_via_dfs_step at verifiedAfterIsResult
+      unfold verify_via_dfs_step at verifiedAfterIsResult
       simp at verifiedAfterIsResult
       split at verifiedAfterIsResult
       · injection verifiedAfterIsResult with verifiedAfterIsResult; rw [← verifiedAfterIsResult]; assumption
@@ -411,7 +411,7 @@ section Dfs
             let extendWalkToA (c : A) (c_pred : c ∈ G.predecessors a) : {w : Walk G // w.val.head? = some c} := ⟨walkFromA.val.prependPredecessor c (by unfold Walk.predecessors; simp [walkFromA.prop]; exact c_pred), by (unfold Walk.prependPredecessor; simp)⟩
 
             let foldl_f : HashSet A -> {c : A // c ∈ G.predecessors a} -> Except String (HashSet A) := (fun b pred => 
-                verify_acyclicity_and_cond_via_dfs_step G cond (extendWalkToA pred.val pred.prop) b
+                verify_via_dfs_step G cond (extendWalkToA pred.val pred.prop) b
               )
 
             have foldl_preserves := (G.predecessors a).attach.foldl_except_preserves_prop foldl_f (Except.ok verifiedNodes)
@@ -422,7 +422,7 @@ section Dfs
               apply foldl_preserves
               simp
               intro init_step res_step pred pred_is_pred prop_init_step f_preserves_prop
-              have _termination := G.verify_acyclicity_and_cond_via_dfs_step_termination_aux walkFromA pred_is_pred (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred_is_pred)
+              have _termination := G.verify_via_dfs_step_termination_aux walkFromA pred_is_pred (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred_is_pred)
               apply dfs_step_result_valid
               exact f_preserves_prop
               exact prop_init_step
@@ -472,15 +472,15 @@ section Dfs
       (verifiedNodesValid : ∀ node, verifiedNodes.contains node -> 
         (¬ G.reachableFromCycle node ∧ 
           G.cond_ok_on_all_canReach node cond)
-      ) : (G.verify_acyclicity_and_cond_via_dfs_step cond walkFromA verifiedNodes).isOk ↔ (¬ G.reachableFromCycle a ∧ G.cond_ok_on_all_canReach a cond) := by 
+      ) : (G.verify_via_dfs_step cond walkFromA verifiedNodes).isOk ↔ (¬ G.reachableFromCycle a ∧ G.cond_ok_on_all_canReach a cond) := by 
       constructor
       · intro check_ok
-        cases eq : G.verify_acyclicity_and_cond_via_dfs_step cond walkFromA verifiedNodes with 
+        cases eq : G.verify_via_dfs_step cond walkFromA verifiedNodes with 
         | error _ => rw [eq] at check_ok; simp [Except.isOk, Except.toBool] at check_ok
         | ok verifiedAfter => 
           apply G.dfs_step_result_valid cond walkFromA verifiedNodes verifiedAfter eq verifiedNodesValid 
           apply G.dfs_step_result_contains_a cond walkFromA verifiedNodes verifiedAfter eq
-      unfold verify_acyclicity_and_cond_via_dfs_step
+      unfold verify_via_dfs_step
       simp
       split
       · simp [Except.isOk, Except.toBool]
@@ -545,7 +545,7 @@ section Dfs
               (G.predecessors a).attach 
               (fun b pred => 
                 let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                verify_acyclicity_and_cond_via_dfs_step G cond walkFromPred b
+                verify_via_dfs_step G cond walkFromPred b
               )
               verifiedNodes
               err
@@ -560,8 +560,8 @@ section Dfs
             · simp [pred]; apply List.get_mem
             intro cond_pred
             let walkFromPred : {w : Walk G // w.val.head? = some pred } := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; simp [pred]; apply List.get_mem), by (unfold Walk.prependPredecessor; simp)⟩
-            have : (G.verify_acyclicity_and_cond_via_dfs_step cond walkFromPred res).isOk := by
-              have _termination := G.verify_acyclicity_and_cond_via_dfs_step_termination_aux walkFromA (b := (G.predecessors a).get ⟨i, by have isLt := i.isLt; simp at isLt; exact isLt⟩) (by apply List.get_mem) (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact (by apply List.get_mem))
+            have : (G.verify_via_dfs_step cond walkFromPred res).isOk := by
+              have _termination := G.verify_via_dfs_step_termination_aux walkFromA (b := (G.predecessors a).get ⟨i, by have isLt := i.isLt; simp at isLt; exact isLt⟩) (by apply List.get_mem) (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact (by apply List.get_mem))
               rw [dfs_step_semantics]
               constructor
               · apply pred_not_reach_cycle; simp [pred]; apply List.get_mem
@@ -571,7 +571,7 @@ section Dfs
                 ((G.predecessors a).attach.take i) 
                 (fun b pred => 
                   let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                  verify_acyclicity_and_cond_via_dfs_step G cond walkFromPred b
+                  verify_via_dfs_step G cond walkFromPred b
                 )
                 (Except.ok verifiedNodes)
                 (fun set => ∀ node, set.contains node -> (¬ G.reachableFromCycle node ∧ G.cond_ok_on_all_canReach node cond))
@@ -599,19 +599,19 @@ section Dfs
           · simp [Except.isOk, Except.toBool]
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
-    def verify_acyclicity_and_cond_via_dfs (G : Graph A) (cond : NodeCondition A) : Except String Unit := 
+    def verify_via_dfs (G : Graph A) (cond : NodeCondition A) : Except String Unit := 
       (G.vertices.attach.foldl_except 
-        (fun acc ⟨a, h⟩ => G.verify_acyclicity_and_cond_via_dfs_step (a := a) cond ⟨Walk.singleton G a h, by unfold Walk.singleton; simp⟩ acc)
+        (fun acc ⟨a, h⟩ => G.verify_via_dfs_step (a := a) cond ⟨Walk.singleton G a h, by unfold Walk.singleton; simp⟩ acc)
         (Except.ok HashSet.empty)).map (fun _ => ())
 
-    lemma dfs_semantics (G : Graph A) (cond : NodeCondition A) : G.verify_acyclicity_and_cond_via_dfs cond = Except.ok () ↔ G.isAcyclic ∧ ∀ a ∈ G.vertices, cond.true a := by 
+    lemma dfs_semantics (G : Graph A) (cond : NodeCondition A) : G.verify_via_dfs cond = Except.ok () ↔ G.isAcyclic ∧ ∀ a ∈ G.vertices, cond.true a := by 
       let f := 
         (fun b (node : {a : A // a ∈ G.vertices}) => 
           let walkFromPred : {w : Walk G // w.val.head? = some node} := ⟨Walk.singleton G node node.prop, by unfold Walk.singleton; simp⟩
-          verify_acyclicity_and_cond_via_dfs_step G cond walkFromPred b
+          verify_via_dfs_step G cond walkFromPred b
         )
 
-      unfold verify_acyclicity_and_cond_via_dfs
+      unfold verify_via_dfs
       unfold Except.map
       rw [acyclicIffAllNotReachableFromCycle]
       simp
