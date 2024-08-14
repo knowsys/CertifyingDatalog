@@ -67,5 +67,24 @@ def multiTry():
             
             log.write(json.dumps({"graph": problem["graph"], "Result": result.stdout, "Preparation time": str(preparation), "Validation time": str(duration)}, indent=4))
 
+            print("Start")
+            start = time.time()
+            inputCreatorNemo.main(folder, ruleFile, "-o", *atoms)
+            
+            preparation = time.time() - start
+            
+            problemFile = ruleFile.split(".")[0] + ".ograph.json"
+
+            with open(problemFile) as file:
+                problem = json.load(file)
+            
+
+            start = time.time()
+            result = subprocess.run(["../../.lake/build/bin/certifyingDatalog", "-o", problemFile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+
+            duration = time.time() - start 
+            
+            log.write(json.dumps({"graph": problem["graph"], "Result": result.stdout, "Preparation time": str(preparation), "Validation time": str(duration)}, indent=4))
+
 
 multiTry()

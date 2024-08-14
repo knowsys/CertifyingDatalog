@@ -1,0 +1,239 @@
+{
+    "graph": {
+        "edges": [
+            {
+                "label": {
+                    "symbol": "edge",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "label": {
+                    "symbol": "edge",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "label": {
+                    "symbol": "edge",
+                    "terms": [
+                        {
+                            "constant": "c"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": []
+            },
+            {
+                "label": {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "b"
+                        }
+                    ]
+                },
+                "predecessors": [0]
+            },
+            {
+                "label": {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "predecessors": [1]
+            },
+            {
+                "label": {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "constant": "c"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": [2]
+            },
+            {
+                "label": {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "c"
+                        }
+                    ]
+                },
+                "predecessors": [3,4]
+            },
+            {
+                "label": {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "constant": "b"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": [4,5]
+            },
+            {
+                "label": {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "constant": "a"
+                        },
+                        {
+                            "constant": "d"
+                        }
+                    ]
+                },
+                "predecessors": [3,7,6]
+            }
+        ]
+    },
+    "program": [
+        {
+            "head": {
+                "symbol": "edge",
+                "terms": [
+                    {
+                        "constant": "a"
+                    },
+                    {
+                        "constant": "b"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "edge",
+                "terms": [
+                    {
+                        "constant": "b"
+                    },
+                    {
+                        "constant": "c"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "edge",
+                "terms": [
+                    {
+                        "constant": "c"
+                    },
+                    {
+                        "constant": "d"
+                    }
+                ]
+            },
+            "body": []
+        },
+        {
+            "head": {
+                "symbol": "trans",
+                "terms": [
+                    {
+                        "variable": "?X"
+                    },
+                    {
+                        "variable": "?Y"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "edge",
+                    "terms": [
+                        {
+                            "variable": "?X"
+                        },
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "head": {
+                "symbol": "trans",
+                "terms": [
+                    {
+                        "variable": "?X"
+                    },
+                    {
+                        "variable": "?Z"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "variable": "?X"
+                        },
+                        {
+                            "variable": "?Y"
+                        }
+                    ]
+                },
+                {
+                    "symbol": "trans",
+                    "terms": [
+                        {
+                            "variable": "?Y"
+                        },
+                        {
+                            "variable": "?Z"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

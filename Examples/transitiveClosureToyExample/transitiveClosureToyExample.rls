@@ -1,6 +1,6 @@
-edge("a","b").
-edge("b","c").
-edge("c","d").
+edge(a,b).
+edge(b,c).
+edge(c,d).
 
 trans(?X,?Y) :- edge(?X,?Y).
 trans(?X,?Z) :- trans(?X,?Y), trans(?Y,?Z).

@@ -10,18 +10,19 @@ The example is inspired by <https://github.com/souffle-lang/benchmarks/tree/mast
 
 - Build the Lean program in the root directory of this project using `lake build`. The binary is found here: `/.lake/build/bin/certifyingDatalog`
 - The `<file>.tree.json` file is gzipped because of its size. Run `gunzip <file.tree.json.gz` to unpack it.
-- In this directory, run `../../.lake/build/bin/certifyingDatalog [-g] <file>.(tree|graph).json`
+- In this directory, run `../../.lake/build/bin/certifyingDatalog [-g/-o] <file>.(tree|graph|ograph).json`
+- To run a completeness check, you can add the `-c` parameter. For the paper, we check completeness with the `ograph` input.
 
 ### Generate Input Facts for Datalog Program 
 
 - Install `ruby`
 - Run `mkdir -p sources`
-- Run `./gen_facts.rb > sources/R.csv`
+- Run `./gen_facts.rb > sources/edge.csv`
 
 ### Building input files from the datalog program 
 
-- Build the `nmo` binary from the `tracing-playground` branch: <https://github.com/knowsys/nemo/tree/tracing-playground>; Run `cargo b -r`; The binary can be found in `/path/to/nemo/target/release/nmo`.
+- Build the `nmo` binary from <https://github.com/knowsys/nemo>. For the latest experiments, we used <https://github.com/knowsys/nemo/releases/tag/v0.5.1>. Run `cargo b -r`. The binary can be found in `/path/to/nemo/target/release/nmo`.
 - Install Python3 alongside the `rfc3987` package.
 - Adjust the path to the `nmo` binary in `inputCreatorNemo.py`
-- Run `python3 inputCreatorNemo.py`; This yields `tc.tree.json` and `tc.graph.json`.
+- Run `python3 inputCreatorNemo.py`; This yields `tc.tree.json`, `tc.graph.json` and `tc.ograph.json`.
 

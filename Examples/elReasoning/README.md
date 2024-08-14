@@ -15,13 +15,14 @@ The example has been taken from <https://github.com/knowsys/nemo-examples/tree/m
 ### Running the already generated input file 
 
 - Build the Lean program in the root directory of this project using `lake build`. The binary is found here: `/.lake/build/bin/certifyingDatalog`
-- In this directory, run `../../.lake/build/bin/certifyingDatalog [-g] <file>.(tree|graph).json`
+- In this directory, run `../../.lake/build/bin/certifyingDatalog [-g/-o] <file>.(tree|graph|ograph).json`
+- To run a completeness check, you can add the `-c` parameter. For the paper, we check completeness with the `ograph` input.
 
 ### Building input files from the datalog program 
 
-- Build the `nmo` binary from the `tracing-playground` branch: <https://github.com/knowsys/nemo/tree/tracing-playground>; Run `cargo b -r`; The binary can be found in `/path/to/nemo/target/release/nmo`.
+- Build the `nmo` binary from <https://github.com/knowsys/nemo>. For the latest experiments, we used <https://github.com/knowsys/nemo/releases/tag/v0.5.1>. Run `cargo b -r`. The binary can be found in `/path/to/nemo/target/release/nmo`.
 - Install Python3 alongside the `rfc3987` package.
 - Adjust the path to the `nmo` binary in `inputCreatorNemo.py`
-- Run `nmo -so transitiveClosureToyExample.rls` to create all reasoning ressult in the `result` directory.
-- Run `python3 experiments.py`; This yields `tc.tree.json` and `tc.graph.json` based on 1000 randomly selected facts from the `result` directory. (The script also executes `/build/bin/certifyingDatalog` and measures execution times but this can be done manually afterwards or even based on the already provided `tc.tree.json` and `tc.graph.json` files to reproduce the results from the paper.)
+- Run `nmo -e keep -o el-calc.rls` to create all reasoning ressult in the `result` directory.
+- Run `python3 experiments.py`; This yields `tc.tree.json`, `tc.graph.json` and `tc.ograph.json` based on 1000 randomly selected facts from the `result` directory. (The script also executes `/build/bin/certifyingDatalog` and measures execution times but this can be done manually afterwards or even based on the already provided `.json` files to reproduce the results from the paper.)
 

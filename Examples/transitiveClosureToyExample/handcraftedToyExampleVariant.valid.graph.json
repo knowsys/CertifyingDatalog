@@ -13,91 +13,7 @@
                         }
                     ]
                 },
-                "successors": []
-            },
-            {
-                "vertex": {
-                    "symbol": "trans",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "c"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
-                    "symbol": "trans",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
-                    "symbol": "trans",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "c"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
-                    "symbol": "trans",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
-                    "symbol": "trans",
-                    "terms": [
-                        {
-                            "constant": "c"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
-                    "symbol": "trans",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "b"
-                        }
-                    ]
-                },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "edge",
                         "terms": [
@@ -113,20 +29,6 @@
             },
             {
                 "vertex": {
-                    "symbol": "edge",
-                    "terms": [
-                        {
-                            "constant": "a"
-                        },
-                        {
-                            "constant": "b"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
                     "symbol": "trans",
                     "terms": [
                         {
@@ -137,7 +39,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "edge",
                         "terms": [
@@ -153,20 +55,6 @@
             },
             {
                 "vertex": {
-                    "symbol": "edge",
-                    "terms": [
-                        {
-                            "constant": "c"
-                        },
-                        {
-                            "constant": "d"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
                     "symbol": "trans",
                     "terms": [
                         {
@@ -177,7 +65,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "trans",
                         "terms": [
@@ -214,7 +102,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "edge",
                         "terms": [
@@ -230,20 +118,6 @@
             },
             {
                 "vertex": {
-                    "symbol": "edge",
-                    "terms": [
-                        {
-                            "constant": "b"
-                        },
-                        {
-                            "constant": "c"
-                        }
-                    ]
-                },
-                "successors": []
-            },
-            {
-                "vertex": {
                     "symbol": "trans",
                     "terms": [
                         {
@@ -254,7 +128,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "trans",
                         "terms": [
@@ -291,7 +165,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "trans",
                         "terms": [

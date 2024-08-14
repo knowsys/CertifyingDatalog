@@ -13,7 +13,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -27,7 +27,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -41,7 +41,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -55,7 +55,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -69,7 +69,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -83,7 +83,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -97,7 +97,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "edge",
                         "terms": [
@@ -123,7 +123,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -137,7 +137,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "edge",
                         "terms": [
@@ -163,7 +163,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -177,7 +177,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "trans",
                         "terms": [
@@ -214,7 +214,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "edge",
                         "terms": [
@@ -240,7 +240,7 @@
                         }
                     ]
                 },
-                "successors": []
+                "predecessors": []
             },
             {
                 "vertex": {
@@ -254,7 +254,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "trans",
                         "terms": [
@@ -291,7 +291,7 @@
                         }
                     ]
                 },
-                "successors": [
+                "predecessors": [
                     {
                         "symbol": "trans",
                         "terms": [

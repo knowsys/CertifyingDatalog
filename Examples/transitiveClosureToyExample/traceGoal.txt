@@ -1,1 +1,1 @@
-trans("a","b");trans("a","c");trans("a","d");trans("b","c");trans("b","d");trans("c","d")
+trans(a,b);trans(a,c);trans(a,d);trans(b,c);trans(b,d);trans(c,d)
