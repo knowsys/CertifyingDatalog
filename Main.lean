@@ -29,42 +29,24 @@ section TreeListValidity
     let kb : KnowledgeBase problem.helper.toSignature := { prog := problem.program, db }
     ProofTreeSkeleton.checkValidityOfList problem.trees kb
 
-  lemma checkTreeListValidityWithUnivDatabaseUnitIffAllTreesValid (problem: TreeVerificationProblem): checkTreeListValidityWithUnivDatabase problem = Except.ok () ↔ ((∀ t ∈ problem.trees, t.isValid {prog := problem.program, db := univDatabase problem.helper.toSignature})
+  theorem checkTreeListValidityWithUnivDatabaseUnitIffAllTreesValid (problem: TreeVerificationProblem): checkTreeListValidityWithUnivDatabase problem = Except.ok () ↔ ((∀ t ∈ problem.trees, t.isValid {prog := problem.program, db := univDatabase problem.helper.toSignature})
     ∧ ((collectModel problem.trees).toSet ⊆ {prog := problem.program, db := univDatabase problem.helper.toSignature : KnowledgeBase problem.helper.toSignature}.proofTheoreticSemantics)) := by
     unfold checkTreeListValidityWithUnivDatabase
     simp
     rw [collectModelToSetIsSetOfTreesElements]
     rw [← ProofTreeSkeleton.checkValidityOfListOkIffAllValidIffAllValidAndSubsetSemantics]
 
-  def checkTreeListWithUnivDatabase (problem: TreeVerificationProblem) (safe: problem.program.isSafe): Except String Unit :=
+  def checkTreeListModelhood (problem: TreeVerificationProblem) (safe: problem.program.isSafe): Except String Unit :=
     let model := collectModel problem.trees
-    match checkTreeListValidityWithUnivDatabase problem with
-    | Except.error e => Except.error e
-    | Except.ok () =>
-      model.checkProgram problem.program safe
+    model.checkProgram problem.program safe
 
-  lemma checkTreeListWithUnivDatabaseUnitIffSolution (problem: TreeVerificationProblem) (safe: problem.program.isSafe) : 
-    checkTreeListWithUnivDatabase problem safe = Except.ok () ↔ 
-      (((∀ t ∈ problem.trees, t.isValid {prog := problem.program, db := univDatabase problem.helper.toSignature})
-    ∧ ((collectModel problem.trees).toSet ⊆ {prog := problem.program, db := univDatabase problem.helper.toSignature : KnowledgeBase problem.helper.toSignature}.proofTheoreticSemantics))
-      ∧ (Interpretation.models (List.toSet (collectModel problem.trees)) {prog := problem.program, db := emptyDatabase problem.helper.toSignature})) := by 
-    unfold checkTreeListWithUnivDatabase
+  theorem checkTreeListModelHoodUnitIffModel (problem: TreeVerificationProblem) (safe: problem.program.isSafe) : 
+    checkTreeListModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet (collectModel problem.trees)) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by 
+    unfold checkTreeListModelhood
     simp
-    split
-    case h_1 heq => 
-      simp
-      intro all_valid subset
-      have all_valid_and_subset := And.intro all_valid subset
-      rw [← checkTreeListValidityWithUnivDatabaseUnitIffAllTreesValid] at all_valid_and_subset
-      rw [heq] at all_valid_and_subset
-      contradiction
-    case h_2 heq =>
-      rw [← checkTreeListValidityWithUnivDatabaseUnitIffAllTreesValid]
-      rw [heq]
-      simp
-      rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
-      unfold Interpretation.models
-      simp
+    rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
+    unfold Interpretation.models
+    simp
 end TreeListValidity
 
 section DagValidity
@@ -73,7 +55,7 @@ section DagValidity
     let d:= univDatabase problem.helper.toSignature
     problem.graph.checkValidity m d
 
-  lemma checkDagValidityWithUnivDatabaseUnitIffAcyclicAndAllValid (problem: GraphVerificationProblem) : checkDagValidityWithUnivDatabase problem = Except.ok () ↔ ((problem.graph.isAcyclic ∧ (∀ a ∈ problem.graph.vertices, problem.graph.locallyValid_for_kb {prog := problem.program, db := univDatabase problem.helper.toSignature} a))
+  theorem checkDagValidityWithUnivDatabaseUnitIffAcyclicAndAllValid (problem: GraphVerificationProblem) : checkDagValidityWithUnivDatabase problem = Except.ok () ↔ ((problem.graph.isAcyclic ∧ (∀ a ∈ problem.graph.vertices, problem.graph.locallyValid_for_kb {prog := problem.program, db := univDatabase problem.helper.toSignature} a))
     ∧ (problem.graph.vertices.toSet ⊆ {prog := problem.program, db := univDatabase problem.helper.toSignature : KnowledgeBase problem.helper.toSignature}.proofTheoreticSemantics)) := by
     unfold checkDagValidityWithUnivDatabase
     simp
@@ -83,35 +65,17 @@ section DagValidity
     apply Graph.verticesOfLocallyValidAcyclicGraphAreInProofTheoreticSemantics
     exact acyclic; exact all_valid
 
-  def checkDagWithUnivDatabase (problem: GraphVerificationProblem) (safe: problem.program.isSafe): Except String Unit :=
+  def checkDagModelhood (problem: GraphVerificationProblem) (safe: problem.program.isSafe): Except String Unit :=
     let model : CheckableModel problem.helper.toSignature := problem.graph.vertices
-    match checkDagValidityWithUnivDatabase problem with
-    | Except.error e => Except.error e
-    | Except.ok () =>
-      model.checkProgram problem.program safe
+    model.checkProgram problem.program safe
 
-  lemma checkDagWithUnivDatabaseUnitIffSolution (problem: GraphVerificationProblem) (safe: problem.program.isSafe) : 
-    checkDagWithUnivDatabase problem safe = Except.ok () ↔ 
-      (((problem.graph.isAcyclic ∧ (∀ a ∈ problem.graph.vertices, problem.graph.locallyValid_for_kb {prog := problem.program, db := univDatabase problem.helper.toSignature} a))
-    ∧ (problem.graph.vertices.toSet ⊆ {prog := problem.program, db := univDatabase problem.helper.toSignature : KnowledgeBase problem.helper.toSignature}.proofTheoreticSemantics))
-      ∧ (Interpretation.models (List.toSet problem.graph.vertices) {prog := problem.program, db := emptyDatabase problem.helper.toSignature})) := by 
-    unfold checkDagWithUnivDatabase
+  theorem checkDagModelhoodUnitIffModel (problem: GraphVerificationProblem) (safe: problem.program.isSafe) : 
+    checkDagModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet problem.graph.vertices) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by 
+    unfold checkDagModelhood
     simp
-    split
-    case h_1 heq => 
-      simp
-      intro acyclic all_valid subset
-      have acyclic_and_all_valid_and_subset := And.intro (And.intro acyclic all_valid) subset
-      rw [← checkDagValidityWithUnivDatabaseUnitIffAcyclicAndAllValid] at acyclic_and_all_valid_and_subset
-      rw [heq] at acyclic_and_all_valid_and_subset
-      contradiction
-    case h_2 heq =>
-      rw [← checkDagValidityWithUnivDatabaseUnitIffAcyclicAndAllValid]
-      rw [heq]
-      simp
-      rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
-      unfold Interpretation.models
-      simp
+    rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
+    unfold Interpretation.models
+    simp
 end DagValidity
 
 section OrderedProofGraphValidity
@@ -120,7 +84,7 @@ section OrderedProofGraphValidity
     let d:= univDatabase problem.helper.toSignature
     problem.graph.checkValidity m d
 
-  lemma checkOrderedGraphValidityWithUnivDatabaseUnitIffValid (problem: OrderedGraphVerificationProblem) : checkOrderedGraphValidityWithUnivDatabase problem = Except.ok () ↔ ((problem.graph.isValid {prog := problem.program, db := univDatabase problem.helper.toSignature})
+  theorem checkOrderedGraphValidityWithUnivDatabaseUnitIffValid (problem: OrderedGraphVerificationProblem) : checkOrderedGraphValidityWithUnivDatabase problem = Except.ok () ↔ ((problem.graph.isValid {prog := problem.program, db := univDatabase problem.helper.toSignature})
     ∧ (problem.graph.labels.toSet ⊆ {prog := problem.program, db := univDatabase problem.helper.toSignature : KnowledgeBase problem.helper.toSignature}.proofTheoreticSemantics)) := by
     unfold checkOrderedGraphValidityWithUnivDatabase
     simp
@@ -130,35 +94,17 @@ section OrderedProofGraphValidity
     apply OrderedProofGraph.verticesValidOrderedProofGraphAreInProofTheoreticSemantics
     exact isValid
 
-  def checkOrderedGraphWithUnivDatabase (problem: OrderedGraphVerificationProblem) (safe: problem.program.isSafe): Except String Unit :=
+  def checkOrderedGraphModelhood (problem: OrderedGraphVerificationProblem) (safe: problem.program.isSafe): Except String Unit :=
     let model : CheckableModel problem.helper.toSignature := problem.graph.labels
-    match checkOrderedGraphValidityWithUnivDatabase problem with
-    | Except.error e => Except.error e
-    | Except.ok () =>
-      model.checkProgram problem.program safe
+    model.checkProgram problem.program safe
 
-  lemma checkOrderedWithUnivDatabaseUnitIffSolution (problem: OrderedGraphVerificationProblem) (safe: problem.program.isSafe) : 
-    checkOrderedGraphWithUnivDatabase problem safe = Except.ok () ↔ 
-      (((problem.graph.isValid {prog := problem.program, db := univDatabase problem.helper.toSignature})
-    ∧ (problem.graph.labels.toSet ⊆ {prog := problem.program, db := univDatabase problem.helper.toSignature : KnowledgeBase problem.helper.toSignature}.proofTheoreticSemantics))
-      ∧ (Interpretation.models (List.toSet problem.graph.labels) {prog := problem.program, db := emptyDatabase problem.helper.toSignature})) := by 
-    unfold checkOrderedGraphWithUnivDatabase
+  theorem checkOrderedGraphModelhoodUnitIffModel (problem: OrderedGraphVerificationProblem) (safe: problem.program.isSafe) : 
+    checkOrderedGraphModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet problem.graph.labels) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by 
+    unfold checkOrderedGraphModelhood
     simp
-    split
-    case h_1 heq => 
-      simp
-      intro isValid subset
-      have isValid_and_subset := And.intro isValid subset
-      rw [← checkOrderedGraphValidityWithUnivDatabaseUnitIffValid] at isValid_and_subset
-      rw [heq] at isValid_and_subset
-      contradiction
-    case h_2 heq =>
-      rw [← checkOrderedGraphValidityWithUnivDatabaseUnitIffValid]
-      rw [heq]
-      simp
-      rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
-      unfold Interpretation.models
-      simp
+    rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
+    unfold Interpretation.models
+    simp
 end OrderedProofGraphValidity
 
 inductive InputFormat where
@@ -210,7 +156,7 @@ def printHelp: IO Unit := do
   IO.println "  -g        Use a graph instead of a list of trees as an input via a list of edges (start -- end)"
   IO.println "  -o        Use an topologically ordered graph instead of a list of trees as an input via a list atom and list of natural numbers of predecessors"
 
-  IO.println "  -c        Completeness check: in addition to validating the trees check if result is also a model"
+  IO.println "  -c        Completeness check: instead of validating the proof, check if the facts form a model. (Can be combined with -g or -o.)"
 
 def parseTreeProblemFromJson (fileName: String): IO (Except String TreeVerificationProblem) := do
   let filePath := System.FilePath.mk fileName
@@ -231,19 +177,20 @@ def main_trees (argsParsed: ArgsParsed): IO Unit := do
   | Except.ok problem =>
     if argsParsed.complete = true
     then
-      IO.println "Completeness check"
+      IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
       | Except.error msg => IO.println msg
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
-        match checkTreeListWithUnivDatabase problem safe' with
+        match checkTreeListModelhood problem safe' with
+        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
         | Except.ok _ => IO.println "Valid result"
-        | Except.error msg => IO.println ("Invalid result due to " ++ msg )
     else
+      IO.println "Checking Proof Validity..."
       match checkTreeListValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to " ++ msg )
+      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
       | Except.ok _ => IO.println "Valid result"
 
 def parseDagProblemFromJson (fileName: String): IO (Except String GraphVerificationProblem) := do
@@ -265,19 +212,20 @@ def main_dag (argsParsed: ArgsParsed): IO Unit := do
   | Except.ok problem =>
     if argsParsed.complete = true
     then
-      IO.println "Completeness check"
+      IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
       | Except.error msg => IO.println msg
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
-        match checkDagWithUnivDatabase problem safe' with
+        match checkDagModelhood problem safe' with
+        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
         | Except.ok _ => IO.println "Valid result"
-        | Except.error msg => IO.println ("Invalid result due to " ++ msg )
     else
+      IO.println "Checking Proof Validity..."
       match checkDagValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to " ++ msg )
+      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
       | Except.ok _ => IO.println "Valid result"
 
 def parseOrderedDagProblemFromJson (fileName: String): IO (Except String OrderedGraphVerificationProblem) := do
@@ -299,19 +247,20 @@ def main_ordered_dag (argsParsed: ArgsParsed): IO Unit := do
   | Except.ok problem =>
     if argsParsed.complete = true
     then
-      IO.println "Completeness check"
+      IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
       | Except.error msg => IO.println msg
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
-        match checkOrderedGraphWithUnivDatabase problem safe' with
+        match checkOrderedGraphModelhood problem safe' with
+        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
         | Except.ok _ => IO.println "Valid result"
-        | Except.error msg => IO.println ("Invalid result due to " ++ msg )
     else
+      IO.println "Checking Proof Validity..."
       match checkOrderedGraphValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to " ++ msg )
+      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
       | Except.ok _ => IO.println "Valid result"
 
 def main(args: List String): IO Unit := do
@@ -325,3 +274,4 @@ def main(args: List String): IO Unit := do
       | InputFormat.trees => main_trees argsParsed
       | InputFormat.graph => main_dag argsParsed
       | InputFormat.orderedGraph => main_ordered_dag argsParsed
+
