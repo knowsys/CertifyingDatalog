@@ -11,10 +11,11 @@ Using [`elan`](https://github.com/leanprover/elan) / `lake`:
 lake build
 ```
 This will download mathlib4 and build the project.  
-To prevent building mathlib yourself, you can run the following to fetch precompiled files.
+To prevent building mathlib yourself, you can run the following to fetch precompiled dependencies.
 ```
 lake exe cache get
 ```
+(You still need to run `lake build` afterwards.)
 
 The resulting executable is found here: `.lake/build/bin/certifyingDatalog`
 
