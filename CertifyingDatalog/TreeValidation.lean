@@ -2,12 +2,14 @@ import CertifyingDatalog.Basic
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.Unification
 
--- TODO: should we use a HashMap for this?
-def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] := List τ.relationSymbols → List (Rule τ)
+def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] := 
+  @Batteries.HashMap (List τ.relationSymbols) (List (Rule τ)) instBEqOfDecidableEq instHashableList
 
 variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
-def SymbolSequenceMap.empty : SymbolSequenceMap τ := fun _ => []
+def SymbolSequenceMap.empty : SymbolSequenceMap τ := @Batteries.HashMap.empty (List τ.relationSymbols) (List (Rule τ)) instBEqOfDecidableEq instHashableList
+
+def SymbolSequenceMap.find (m : SymbolSequenceMap τ) (l : List (τ.relationSymbols)) : List (Rule τ) := m.findD l []
 
 namespace Rule
   def symbolSequence (r: Rule τ): List τ.relationSymbols := r.head.symbol :: (List.map Atom.symbol r.body)
@@ -42,12 +44,13 @@ namespace Program
   def toSymbolSequenceMap_aux (init : SymbolSequenceMap τ) : Program τ -> SymbolSequenceMap τ
   | .nil => init
   | .cons rule p => 
-    let new_init := fun seq => if seq = rule.symbolSequence then rule :: (init seq) else init seq
+    let new_init := init.insert rule.symbolSequence (rule :: (init.find rule.symbolSequence))
+    -- let new_init := fun seq => if seq = rule.symbolSequence then rule :: (init seq) else init seq
     toSymbolSequenceMap_aux new_init p
 
   def toSymbolSequenceMap (p : Program τ) := p.toSymbolSequenceMap_aux SymbolSequenceMap.empty
 
-  lemma toSymbolSequenceMap_mem (init : SymbolSequenceMap τ) (p : Program τ) : ∀ (l : List (τ.relationSymbols)) (r : Rule τ), r ∈ (p.toSymbolSequenceMap_aux init l) ↔ r ∈ init l ∨ (r.symbolSequence = l ∧ r ∈ p) := by 
+  lemma toSymbolSequenceMap_mem (init : SymbolSequenceMap τ) (p : Program τ) : ∀ (l : List (τ.relationSymbols)) (r : Rule τ), r ∈ ((p.toSymbolSequenceMap_aux init).find l) ↔ r ∈ (init.find l) ∨ (r.symbolSequence = l ∧ r ∈ p) := by 
     induction p generalizing init with
     | nil =>
       intros
@@ -60,8 +63,12 @@ namespace Program
       rw [ih]
       by_cases l_symb: l = rule.symbolSequence
       · simp [l_symb]
+        unfold SymbolSequenceMap.find
+        rw [Batteries.HashMap.findD_insert' init rule.symbolSequence]
+        simp
         tauto
-      · simp [l_symb]
+      · unfold SymbolSequenceMap.find
+        rw [Batteries.HashMap.findD_insert'' (h := by intro contra; apply l_symb; rw [contra])]
         constructor
         · intro h
           cases h with
@@ -89,17 +96,19 @@ namespace Program
             | inr r_tl =>
               apply r_tl
 
-
-  lemma toSymbolSequenceMap_semantics (p: Program τ) (r: Rule τ) : ∀ (r': Rule τ), r' ∈ p.toSymbolSequenceMap r.symbolSequence ↔ r' ∈ p ∧ r'.symbolSequence = r.symbolSequence := by
+  lemma toSymbolSequenceMap_semantics (p: Program τ) (r: Rule τ) : ∀ (r': Rule τ), r' ∈ (p.toSymbolSequenceMap.find r.symbolSequence) ↔ r' ∈ p ∧ r'.symbolSequence = r.symbolSequence := by
     intro r'
     unfold toSymbolSequenceMap
     rw [toSymbolSequenceMap_mem]
-    simp [SymbolSequenceMap.empty]
+    simp [SymbolSequenceMap.empty, SymbolSequenceMap.find]
+    rw [Batteries.HashMap.findD_eq_find?]
+    rw [Batteries.HashMap.not_contains_find_none (h := by rw [Batteries.HashMap.empty_contains]; simp)]
+    simp
     rw [And.comm]
 end Program
 
 def checkRuleMatch (m: SymbolSequenceMap τ) (gr: GroundRule τ): Except String Unit :=
-  if (m gr.toRule.symbolSequence).any (fun rule => (Substitution.matchRule rule gr).isSome)
+  if (m.find gr.toRule.symbolSequence).any (fun rule => (Substitution.matchRule rule gr).isSome)
   then Except.ok ()
   else Except.error ("No match for " ++ ToString.toString gr)
 
