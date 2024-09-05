@@ -5,11 +5,11 @@ import CertifyingDatalog.Datastructures.Array
 import CertifyingDatalog.Datastructures.AssocList
 import CertifyingDatalog.Datastructures.List
 
-variable {A : Type u} [DecidableEq A] [Hashable A] {B : Type v} [DecidableEq B]
+variable {A : Type u} {B : Type v}
 
-instance: Batteries.HashMap.LawfulHashable A := {hash_eq := by simp}
+instance [DecidableEq A] [Hashable A] : Batteries.HashMap.LawfulHashable A := {hash_eq := by simp}
 
-instance: PartialEquivBEq A := {symm:= by simp, trans:= by simp}
+instance [DecidableEq A] [Hashable A] : PartialEquivBEq A := {symm:= by simp, trans:= by simp}
 
 namespace Batteries.HashMap.Imp.Buckets
   lemma mem_update (buckets: Buckets A B) (i : USize) (d: AssocList A B) (h : USize.toNat i < Array.size buckets.1) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (buckets.update i d h).1 ∧ ab ∈ bkt.toList) ↔ ab ∈ d.toList ∨ ∃ (j: Fin buckets.1.size), j.1 ≠ i.toNat ∧ ab ∈ (buckets.1[j]).toList :=
@@ -52,18 +52,18 @@ namespace Batteries.HashMap.Imp.Buckets
       simp
       apply ab_mem
 
-  def kv (buckets: Buckets A B): Finset (A × B) := Array.foldl (fun x y => x ∪ y.toList.toFinset) ∅ buckets.val
+  def kv [DecidableEq A] [DecidableEq B] (buckets: Buckets A B): Finset (A × B) := Array.foldl (fun x y => x ∪ y.toList.toFinset) ∅ buckets.val
 
-  def keys' (buckets: Buckets A B): Finset A := Array.foldl (fun x y => x ∪ (y.toList.map Prod.fst).toFinset) ∅ buckets.val
+  def keys' [DecidableEq A] (buckets: Buckets A B): Finset A := Array.foldl (fun x y => x ∪ (y.toList.map Prod.fst).toFinset) ∅ buckets.val
 
-  lemma keys'_iff_kv (buckets: Buckets A B) (a:A): a ∈ buckets.keys' ↔ ∃ (b:B), (a,b) ∈ buckets.kv:= by
+  lemma keys'_iff_kv [DecidableEq A] [DecidableEq B] (buckets: Buckets A B) (a:A): a ∈ buckets.keys' ↔ ∃ (b:B), (a,b) ∈ buckets.kv:= by
     unfold keys'
     unfold kv
     simp_rw [Array.foldl_union]
     simp
     tauto
 
-  lemma keys'_mem_iff (buckets: Buckets A B) (a:A): a ∈ buckets.keys' ↔ ∃ (l: AssocList A B), l ∈ buckets.val ∧ l.contains a:=
+  lemma keys'_mem_iff [DecidableEq A] (buckets: Buckets A B) (a:A): a ∈ buckets.keys' ↔ ∃ (l: AssocList A B), l ∈ buckets.val ∧ l.contains a:=
   by
     unfold keys'
     rw [Array.foldl_union]
@@ -71,7 +71,7 @@ namespace Batteries.HashMap.Imp.Buckets
 
   def toList (buckets : Buckets A B) : List (A × B) := List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) [] buckets.val.data
 
-  theorem in_toList_means_in_list_at_index (buckets : Buckets A B) : (a, b) ∈ buckets.toList -> a ∈ buckets.keys' := by 
+  theorem in_toList_means_in_list_at_index [DecidableEq A] [DecidableEq B] (buckets : Buckets A B) : (a, b) ∈ buckets.toList -> a ∈ buckets.keys' := by
     intro h
     rw [keys'_iff_kv]
     exists b
@@ -79,16 +79,16 @@ namespace Batteries.HashMap.Imp.Buckets
     simp [Array.foldl_eq_foldl_data]
     unfold toList at h
     revert h
-    have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data -> (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data := by 
-      induction buckets.val.data with 
+    have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data -> (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data := by
+      induction buckets.val.data with
       | nil => simp
-      | cons bucket buckets ih => 
+      | cons bucket buckets ih =>
         intro bucket_list h
-        simp at h 
+        simp at h
         simp
-        have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by 
+        have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by
           apply Finset.ext
-          intro pair 
+          intro pair
           simp [Or.comm]
         rw [← this]
         apply ih
@@ -96,7 +96,7 @@ namespace Batteries.HashMap.Imp.Buckets
         apply h
     apply this []
 
-  theorem in_list_at_index_means_in_toList (buckets : Buckets A B) : a ∈ buckets.keys' -> ∃ b, (a,b) ∈ buckets.toList := by 
+  theorem in_list_at_index_means_in_toList [DecidableEq A] [DecidableEq B] (buckets : Buckets A B) : a ∈ buckets.keys' -> ∃ b, (a,b) ∈ buckets.toList := by
     intro h
     rw [keys'_iff_kv] at h
     cases h with | intro b hb =>
@@ -105,24 +105,24 @@ namespace Batteries.HashMap.Imp.Buckets
       exists b
       unfold toList
       revert hb
-      have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data -> (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data := by 
-        induction buckets.val.data with 
+      have : ∀ bucket_list : List _, (a, b) ∈ List.foldl (fun x y => x ∪ y.toList.toFinset) bucket_list.toFinset buckets.val.data -> (a, b) ∈ List.foldl (fun mb a => List.foldl (fun mb a => a :: mb) mb a.toList) bucket_list buckets.val.data := by
+        induction buckets.val.data with
         | nil => simp
-        | cons bucket buckets ih => 
+        | cons bucket buckets ih =>
           intro bucket_list hb
           simp at hb
           simp
           rw [List.foldl_cons_is_concat]
           apply ih
-          have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by 
+          have : (bucket.toList.reverse ++ bucket_list).toFinset = bucket_list.toFinset ∪ bucket.toList.toFinset := by
             apply Finset.ext
-            intro pair 
+            intro pair
             simp [Or.comm]
           rw [this]
           apply hb
       apply this []
 
-  lemma distinct_elements (buckets: Buckets A B) (wf: Buckets.WF buckets) (l: AssocList A B) (mem: l ∈ buckets.1): List.Pairwise (fun x y => ¬x.1 = y.1) l.toList := by
+  lemma distinct_elements [DecidableEq A] [Hashable A] (buckets: Buckets A B) (wf: Buckets.WF buckets) (l: AssocList A B) (mem: l ∈ buckets.1): List.Pairwise (fun x y => ¬x.1 = y.1) l.toList := by
     have dist: ∀ (bucket : Batteries.AssocList A B),
     bucket ∈ buckets.val.data →
       List.Pairwise (fun (a b : A × B) => ¬(a.fst == b.fst) = true) (Batteries.AssocList.toList bucket) := by
@@ -132,7 +132,7 @@ namespace Batteries.HashMap.Imp.Buckets
     rw [← Array.mem_def]
     apply mem
 
-  lemma element_member_in_hash_bucket (a: A ) (b: B) (buckets: Buckets A B) (wf: Buckets.WF buckets) (i: Fin (buckets.1.size)): (a,b) ∈ buckets.1[↑i].toList →  i.val = USize.toNat (mkIdx buckets.2 (UInt64.toUSize (hash a))) := by
+  lemma element_member_in_hash_bucket [DecidableEq A] [Hashable A] (a: A ) (b: B) (buckets: Buckets A B) (wf: Buckets.WF buckets) (i: Fin (buckets.1.size)): (a,b) ∈ buckets.1[↑i].toList →  i.val = USize.toNat (mkIdx buckets.2 (UInt64.toUSize (hash a))) := by
     have hash_self: ∀ (i : Nat) (h : i < Array.size buckets.val),
     Batteries.AssocList.All (fun (k : A) (_ : B) => USize.toNat (UInt64.toUSize (hash k) % Array.size buckets.val) = i) buckets.val[i] := by
       apply wf.hash_self
@@ -148,16 +148,16 @@ namespace Batteries.HashMap.Imp.Buckets
 end Batteries.HashMap.Imp.Buckets
 
 namespace Batteries.HashMap.Imp
-  def kv (m: Imp A B): Finset (A × B) := m.2.kv
+  def kv [DecidableEq A] [DecidableEq B] (m: Imp A B): Finset (A × B) := m.2.kv
 
-  def kv_member (m: Imp A B) (a: A) (b:B): Bool :=
+  def kv_member [DecidableEq A] [DecidableEq B] [Hashable A] (m: Imp A B) (a: A) (b:B): Bool :=
     let ⟨_, buckets⟩ := m
     let ⟨i, h⟩ := mkIdx buckets.2 (hash a |>.toUSize)
     let bkt := buckets.1[i]
 
     (a,b) ∈ bkt.toList
 
-  lemma kv_member_iff_in_kv (m: Imp A B) (wf: Imp.WF m) (a: A) (b:B): (a,b) ∈ m.kv ↔ Imp.kv_member m a b = true :=
+  lemma kv_member_iff_in_kv [DecidableEq A] [DecidableEq B] [Hashable A] (m: Imp A B) (wf: Imp.WF m) (a: A) (b:B): (a,b) ∈ m.kv ↔ Imp.kv_member m a b = true :=
   by
     cases m with
     | mk size buckets =>
@@ -198,11 +198,11 @@ namespace Batteries.HashMap.Imp
       exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
       exact h
 
-  def keys' (m: Imp A B): Finset A :=
+  def keys' [DecidableEq A] (m: Imp A B): Finset A :=
     match m with
     | ⟨_, buckets⟩ => buckets.keys'
 
-  lemma keys'_iff_kv (m: Imp A B) (a:A): a ∈ m.keys' ↔ ∃ (b:B), (a,b) ∈ m.kv:= by
+  lemma keys'_iff_kv [DecidableEq A] [DecidableEq B] (m: Imp A B) (a:A): a ∈ m.keys' ↔ ∃ (b:B), (a,b) ∈ m.kv:= by
     unfold keys'
     unfold kv
     cases m with
@@ -211,7 +211,7 @@ namespace Batteries.HashMap.Imp
       rw [Buckets.keys'_iff_kv]
 
 
-  lemma contains_iff (m: Imp A B) (wf: Imp.WF m): m.contains a ↔ a ∈ m.keys' :=
+  lemma contains_iff [DecidableEq A] [DecidableEq B] [Hashable A] (m: Imp A B) (wf: Imp.WF m): m.contains a ↔ a ∈ m.keys' :=
   by
     cases m with
     | mk size buckets =>
@@ -228,7 +228,7 @@ namespace Batteries.HashMap.Imp
       simp
       constructor
       exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
-      rw [AssocList.contains_eq, List.any_iff_exists] at h
+      rw [AssocList.contains_eq, List.any_eq_true] at h
       simp at h
       apply h
 
@@ -240,10 +240,10 @@ namespace Batteries.HashMap.Imp
       rw [Imp.WF_iff] at wf
       simp at wf
       rcases wf with ⟨_, wf⟩
-      rw [Batteries.AssocList.contains_eq, List.any_iff_exists]
+      rw [Batteries.AssocList.contains_eq, List.any_eq_true]
       unfold mkIdx
       simp
-      rw [Batteries.AssocList.contains_eq, List.any_iff_exists] at a_l
+      rw [Batteries.AssocList.contains_eq, List.any_eq_true] at a_l
       rcases a_l with ⟨ab, ab_mem, ab_a⟩
       use ab.2
       rw [← Array.contains_def] at l_buckets
@@ -271,7 +271,7 @@ namespace Batteries.HashMap.Imp
       rw [l_buckets]
       apply ab_mem
 
-  lemma foldl_reinsertAux (source:(AssocList A B)) (target: Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (List.foldl (fun d x => reinsertAux d x.1 x.2) target (AssocList.toList source)).1 ∧ ab ∈ bkt.toList ) ↔ (∃ (bkt: AssocList A B),  bkt ∈ target.1 ∧ ab ∈ bkt.toList) ∨ ab ∈ source.toList := by
+  lemma foldl_reinsertAux [Hashable A] (source:(AssocList A B)) (target: Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (List.foldl (fun d x => reinsertAux d x.1 x.2) target (AssocList.toList source)).1 ∧ ab ∈ bkt.toList ) ↔ (∃ (bkt: AssocList A B),  bkt ∈ target.1 ∧ ab ∈ bkt.toList) ∨ ab ∈ source.toList := by
     induction source generalizing target with
     | nil =>
       unfold List.foldl
@@ -288,7 +288,7 @@ namespace Batteries.HashMap.Imp
       rw [or_assoc (a:= ab = (hda, hdb)), or_comm (a:= (ab = (hda, hdb))), or_assoc (c:= ab ∈ AssocList.toList tl), Array.splitLemma (b:= ab) (f:= AssocList.toList) (as:=target.1) (i:=USize.toNat (Imp.mkIdx target.2 (UInt64.toUSize (hash hda)))) (h:= (Imp.mkIdx target.2 (UInt64.toUSize (hash hda))).2)]
       simp
 
-  lemma expand_go_mem (i : Nat) (source : Array (AssocList A B)) (target : Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (expand.go i source target).1 ∧ ab ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B), (bkt ∈ target.1 ∨ ∃ (j: Fin source.size), j.val ≥ i ∧ bkt = source[j]) ∧ ab ∈ bkt.toList := by
+  lemma expand_go_mem [Hashable A] (i : Nat) (source : Array (AssocList A B)) (target : Buckets A B) (ab: A × B): (∃ (bkt: AssocList A B), bkt ∈ (expand.go i source target).1 ∧ ab ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B), (bkt ∈ target.1 ∨ ∃ (j: Fin source.size), j.val ≥ i ∧ bkt = source[j]) ∧ ab ∈ bkt.toList := by
     induction' h:(source.size - i)  with n ih generalizing source i target
 
     rw [Nat.sub_eq_zero_iff_le] at h
@@ -431,7 +431,7 @@ namespace Batteries.HashMap.Imp
         exact k.isLt
         exact ab_mem
 
-  lemma expand_preserves_mem  (size : Nat) (buckets : Buckets A B) (a:A) (b:B): (∃ (bkt: AssocList A B),  bkt ∈ buckets.1 ∧ (a,b) ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B),  bkt ∈ (expand size buckets).buckets.1 ∧  (a,b) ∈ bkt.toList := by
+  lemma expand_preserves_mem [Hashable A] (size : Nat) (buckets : Buckets A B) (a:A) (b:B): (∃ (bkt: AssocList A B),  bkt ∈ buckets.1 ∧ (a,b) ∈ bkt.toList) ↔ ∃ (bkt: AssocList A B),  bkt ∈ (expand size buckets).buckets.1 ∧  (a,b) ∈ bkt.toList := by
     unfold expand
     simp [expand_go_mem]
     unfold Buckets.mk
@@ -467,7 +467,7 @@ namespace Batteries.HashMap.Imp
 
     apply ab_mem
 
-  lemma insert_semantics (m: Imp A B) (wf: Imp.WF m) (a a': A) (b b':B): (m.insert a b).kv_member a' b' ↔ (m.kv_member a' b' ∧ a ≠ a') ∨ (a, b) = (a', b') :=
+  lemma insert_semantics [DecidableEq A] [DecidableEq B] [Hashable A] (m: Imp A B) (wf: Imp.WF m) (a a': A) (b b':B): (m.insert a b).kv_member a' b' ↔ (m.kv_member a' b' ∧ a ≠ a') ∨ (a, b) = (a', b') :=
   by
     rw [← kv_member_iff_in_kv (wf:=wf), ← kv_member_iff_in_kv (wf:= Imp.WF.insert wf)]
     cases m with
@@ -657,7 +657,7 @@ namespace Batteries.HashMap.Imp
         left
         simp [h]
 
-  lemma pairwise_diff_to_element_if_bucket (l: AssocList A B) (m: Imp A B) (wf: Imp.WF m) (mem: l ∈ m.buckets.1) (a:A): List.Pairwise (fun x y => ¬((x.1 == a) = true ∧ (y.1 == a) = true))
+  lemma pairwise_diff_to_element_if_bucket [DecidableEq A] [DecidableEq B] [Hashable A] (l: AssocList A B) (m: Imp A B) (wf: Imp.WF m) (mem: l ∈ m.buckets.1) (a:A): List.Pairwise (fun x y => ¬((x.1 == a) = true ∧ (y.1 == a) = true))
     (AssocList.toList l ) := by
       have distinct: List.Pairwise (fun x y => ¬x.1 = y.1) l.toList := by
         apply Buckets.distinct_elements
@@ -668,7 +668,7 @@ namespace Batteries.HashMap.Imp
       apply AssocList.pairwise_diff_to_element_if_all_diff
       exact distinct
 
-  lemma find_iff_kv (m: Imp A B) (wf: Imp.WF m) (a:A) (b:B): m.find? a = some b ↔ m.kv_member a b = true := by
+  lemma find_iff_kv [DecidableEq A] [DecidableEq B] [Hashable A] (m: Imp A B) (wf: Imp.WF m) (a:A) (b:B): m.find? a = some b ↔ m.kv_member a b = true := by
     cases m with
     | mk size buckets =>
       unfold kv_member
@@ -697,7 +697,7 @@ namespace Batteries.HashMap.Imp
       simp
       exact Array.get_mem buckets.1 (Fin.mk (mkIdx buckets.2 (hash a).toUSize).1.toNat (mkIdx buckets.2 (hash a).toUSize).2)
 
-  lemma contains_iff_find? (m: Imp A B) (wf: Imp.WF m) (a:A): m.contains a ↔ ∃ (b:B), m.find? a = some b := by
+  lemma contains_iff_find? [DecidableEq A] [DecidableEq B] [Hashable A] (m: Imp A B) (wf: Imp.WF m) (a:A): m.contains a ↔ ∃ (b:B), m.find? a = some b := by
     unfold contains
     unfold find?
     cases m with
@@ -729,6 +729,8 @@ namespace Batteries.HashMap.Imp
 end Batteries.HashMap.Imp
 
 namespace Batteries.HashMap
+  variable [DecidableEq A] [DecidableEq B] [Hashable A]
+
   def keys' (m: HashMap A B): Finset A := m.val.keys'
 
   lemma contains_iff (m: HashMap A B) (a: A): m.contains a ↔ a ∈ m.keys' :=
@@ -832,12 +834,12 @@ namespace Batteries.HashMap
     rw [contains_iff_find?]
     use b
 
-  lemma findD_eq_find? (m: HashMap A B) (a:A) (b:B): m.findD a b = match m.find? a with
-                      | some b' => b'
-                      | none => b := by
-    unfold findD
-    rw [Option.getD_eq_iff]
-    aesop
+  omit [DecidableEq B] in lemma findD_eq_find? (m: HashMap A B) (a:A) (b:B): m.findD a b = match m.find? a with
+    | some b' => b'
+    | none => b := by
+      unfold findD
+      rw [Option.getD_eq_iff]
+      aesop
 
   lemma not_contains_find_none (m: HashMap A B) (a:A) (h: ¬ m.contains a = true): m.find? a = none := by
     rw [contains_iff_find?] at h
@@ -871,21 +873,21 @@ namespace Batteries.HashMap
       unfold Id.run
       unfold Imp.foldM
       simp [Array.foldlM_eq_foldlM_data, List.foldlM_eq_foldl]
-      
-      rw [contains_iff] 
-      
+
+      rw [contains_iff]
+
       constructor
-      · intro h 
-        cases h with | intro b hb => 
+      · intro h
+        cases h with | intro b hb =>
           apply Imp.Buckets.in_toList_means_in_list_at_index
           apply hb
-      · intro h 
+      · intro h
         unfold keys' at h
         unfold Imp.keys' at h
         simp at h
         cases Imp.Buckets.in_list_at_index_means_in_toList _ h with | intro b hb => exists b
 
-    lemma empty_contains: ∀ (a:A), (@HashMap.empty A B).contains a = false :=
+    omit [DecidableEq B] in lemma empty_contains: ∀ (a:A), (@HashMap.empty A B).contains a = false :=
     by
       intro a
       unfold contains
@@ -899,17 +901,17 @@ namespace Batteries.HashMap
       unfold Imp.Buckets.mk
       simp
 
-    theorem ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by 
+    theorem ofList_mapped_to_pair_contains_iff_list_elem (l : List A) (a : A) : ∀ b : B, (ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by
       intro b
       unfold ofList
       simp
-      
-      have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm (List.map (fun a => (a, b)) l)).contains a = true ↔ hm.contains a ∨ a ∈ l := by 
-        induction l with 
-        | nil => simp 
-        | cons head tail ih => 
+
+      have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm (List.map (fun a => (a, b)) l)).contains a = true ↔ hm.contains a ∨ a ∈ l := by
+        induction l with
+        | nil => simp
+        | cons head tail ih =>
           simp
-          intro hm 
+          intro hm
           rw [ih (hm.insert head b)]
           rw [contains_insert]
           have : a = head ↔ head = a := by constructor <;> apply Eq.symm
@@ -921,47 +923,47 @@ namespace Batteries.HashMap
       simp at applied_this
       apply applied_this
 
-    theorem findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (ofList l).findD a b = ((l.reverse.find? (fun x => x.fst == a)).map Prod.snd).getD b := by 
-      intro b 
+    theorem findD_ofList_is_list_find_getD (l : List (A × B)) (a : A) : ∀ b, (ofList l).findD a b = ((l.reverse.find? (fun x => x.fst == a)).map Prod.snd).getD b := by
+      intro b
       unfold ofList
       simp
 
-      have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm l).findD a b = (Option.map Prod.snd (List.find? (fun x => x.1 == a) l.reverse)).getD (hm.findD a b) := by 
-        induction l with 
+      have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm l).findD a b = (Option.map Prod.snd (List.find? (fun x => x.1 == a) l.reverse)).getD (hm.findD a b) := by
+        induction l with
         | nil => simp
-        | cons head tail ih => 
+        | cons head tail ih =>
           simp
           intro hm
           rw [ih (hm.insert head.1 head.2)]
-          have findD_insert : ∀ b, (hm.insert head.1 head.2).findD a b = if a = head.1 then head.2 else hm.findD a b := by 
+          have findD_insert : ∀ b, (hm.insert head.1 head.2).findD a b = if a = head.1 then head.2 else hm.findD a b := by
             intro b
             rw [findD_eq_find?]
             rw [findD_eq_find?]
             rw [find_insert]
             split
-            case h_1 _ b hb => 
+            case h_1 _ b hb =>
               split at hb
-              case isTrue h => 
+              case isTrue h =>
                 simp [h]
                 injection hb with hb
                 rw [hb]
-              case isFalse h => 
+              case isFalse h =>
                 simp [h]
                 rw [hb]
-            case h_2 b _ hb => 
+            case h_2 b _ hb =>
               split at hb
               case isTrue _ => contradiction
-              case isFalse h => 
+              case isFalse h =>
                 simp [h]
                 rw [hb]
           rw [findD_insert]
           split
           case isTrue h =>
-            have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = (tail.reverse.find? (fun x => x.1 == a)).getD head := by 
+            have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = (tail.reverse.find? (fun x => x.1 == a)).getD head := by
               rw [List.find_concat]
               have : [head].find? (fun x => x.1 == a) = some head := by unfold List.find?; simp [h]
               rw [this]
-              have : ∀ {α} (opt : Option α) (x : α), opt.orElse (fun _ => some x) = Option.some (opt.getD x) := by 
+              have : ∀ {α} (opt : Option α) (x : α), opt.orElse (fun _ => some x) = Option.some (opt.getD x) := by
                 intro _ opt x
                 unfold Option.orElse
                 split <;> simp
@@ -969,7 +971,7 @@ namespace Batteries.HashMap
             rw [this]
             simp
           case isFalse h =>
-            have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = tail.reverse.find? (fun x => x.1 == a) := by 
+            have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = tail.reverse.find? (fun x => x.1 == a) := by
               rw [List.find_concat]
               have : (head.1 == a) = false := by simp; intro contra; apply h; rw [contra]
               have : [head].find? (fun x => x.1 == a) = none := by unfold List.find?; simp [this]

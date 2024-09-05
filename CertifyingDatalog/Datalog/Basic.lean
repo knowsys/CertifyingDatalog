@@ -53,7 +53,7 @@ section Basic
 end Basic
 
 section Methods
-  variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
+  variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
   namespace Term
     def vars: Term τ → Finset τ.vars
@@ -63,7 +63,7 @@ section Methods
     def toConstant (t: Term τ) (h: t.vars = ∅) : τ.constants :=
       match t with
       | Term.constant c => c
-      | Term.variableDL v => by simp [Term.vars] at h 
+      | Term.variableDL v => by simp [Term.vars] at h
   end Term
 
   namespace Atom
@@ -103,19 +103,19 @@ section Methods
         right
         use a
         simp at x_mem
-        constructor 
-        · exact h 
+        constructor
+        · exact h
         · exact x_mem
       apply subs
 
     def isSafe (r: Rule τ) : Prop := r.head.vars ⊆ List.foldl_union Atom.vars ∅ r.body
 
-    def checkSafety (r: Rule τ) : Except String Unit :=
+    def checkSafety [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] (r: Rule τ) : Except String Unit :=
       if r.head.vars \ (List.foldl_union Atom.vars ∅ r.body) = ∅
       then Except.ok ()
       else Except.error ("Rule" ++ ToString.toString r ++ "is not safe ")
 
-    lemma checkSafety_iff_isSafe (r: Rule τ) : r.checkSafety = Except.ok () ↔ r.isSafe := by
+    lemma checkSafety_iff_isSafe [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] (r: Rule τ) : r.checkSafety = Except.ok () ↔ r.isSafe := by
       unfold checkSafety
       unfold isSafe
       split <;> (simp at *; assumption)
@@ -124,10 +124,10 @@ section Methods
   namespace Program
     def isSafe (p : Program τ) : Prop := ∀ r, r ∈ p -> r.isSafe
 
-    def checkSafety (p : Program τ): Except String Unit :=
+    def checkSafety [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] (p : Program τ): Except String Unit :=
       List.mapExceptUnit p (fun r => r.checkSafety)
 
-    lemma checkSafety_iff_isSafe (p: Program τ): p.checkSafety = Except.ok () ↔ p.isSafe := by
+    lemma checkSafety_iff_isSafe [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] (p: Program τ): p.checkSafety = Except.ok () ↔ p.isSafe := by
       unfold checkSafety
       unfold isSafe
       rw [List.mapExceptUnit_iff]

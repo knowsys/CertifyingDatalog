@@ -1,11 +1,12 @@
 import CertifyingDatalog.Datalog
 
 section TermMatching
-  variable {τ: Signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+  variable {τ: Signature} [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
   namespace Substitution
     def extend (s: Substitution τ) (v: τ.vars) (c: τ.constants) : Substitution τ := fun x => if x = v then Option.some c else s x
 
+    omit [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] in
     lemma extend_subset (s: Substitution τ) (v: τ.vars) (c: τ.constants) (p: Option.isNone (s v)): s ⊆ extend s v c := by
       unfold extend
       unfold_projs
@@ -32,106 +33,106 @@ section TermMatching
     def matchTerm (s: Substitution τ) (t: Term τ) (c: τ.constants) : Option (Substitution τ) :=
       match t with
       | .constant c' => if c = c' then Option.some s else Option.none
-      | .variableDL v => match s v with 
+      | .variableDL v => match s v with
         | .some c' => if c = c' then Option.some s else Option.none
         | .none => s.extend v c
 
-    lemma matchTermSubset (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isSome) : s ⊆ ((s.matchTerm t c).get h) := by 
+    lemma matchTermSubset (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isSome) : s ⊆ ((s.matchTerm t c).get h) := by
       unfold matchTerm
-      cases t with 
-      | constant c' => 
+      cases t with
+      | constant c' =>
         simp
-        cases Decidable.em (c = c') with 
-        | inl eq => 
+        cases Decidable.em (c = c') with
+        | inl eq =>
           simp [eq]
           apply subset_refl
-        | inr neq => 
+        | inr neq =>
           unfold matchTerm at h
           simp [neq] at h
-      | variableDL v => 
-        cases eq : (s v) with 
-        | none => 
+      | variableDL v =>
+        cases eq : (s v) with
+        | none =>
           simp [eq]
           apply extend_subset
           simp [eq]
-        | some c' => 
+        | some c' =>
           simp [eq]
-          cases Decidable.em (c = c') with 
-          | inl eq2 => 
+          cases Decidable.em (c = c') with
+          | inl eq2 =>
             simp [eq2]
             apply subset_refl
-          | inr neq => 
+          | inr neq =>
             unfold matchTerm at h
             simp [eq, neq] at h
 
-    lemma matchTermYieldsSubs (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isSome) : ((s.matchTerm t c).get h).applyTerm t = c := by 
+    lemma matchTermYieldsSubs (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isSome) : ((s.matchTerm t c).get h).applyTerm t = c := by
       unfold matchTerm
-      cases t with 
-      | constant c' => 
+      cases t with
+      | constant c' =>
         simp
-        cases Decidable.em (c = c') with 
-        | inl eq => 
+        cases Decidable.em (c = c') with
+        | inl eq =>
           simp [eq]
           unfold applyTerm
           simp
-        | inr neq => 
+        | inr neq =>
           unfold matchTerm at h
           simp [neq] at h
-      | variableDL v => 
-        cases eq : (s v) with 
-        | none => 
+      | variableDL v =>
+        cases eq : (s v) with
+        | none =>
           simp [eq]
           unfold applyTerm
           unfold extend
           simp
-        | some c' => 
+        | some c' =>
           simp [eq]
-          cases Decidable.em (c = c') with 
-          | inl eq2 => 
+          cases Decidable.em (c = c') with
+          | inl eq2 =>
             simp [eq2]
             unfold applyTerm
             simp [eq]
-          | inr neq => 
+          | inr neq =>
             unfold matchTerm at h
             simp [eq, neq] at h
 
     lemma matchTermIsMinimal (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyTerm t = c -> ((s.matchTerm t c).get h) ⊆ s' := by
       intro s' ⟨subset, apply_t⟩
       unfold matchTerm
-      cases t with 
-      | constant c' => 
+      cases t with
+      | constant c' =>
         simp
         unfold applyTerm at apply_t
         simp at apply_t
         simp [apply_t]
         apply subset
-      | variableDL v => 
-        cases eq2 : (s v) with 
+      | variableDL v =>
+        cases eq2 : (s v) with
         | some c' =>
           simp [eq2]
           unfold matchTerm at h
           simp [eq2] at h
-          have : c = c' := by 
+          have : c = c' := by
             apply Decidable.by_contra
             intro contra
             simp [contra] at h
           simp [this]
           apply subset
-        | none => 
+        | none =>
           simp [eq2]
           unfold extend
           unfold_projs
           unfold subset
           intro v' v'_dom
-          cases Decidable.em (v' = v) with 
-          | inl eqv => 
-            simp [eqv] 
+          cases Decidable.em (v' = v) with
+          | inl eqv =>
+            simp [eqv]
             unfold applyTerm at apply_t
             simp at apply_t
-            cases eq3 : s' v with 
+            cases eq3 : s' v with
             | none => simp [eq3] at apply_t
             | some c' => simp [eq3] at apply_t; rw [apply_t]
-          | inr neqv => 
+          | inr neqv =>
             simp [neqv]
             apply subset
             unfold domain at v'_dom
@@ -140,19 +141,19 @@ section TermMatching
             simp [neqv]
             exact v'_dom
 
-    lemma matchTermNoneThenNoSubs (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyTerm t ≠ c := by 
+    lemma matchTermNoneThenNoSubs (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyTerm t ≠ c := by
       intro s' subset apply_t
       unfold matchTerm at h
-      cases t with 
-      | constant c' => 
+      cases t with
+      | constant c' =>
         unfold applyTerm at apply_t
         simp at apply_t
         simp [apply_t] at h
       | variableDL v =>
         simp at h
-        cases eq : (s v) with 
+        cases eq : (s v) with
         | none => simp [eq] at h
-        | some c' => 
+        | some c' =>
           simp [eq] at h
           have : s.applyTerm (Term.variableDL v) = Term.constant c' := by unfold applyTerm; simp [eq]
           rw [subset_applyTerm_eq subset this] at apply_t
@@ -167,19 +168,19 @@ section AtomMatching
   namespace Substitution
     def matchTermList (s: Substitution τ) : List ((Term τ) × τ.constants) -> Option (Substitution τ)
     | .nil => Option.some s
-    | .cons ⟨t, c⟩ l => match s.matchTerm t c with 
+    | .cons ⟨t, c⟩ l => match s.matchTerm t c with
       | .none => Option.none
       | .some s' => s'.matchTermList l
 
-    lemma matchTermListSubset (s : Substitution τ) (l : List ((Term τ) × τ.constants)) (h : (s.matchTermList l).isSome) : s ⊆ (s.matchTermList l).get h := by 
-      induction l generalizing s with 
+    lemma matchTermListSubset (s : Substitution τ) (l : List ((Term τ) × τ.constants)) (h : (s.matchTermList l).isSome) : s ⊆ (s.matchTermList l).get h := by
+      induction l generalizing s with
       | nil => unfold matchTermList; apply subset_refl
       | cons pair l ih =>
-        cases eq : s.matchTerm pair.fst pair.snd with 
+        cases eq : s.matchTerm pair.fst pair.snd with
         | none => unfold matchTermList at h; simp [eq] at h
-        | some s' => 
+        | some s' =>
           have matchPairSome : (s.matchTerm pair.fst pair.snd).isSome := by simp [eq]
-          have : s.matchTermList (pair::l) = ((s.matchTerm pair.fst pair.snd).get matchPairSome).matchTermList l := by 
+          have : s.matchTermList (pair::l) = ((s.matchTerm pair.fst pair.snd).get matchPairSome).matchTermList l := by
             conv => left; unfold matchTermList
             simp [eq]
           simp_rw [this]
@@ -188,22 +189,22 @@ section AtomMatching
           apply matchPairSome
           apply ih
 
-    lemma matchTermListYieldsSubs (s: Substitution τ) (l: List ((Term τ) × τ.constants)) (h : (s.matchTermList l).isSome) : (l.map Prod.fst).map ((s.matchTermList l).get h).applyTerm = l.map Prod.snd := by 
-      induction l generalizing s with 
+    lemma matchTermListYieldsSubs (s: Substitution τ) (l: List ((Term τ) × τ.constants)) (h : (s.matchTermList l).isSome) : (l.map Prod.fst).map ((s.matchTermList l).get h).applyTerm = l.map Prod.snd := by
+      induction l generalizing s with
       | nil => simp
       | cons pair l ih =>
-        cases eq : s.matchTerm pair.fst pair.snd with 
+        cases eq : s.matchTerm pair.fst pair.snd with
         | none => unfold matchTermList at h; simp [eq] at h
         | some s' =>
           have : (s.matchTerm pair.fst pair.snd).isSome := by simp [eq]
           have matchTermResult := s.matchTermYieldsSubs pair.fst pair.snd this
-          have : s.matchTermList (pair::l) = ((s.matchTerm pair.fst pair.snd).get this).matchTermList l := by 
+          have : s.matchTermList (pair::l) = ((s.matchTerm pair.fst pair.snd).get this).matchTermList l := by
             conv => left; unfold matchTermList
             simp [eq]
           simp
           constructor
           · unfold matchTermList at h
-            cases eq : s.matchTerm pair.fst pair.snd with 
+            cases eq : s.matchTerm pair.fst pair.snd with
             | none => simp [eq] at h
             | some s' =>
               apply subset_applyTerm_eq _ matchTermResult
@@ -214,16 +215,16 @@ section AtomMatching
             apply ih
 
     lemma matchTermListIsMinimal (s: Substitution τ) (l: List ((Term τ) × τ.constants)) (h : (s.matchTermList l).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ ((l.map Prod.fst).map s'.applyTerm = l.map Prod.snd) -> ((s.matchTermList l).get h) ⊆ s' := by
-      induction l generalizing s with 
+      induction l generalizing s with
       | nil => intro s ⟨subset, _⟩; simp [matchTermList]; exact subset
       | cons pair l ih =>
         intro s' ⟨subset, apply_t⟩
         rw [List.map_map] at apply_t
         unfold List.map at apply_t
         simp at apply_t
-        cases eq : s.matchTerm pair.fst pair.snd with 
+        cases eq : s.matchTerm pair.fst pair.snd with
         | none => simp [matchTermList, eq] at h
-        | some s'' => 
+        | some s'' =>
           simp [matchTermList, eq]
           simp [matchTermList, eq] at h
           simp [List.map_map] at ih
@@ -237,26 +238,26 @@ section AtomMatching
           apply subset
           apply apply_t.left
 
-    lemma matchTermListNoneThenNoSubs (s: Substitution τ) (l: List ((Term τ) × τ.constants)) (h : (s.matchTermList l).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> ¬ (l.map Prod.fst).map s'.applyTerm = l.map Prod.snd := by 
-      induction l generalizing s with 
+    lemma matchTermListNoneThenNoSubs (s: Substitution τ) (l: List ((Term τ) × τ.constants)) (h : (s.matchTermList l).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> ¬ (l.map Prod.fst).map s'.applyTerm = l.map Prod.snd := by
+      induction l generalizing s with
       | nil => simp [matchTermList] at h
-      | cons pair l ih => 
+      | cons pair l ih =>
         intro s' subset apply_t
         rw [List.map_map] at apply_t
         unfold List.map at apply_t
         simp at apply_t
 
-        cases eq : s.matchTerm pair.fst pair.snd with 
-        | none => 
+        cases eq : s.matchTerm pair.fst pair.snd with
+        | none =>
           apply matchTermNoneThenNoSubs s pair.fst pair.snd
           rw [eq]; simp
           apply subset
           apply apply_t.left
-        | some s'' => 
+        | some s'' =>
           simp [matchTermList, eq] at h
           simp [List.map_map] at ih
           apply ih s'' h s' _ apply_t.right
-          
+
           have isSome : (s.matchTerm pair.fst pair.snd).isSome := by simp [eq]
           have : s'' = (s.matchTerm pair.fst pair.snd).get isSome := by simp [eq]
           rw [this]
@@ -271,8 +272,8 @@ section AtomMatching
       then s.matchTermList (a.atom_terms.zip ga.atom_terms)
       else none
 
-    lemma matchAtomSubset (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isSome) : s ⊆ ((s.matchAtom a ga).get h) := by 
-      have symb_eq : a.symbol = ga.symbol := by 
+    lemma matchAtomSubset (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isSome) : s ⊆ ((s.matchAtom a ga).get h) := by
+      have symb_eq : a.symbol = ga.symbol := by
         apply Decidable.by_contra
         intro contra
         unfold matchAtom at h
@@ -282,7 +283,7 @@ section AtomMatching
       apply s.matchTermListSubset
 
     lemma matchAtomYieldsSubs (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isSome) : ((s.matchAtom a ga).get h).applyAtom a = ga := by
-      have symb_eq : a.symbol = ga.symbol := by 
+      have symb_eq : a.symbol = ga.symbol := by
         apply Decidable.by_contra
         intro contra
         unfold matchAtom at h
@@ -299,11 +300,11 @@ section AtomMatching
       simp [symb_eq] at h
       let term_list : List ((Term τ) × τ.constants) := a.atom_terms.zip ga.atom_terms
       have match_t_list := s.matchTermListYieldsSubs term_list h
-      have fst : a.atom_terms = term_list.map Prod.fst := by 
+      have fst : a.atom_terms = term_list.map Prod.fst := by
         rw [List.map_fst_zip]
         apply Nat.le_of_eq
         rw [term_lists_eq_len]
-      have snd : ga.atom_terms = term_list.map Prod.snd := by 
+      have snd : ga.atom_terms = term_list.map Prod.snd := by
         rw [List.map_snd_zip]
         apply Nat.le_of_eq
         rw [term_lists_eq_len]
@@ -312,7 +313,7 @@ section AtomMatching
       simp [List.map_eq_bind]
 
     lemma matchAtomIsMinimal (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyAtom a = ga -> ((s.matchAtom a ga).get h) ⊆ s' := by
-      intro s' ⟨subset, apply_a⟩ 
+      intro s' ⟨subset, apply_a⟩
       unfold applyAtom at apply_a
       unfold GroundAtom.toAtom at apply_a
       simp at apply_a
@@ -324,11 +325,11 @@ section AtomMatching
       apply s.matchTermListIsMinimal term_list
       constructor
       apply subset
-      have fst : a.atom_terms = term_list.map Prod.fst := by 
+      have fst : a.atom_terms = term_list.map Prod.fst := by
         rw [List.map_fst_zip]
         apply Nat.le_of_eq
         rw [term_lists_eq_len]
-      have snd : ga.atom_terms = term_list.map Prod.snd := by 
+      have snd : ga.atom_terms = term_list.map Prod.snd := by
         rw [List.map_snd_zip]
         apply Nat.le_of_eq
         rw [term_lists_eq_len]
@@ -336,7 +337,7 @@ section AtomMatching
       rw [terms_eq]
       simp [List.map_eq_bind]
 
-    lemma matchAtomNoneThenNoSubs (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyAtom a ≠ ga := by 
+    lemma matchAtomNoneThenNoSubs (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyAtom a ≠ ga := by
       intro s' subset apply_a
       unfold matchAtom at h
       unfold applyAtom at apply_a
@@ -350,11 +351,11 @@ section AtomMatching
       simp
       apply h
       apply subset
-      have fst : a.atom_terms = term_list.map Prod.fst := by 
+      have fst : a.atom_terms = term_list.map Prod.fst := by
         rw [List.map_fst_zip]
         apply Nat.le_of_eq
         rw [term_lists_eq_len]
-      have snd : ga.atom_terms = term_list.map Prod.snd := by 
+      have snd : ga.atom_terms = term_list.map Prod.snd := by
         rw [List.map_snd_zip]
         apply Nat.le_of_eq
         rw [term_lists_eq_len]
@@ -365,24 +366,24 @@ section AtomMatching
 end AtomMatching
 
 section RuleMatching
-  variable {τ: Signature} [DecidableEq τ.constants][DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+  variable {τ: Signature} [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
   namespace Substitution
-    def matchAtomList (s: Substitution τ) : List ((Atom τ) × (GroundAtom τ)) -> Option (Substitution τ) 
+    def matchAtomList (s: Substitution τ) : List ((Atom τ) × (GroundAtom τ)) -> Option (Substitution τ)
     | .nil => Option.some s
-    | .cons ⟨a, ga⟩ l => match s.matchAtom a ga with 
+    | .cons ⟨a, ga⟩ l => match s.matchAtom a ga with
       | .none => Option.none
       | .some s' => s'.matchAtomList l
 
-    lemma matchAtomListSubset (s : Substitution τ) (l : List ((Atom τ) × (GroundAtom τ))) (h : (s.matchAtomList l).isSome) : s ⊆ (s.matchAtomList l).get h := by 
-      induction l generalizing s with 
+    lemma matchAtomListSubset (s : Substitution τ) (l : List ((Atom τ) × (GroundAtom τ))) (h : (s.matchAtomList l).isSome) : s ⊆ (s.matchAtomList l).get h := by
+      induction l generalizing s with
       | nil => unfold matchAtomList; apply subset_refl
       | cons pair l ih =>
-        cases eq : s.matchAtom pair.fst pair.snd with 
+        cases eq : s.matchAtom pair.fst pair.snd with
         | none => unfold matchAtomList at h; simp [eq] at h
-        | some s' => 
+        | some s' =>
           have matchPairSome : (s.matchAtom pair.fst pair.snd).isSome := by simp [eq]
-          have : s.matchAtomList (pair::l) = ((s.matchAtom pair.fst pair.snd).get matchPairSome).matchAtomList l := by 
+          have : s.matchAtomList (pair::l) = ((s.matchAtom pair.fst pair.snd).get matchPairSome).matchAtomList l := by
             conv => left; unfold matchAtomList
             simp [eq]
           simp_rw [this]
@@ -392,21 +393,21 @@ section RuleMatching
           apply ih
 
     lemma matchAtomListYieldsSubs (s: Substitution τ) (l: List ((Atom τ) × (GroundAtom τ))) (h : (s.matchAtomList l).isSome) : (l.map Prod.fst).map ((s.matchAtomList l).get h).applyAtom = l.map Prod.snd := by
-      induction l generalizing s with 
+      induction l generalizing s with
       | nil => simp
       | cons pair l ih =>
-        cases eq : s.matchAtom pair.fst pair.snd with 
+        cases eq : s.matchAtom pair.fst pair.snd with
         | none => unfold matchAtomList at h; simp [eq] at h
         | some s' =>
           have : (s.matchAtom pair.fst pair.snd).isSome := by simp [eq]
           have matchAtomResult := s.matchAtomYieldsSubs pair.fst pair.snd this
-          have : s.matchAtomList (pair::l) = ((s.matchAtom pair.fst pair.snd).get this).matchAtomList l := by 
+          have : s.matchAtomList (pair::l) = ((s.matchAtom pair.fst pair.snd).get this).matchAtomList l := by
             conv => left; unfold matchAtomList
             simp [eq]
           simp
           constructor
           · unfold matchAtomList at h
-            cases eq : s.matchAtom pair.fst pair.snd with 
+            cases eq : s.matchAtom pair.fst pair.snd with
             | none => simp [eq] at h
             | some s' =>
               apply subset_applyAtom_eq _ matchAtomResult
@@ -416,26 +417,26 @@ section RuleMatching
             simp [List.map_map] at ih
             apply ih
 
-    lemma matchAtomListNoneThenNoSubs (s: Substitution τ) (l: List ((Atom τ) × (GroundAtom τ))) (h : (s.matchAtomList l).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> ¬ (l.map Prod.fst).map s'.applyAtom = l.map Prod.snd := by 
-      induction l generalizing s with 
+    lemma matchAtomListNoneThenNoSubs (s: Substitution τ) (l: List ((Atom τ) × (GroundAtom τ))) (h : (s.matchAtomList l).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> ¬ (l.map Prod.fst).map s'.applyAtom = l.map Prod.snd := by
+      induction l generalizing s with
       | nil => simp [matchAtomList] at h
-      | cons pair l ih => 
+      | cons pair l ih =>
         intro s' subset apply_t
         rw [List.map_map] at apply_t
         unfold List.map at apply_t
         simp at apply_t
 
-        cases eq : s.matchAtom pair.fst pair.snd with 
-        | none => 
+        cases eq : s.matchAtom pair.fst pair.snd with
+        | none =>
           apply matchAtomNoneThenNoSubs s pair.fst pair.snd
           rw [eq]; simp
           apply subset
           apply apply_t.left
-        | some s'' => 
+        | some s'' =>
           simp [matchAtomList, eq] at h
           simp [List.map_map] at ih
           apply ih s'' h s' _ apply_t.right
-          
+
           have isSome : (s.matchAtom pair.fst pair.snd).isSome := by simp [eq]
           have : s'' = (s.matchAtom pair.fst pair.snd).get isSome := by simp [eq]
           rw [this]
@@ -445,15 +446,15 @@ section RuleMatching
           apply apply_t.left
 
     def matchRule (r: Rule τ) (gr: GroundRule τ): Option (Substitution τ):=
-      match empty.matchAtom r.head gr.head with 
-      | .none => Option.none 
+      match empty.matchAtom r.head gr.head with
+      | .none => Option.none
       | .some s => if r.body.length = gr.body.length then s.matchAtomList (r.body.zip gr.body) else Option.none
 
-    theorem matchRuleYieldsSubs (r : Rule τ) (gr : GroundRule τ) (h : (matchRule r gr).isSome) : ((matchRule r gr).get h).applyRule r = gr := by 
-      cases eq : empty.matchAtom r.head gr.head with 
+    theorem matchRuleYieldsSubs (r : Rule τ) (gr : GroundRule τ) (h : (matchRule r gr).isSome) : ((matchRule r gr).get h).applyRule r = gr := by
+      cases eq : empty.matchAtom r.head gr.head with
       | none => simp [matchRule, eq] at h
-      | some s => 
-        have body_eq_len : r.body.length = gr.body.length := by 
+      | some s =>
+        have body_eq_len : r.body.length = gr.body.length := by
           unfold matchRule at h
           simp [eq] at h
           apply Decidable.by_contra
@@ -475,11 +476,11 @@ section RuleMatching
           simp [matchRule, eq, body_eq_len] at h
           let atom_list := r.body.zip gr.body
           have match_a_list := s.matchAtomListYieldsSubs atom_list h
-          have fst : r.body = atom_list.map Prod.fst := by 
+          have fst : r.body = atom_list.map Prod.fst := by
             rw [List.map_fst_zip]
             apply Nat.le_of_eq
             rw [body_eq_len]
-          have snd : gr.body = atom_list.map Prod.snd := by 
+          have snd : gr.body = atom_list.map Prod.snd := by
             rw [List.map_snd_zip]
             apply Nat.le_of_eq
             rw [body_eq_len]
@@ -487,22 +488,22 @@ section RuleMatching
           rw [match_a_list]
           simp [List.map_eq_bind]
 
-    theorem matchRuleNoneThenNoSubs (r : Rule τ) (gr : GroundRule τ) (h : (matchRule r gr).isNone) : ∀ s : Substitution τ, s.applyRule r ≠ gr := by 
+    theorem matchRuleNoneThenNoSubs (r : Rule τ) (gr : GroundRule τ) (h : (matchRule r gr).isNone) : ∀ s : Substitution τ, s.applyRule r ≠ gr := by
       simp
       intro s contra
       unfold applyRule at contra
       unfold GroundRule.toRule at contra
       simp at contra
 
-      cases eq : empty.matchAtom r.head gr.head with 
-      | none => 
+      cases eq : empty.matchAtom r.head gr.head with
+      | none =>
         apply empty.matchAtomNoneThenNoSubs r.head gr.head
         simp [eq]
         apply empty_isMinimal
         apply contra.left
-      | some s' => 
+      | some s' =>
         unfold matchRule at h
-        have body_eq_len : r.body.length = gr.body.length := by 
+        have body_eq_len : r.body.length = gr.body.length := by
           have : (r.body.map s.applyAtom).length = (gr.body.map GroundAtom.toAtom).length := by rw [contra.right]
           rw [List.length_map, List.length_map] at this
           exact this
@@ -516,11 +517,11 @@ section RuleMatching
           constructor
           apply empty_isMinimal
           apply contra.left
-        · have fst : r.body = atom_list.map Prod.fst := by 
+        · have fst : r.body = atom_list.map Prod.fst := by
             rw [List.map_fst_zip]
             apply Nat.le_of_eq
             rw [body_eq_len]
-          have snd : gr.body = atom_list.map Prod.snd := by 
+          have snd : gr.body = atom_list.map Prod.snd := by
             rw [List.map_snd_zip]
             apply Nat.le_of_eq
             rw [body_eq_len]

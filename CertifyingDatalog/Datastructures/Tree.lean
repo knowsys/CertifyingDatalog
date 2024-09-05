@@ -4,13 +4,13 @@ inductive Tree (A: Type u)
 | node: A → List (Tree A) → Tree A
 
 namespace Tree
-  variable {A: Type u} [DecidableEq A]
+  variable {A: Type u}
 
   def member (t1 t2: Tree A): Prop :=
     match t1 with
     | .node _ l => t2 ∈ l
 
-  def elem (a: A) (t: Tree A): Bool  :=
+  def elem  [DecidableEq A] (a: A) (t: Tree A): Bool  :=
     match t with
     | .node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elem a x)
   termination_by sizeOf t
@@ -35,7 +35,7 @@ namespace Tree
   by
     unfold height
     simp
-    rw [List.attach_map_coe']
+    rw [List.attach_map_coe]
 
   lemma heightOfMemberIsSmaller (t1 t2: Tree A) (mem: member t1 t2): height t2 < height t1 :=
   by
@@ -45,9 +45,9 @@ namespace Tree
       simp at mem
       rw [height_def]
 
-      cases eq : (l.map height).maximum? with 
+      cases eq : (l.map height).maximum? with
       | none => rw [List.maximum?_eq_none_iff] at eq; simp at eq; rw [eq] at mem; contradiction
-      | some max => 
+      | some max =>
         simp
         rw [Nat.lt_one_add_iff]
         rw [List.maximum?_eq_some_iff'] at eq
@@ -55,7 +55,7 @@ namespace Tree
         apply List.mem_map_of_mem
         exact mem
 
-  lemma elem_iff_memElements (t: Tree A) (a : A) : t.elem a = true ↔ a ∈ t.elements :=
+  lemma elem_iff_memElements  [DecidableEq A] (t: Tree A) (a : A) : t.elem a = true ↔ a ∈ t.elements :=
   by
     induction' h' : t.height using Nat.strongInductionOn with n ih generalizing t
     cases t with

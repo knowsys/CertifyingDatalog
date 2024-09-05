@@ -4,14 +4,93 @@ import CertifyingDatalog.Datalog.Grounding
 
 def Substitution (τ: Signature) := τ.vars → Option (τ.constants)
 
-variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
-
 namespace Substitution
   def domain (s: Substitution τ): Set (τ.vars) := {v | Option.isSome (s v) = true}
 
-  def applyTerm (s: Substitution τ) : Term τ -> Term τ 
+  def empty : Substitution τ := (fun _ => none)
+
+  def subset (s1 s2: Substitution τ): Prop :=
+    ∀ (v: τ.vars), v ∈ s1.domain → s1 v = s2 v
+
+  instance: HasSubset (Substitution τ) where
+    Subset := Substitution.subset
+
+  lemma empty_isMinimal : ∀ s : Substitution τ, Substitution.empty ⊆ s := by
+    unfold_projs
+    unfold subset
+    intro v
+    unfold empty
+    unfold domain
+    simp
+
+  lemma subset_some (s1 s2: Substitution τ) (subs: s1 ⊆ s2) (c: τ.constants) (v: τ.vars) (h: s1 v = Option.some c): s2 v = Option.some c := by
+    unfold_projs at subs
+    unfold subset at subs
+    rw [← h]
+    apply Eq.symm
+    apply subs
+    unfold domain
+    simp
+    rw [h]
+    simp
+
+  lemma subset_none (s1 s2: Substitution τ) (subs: s1 ⊆ s2) (v: τ.vars) (h: s2 v = Option.none): s1 v = Option.none := by
+    unfold_projs at subs
+    unfold Substitution.subset at subs
+    specialize subs v
+    by_contra p
+    cases q:(s1 v) with
+    | none =>
+      exact absurd q p
+    | some c =>
+      have s1_s2: s1 v = s2 v := by
+        apply subs
+        unfold domain
+        simp
+        rw [q]
+        simp
+      rw [s1_s2] at p
+      exact absurd h p
+
+  lemma subset_refl (s: Substitution τ): s ⊆ s := by
+    unfold_projs
+    unfold subset
+    simp
+
+  lemma subset_antisymm (s1 s2: Substitution τ) (subs_l: s1 ⊆ s2) (subs_r: s2 ⊆ s1): s1 = s2 := by
+    funext x
+    cases p: s1 x with
+    | some c =>
+      apply Eq.symm
+      apply subset_some s1 s2 subs_l c x p
+    | none =>
+      apply Eq.symm
+      apply subset_none s2 s1 subs_r x p
+
+  lemma subset_trans (s1 s2 s3: Substitution τ) (subs_l: s1 ⊆ s2) (subs_r: s2 ⊆ s3): s1 ⊆ s3 := by
+    unfold_projs at *
+    unfold subset at *
+    intro v
+    intro h
+    specialize subs_l v h
+    rw [subs_l]
+    apply subs_r
+    unfold domain
+    simp
+    rw [← subs_l]
+    unfold domain at h
+    simp at h
+    apply h
+
+end Substitution
+
+
+namespace Substitution
+  variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+
+  def applyTerm (s: Substitution τ) : Term τ -> Term τ
   | Term.constant c => Term.constant c
-  | Term.variableDL v => match s v with 
+  | Term.variableDL v => match s v with
     | .some c => Term.constant c
     | .none => Term.variableDL v
 
@@ -121,8 +200,8 @@ namespace Substitution
     simp
     rw [get_of_right]
 
-  def toGrounding [ex: Inhabited τ.constants] (s: Substitution τ): Grounding τ := fun t => match s t with 
-    | .some c => c  
+  def toGrounding [ex: Inhabited τ.constants] (s: Substitution τ): Grounding τ := fun t => match s t with
+    | .some c => c
     | .none => ex.default
 
   lemma toGrounding_applyTerm_eq [Inhabited τ.constants] (t: Term τ) (s: Substitution τ) (h: ↑ t.vars ⊆ s.domain): Term.constant (s.toGrounding.applyTerm' t) = s.applyTerm t := by
@@ -135,9 +214,9 @@ namespace Substitution
       simp
     | variableDL v =>
       simp
-      cases eq : s v with 
+      cases eq : s v with
       | some c => simp
-      | none => 
+      | none =>
         unfold Term.vars at h
         unfold domain at h
         unfold Option.isSome at h
@@ -174,81 +253,6 @@ namespace Substitution
     exact h'
     exact h
 
-  def empty : Substitution τ := (fun _ => none)
-
-  def subset (s1 s2: Substitution τ): Prop :=
-    ∀ (v: τ.vars), v ∈ s1.domain → s1 v = s2 v
-
-  instance: HasSubset (Substitution τ) where
-    Subset := Substitution.subset
-
-  lemma empty_isMinimal : ∀ s : Substitution τ, Substitution.empty ⊆ s := by
-    unfold_projs
-    unfold subset
-    intro v
-    unfold empty
-    unfold domain
-    simp
-
-  lemma subset_some (s1 s2: Substitution τ) (subs: s1 ⊆ s2) (c: τ.constants) (v: τ.vars) (h: s1 v = Option.some c): s2 v = Option.some c := by
-    unfold_projs at subs
-    unfold subset at subs
-    rw [← h]
-    apply Eq.symm
-    apply subs
-    unfold domain
-    simp
-    rw [h]
-    simp
-
-  lemma subset_none (s1 s2: Substitution τ) (subs: s1 ⊆ s2) (v: τ.vars) (h: s2 v = Option.none): s1 v = Option.none := by
-    unfold_projs at subs
-    unfold Substitution.subset at subs
-    specialize subs v
-    by_contra p
-    cases q:(s1 v) with
-    | none =>
-      exact absurd q p
-    | some c =>
-      have s1_s2: s1 v = s2 v := by
-        apply subs
-        unfold domain
-        simp
-        rw [q]
-        simp
-      rw [s1_s2] at p
-      exact absurd h p
-
-  lemma subset_refl (s: Substitution τ): s ⊆ s := by
-    unfold_projs
-    unfold subset
-    simp
-
-  lemma subset_antisymm (s1 s2: Substitution τ) (subs_l: s1 ⊆ s2) (subs_r: s2 ⊆ s1): s1 = s2 := by
-    funext x
-    cases p: s1 x with
-    | some c =>
-      apply Eq.symm
-      apply subset_some s1 s2 subs_l c x p
-    | none =>
-      apply Eq.symm
-      apply subset_none s2 s1 subs_r x p
-
-  lemma subset_trans (s1 s2 s3: Substitution τ) (subs_l: s1 ⊆ s2) (subs_r: s2 ⊆ s3): s1 ⊆ s3 := by
-    unfold_projs at *
-    unfold subset at *
-    intro v
-    intro h
-    specialize subs_l v h
-    rw [subs_l]
-    apply subs_r
-    unfold domain
-    simp
-    rw [← subs_l]
-    unfold domain at h
-    simp at h
-    apply h
-
   lemma subset_applyTerm_eq {s1 s2: Substitution τ} {t: Term τ} {c: τ.constants} (subs: s1 ⊆ s2) (eq: s1.applyTerm t = c): s2.applyTerm t = c := by
     cases t with
     | constant c' =>
@@ -260,9 +264,9 @@ namespace Substitution
     | variableDL v =>
       unfold applyTerm at *
       simp at *
-      cases eq2 : s1 v with 
-      | none => rw [eq2] at eq; simp at eq 
-      | some c => 
+      cases eq2 : s1 v with
+      | none => rw [eq2] at eq; simp at eq
+      | some c =>
         rw [eq2] at eq
         simp at eq
         have s2_v: s2 v = some c := by
@@ -315,9 +319,9 @@ namespace Substitution
       rw [Finset.ext_iff]
       simp
 
-      cases eq : s v with 
-      | some c => 
-        simp 
+      cases eq : s v with
+      | some c =>
+        simp
         intro v'
         simp [Finset.mem_filter_nc]
         unfold domain
@@ -348,6 +352,8 @@ namespace Substitution
 end Substitution
 
 namespace Grounding
+  variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+
   def toSubstitution (g: Grounding τ): Substitution τ := fun t => Option.some (g t)
 
   lemma toSubsitution_applyTerm_eq (g: Grounding τ) (t: Term τ): g.applyTerm' t = g.toSubstitution.applyTerm t := by
@@ -385,7 +391,7 @@ namespace Grounding
     rw [toSubsitution_applyAtom_eq]
 end Grounding
 
-theorem grounding_substitution_equiv [Inhabited τ.constants] (r: GroundRule τ) (r': Rule τ): (∃ (g: Grounding τ), g.applyRule' r' = r) ↔ (∃ (s: Substitution τ), s.applyRule r'= r) :=
+theorem grounding_substitution_equiv {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [Inhabited τ.constants] (r: GroundRule τ) (r': Rule τ): (∃ (g: Grounding τ), g.applyRule' r' = r) ↔ (∃ (s: Substitution τ), s.applyRule r'= r) :=
   by
     simp
     constructor

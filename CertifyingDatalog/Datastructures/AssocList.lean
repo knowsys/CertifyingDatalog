@@ -1,6 +1,7 @@
 import Mathlib.Data.Finset.Basic
 import Mathlib.Logic.Basic
 import Mathlib.Tactic.Tauto
+import Batteries.Data.AssocList
 
 namespace Batteries.AssocList
   theorem eq_iff_toList (l1 l2: AssocList A B): l1 = l2 ↔ l1.toList = l2.toList :=

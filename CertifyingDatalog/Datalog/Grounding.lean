@@ -17,7 +17,7 @@ structure GroundRule (τ: Signature) [DecidableEq τ.vars] [DecidableEq τ.relat
 
 abbrev Grounding (τ: Signature) := τ.vars → τ.constants
 
-variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
+variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
 namespace GroundAtom
   def toAtom (ga: GroundAtom τ): Atom τ:= {symbol:=ga.symbol, atom_terms:= List.map Term.constant ga.atom_terms,term_length := by rw [List.length_map]; exact ga.term_length}
@@ -34,7 +34,7 @@ namespace GroundAtom
     rw [GroundAtom.ext_iff]
     constructor
     apply sym
-    have : Function.Injective (List.map (Term.constant (τ := τ))) := by 
+    have : Function.Injective (List.map (Term.constant (τ := τ))) := by
       rw [List.map_injective_iff]
       intro _ _ term_eq
       injection term_eq
@@ -44,7 +44,7 @@ namespace GroundAtom
   instance: Coe (GroundAtom τ) (Atom τ) where
     coe := GroundAtom.toAtom
 
-  lemma vars_empty (ga : GroundAtom τ) : ga.toAtom.vars = ∅ := by 
+  lemma vars_empty (ga : GroundAtom τ) : ga.toAtom.vars = ∅ := by
     unfold toAtom
     unfold Atom.vars
     simp
@@ -91,7 +91,7 @@ end Atom
 namespace GroundRule
   def toRule (r: GroundRule τ): Rule τ := {head:= r.head.toAtom, body := List.map GroundAtom.toAtom r.body}
 
-  instance : ToString (GroundRule τ) where
+  instance [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] : ToString (GroundRule τ) where
     toString gr := ToString.toString gr.toRule
 
   instance: Coe (GroundRule τ) (Rule τ) where
@@ -127,11 +127,11 @@ namespace GroundRule
 end GroundRule
 
 namespace Grounding
-  def applyTerm (g: Grounding τ) : Term τ -> Term τ 
+  def applyTerm (g: Grounding τ) : Term τ -> Term τ
   | Term.constant c => Term.constant c
   | Term.variableDL v => Term.constant (g v)
 
-  lemma applyTerm_removesVars (g: Grounding τ) (t: Term τ): (g.applyTerm t).vars = ∅ := by 
+  lemma applyTerm_removesVars (g: Grounding τ) (t: Term τ): (g.applyTerm t).vars = ∅ := by
     cases t <;> (unfold applyTerm; unfold Term.vars; simp)
 
   lemma applyTerm_preservesLength (g: Grounding τ) (a: Atom τ): (List.map g.applyTerm a.atom_terms).length = τ.relationArity a.symbol :=
@@ -167,7 +167,7 @@ namespace Grounding
 
   def applyAtom' (g: Grounding τ) (a: Atom τ): GroundAtom τ := {symbol := a.symbol, atom_terms := List.map g.applyTerm' a.atom_terms, term_length := applyTerm'_preservesLength g a}
 
-  lemma applyAtom'_on_GroundAtom_unchanged (g : Grounding τ) (ga : GroundAtom τ) : g.applyAtom' ga = ga := by 
+  lemma applyAtom'_on_GroundAtom_unchanged (g : Grounding τ) (ga : GroundAtom τ) : g.applyAtom' ga = ga := by
     unfold applyAtom'
     rw [GroundAtom.ext_iff]
     simp [GroundAtom.toAtom]

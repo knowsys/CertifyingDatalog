@@ -124,26 +124,26 @@ namespace List
       rw [ih]
       simp [or_assoc]
 
-  theorem foldl_cons_is_concat (as bs : List α) : as.foldl (fun acc a => a :: acc) bs = as.reverse ++ bs := by 
+  theorem foldl_cons_is_concat (as bs : List α) : as.foldl (fun acc a => a :: acc) bs = as.reverse ++ bs := by
     revert bs
-    induction as with 
-    | nil => simp 
-    | cons a as ih => 
+    induction as with
+    | nil => simp
+    | cons a as ih =>
       simp
       intro _
       apply ih
 
-  theorem elem_concat_iff_elem_of_one (as bs : List α) : ∀ e, e ∈ (as ++ bs) ↔ e ∈ as ∨ e ∈ bs := by simp 
+  theorem elem_concat_iff_elem_of_one (as bs : List α) : ∀ e, e ∈ (as ++ bs) ↔ e ∈ as ∨ e ∈ bs := by simp
 
-  theorem find_concat (as bs : List α) : ∀ f, (as ++ bs).find? f = (as.find? f).orElse (fun () => bs.find? f) := by 
-    intro f 
-    induction as with 
+  theorem find_concat (as bs : List α) : ∀ f, (as ++ bs).find? f = (as.find? f).orElse (fun () => bs.find? f) := by
+    intro f
+    induction as with
     | nil => simp
     | cons a as ih =>
-      have find_sem : ∀ a as, (a :: as).find? f = if f a then some a else (as.find? f) := by 
+      have find_sem : ∀ a as, (a :: as).find? f = if f a then some a else (as.find? f) := by
         intro a as
         conv => left; unfold find?
-        split 
+        split
         case h_1 _ h => simp[h]
         case h_2 _ h => simp[h]
       have : ∀ (a : α) (as bs : List α), (a :: as ++ bs) = (a :: (as ++ bs)) := by simp
@@ -242,7 +242,7 @@ namespace List
               rw [Fin.ext_iff]
               simp
               apply hj
-            rw [hj'] 
+            rw [hj']
             simp
       | succ m =>
         simp
@@ -370,39 +370,39 @@ namespace List
         tauto
       rw [h]
 
-  lemma tail_getElem (l : List A) (h : 0 < l.length) : ∀ (i) (g : i < l.length - 1), 
-    l.tail[i]'(by simp; exact g) = l[i.succ] := by 
-      cases l with 
+  lemma tail_getElem (l : List A) (h : 0 < l.length) : ∀ (i) (g : i < l.length - 1),
+    l.tail[i]'(by simp; exact g) = l[i.succ] := by
+      cases l with
       | nil => contradiction
       | cons a as => simp
 
-  lemma tail_getLast (l : List A) (h : l.tail ≠ []) : l.tail.getLast h = l.getLast (by intro contra; simp [contra] at h) := by 
-    cases l with 
+  lemma tail_getLast (l : List A) (h : l.tail ≠ []) : l.tail.getLast h = l.getLast (by intro contra; simp [contra] at h) := by
+    cases l with
     | nil => simp at h
     | cons a as =>
       simp
       rw [List.getLast_cons]
 
-  lemma head_append (as bs : List A) (h : as ≠ []) : (as ++ bs).head (by intro contra; simp at contra; apply h; apply contra.left) = as.head h := by 
-    cases as with 
+  lemma head_append' (as bs : List A) (h : as ≠ []) : (as ++ bs).head (by intro contra; simp at contra; apply h; apply contra.left) = as.head h := by
+    cases as with
     | nil => contradiction
     | cons a as => rfl
-  
-  lemma take_head (l : List A) (ne : l ≠ []) (n : Nat) (h : 0 < n) : (l.take n).head (by intro contra; simp at contra; cases contra; contradiction; case inr h' => rw [h'] at h; contradiction) = l.head ne := by 
-    cases n.eq_zero_or_eq_succ_pred with 
+
+  lemma take_head (l : List A) (ne : l ≠ []) (n : Nat) (h : 0 < n) : (l.take n).head (by intro contra; simp at contra; cases contra with | inl h' => rw [h'] at h; contradiction | inr _ => contradiction) = l.head ne := by
+    cases n.eq_zero_or_eq_succ_pred with
     | inl contra => rw [contra] at h; contradiction
-    | inr eq => 
+    | inr eq =>
       let m := n.pred
       have eq : n = m.succ := by simp [m]; rw [eq]; simp
-      cases l with 
+      cases l with
       | nil => contradiction
       | cons a as =>
         simp
         simp [eq]
 
-  lemma take_getLast (l : List A) (ne : l ≠ []) (n : Fin (l.length + 1)) (h : 0 < n.val) : (l.take n.val).getLast (by intro contra; simp at contra; cases contra; contradiction; case inr h' => rw [h'] at h; contradiction) = l.get ⟨n.val - 1, by apply Nat.sub_lt_right_of_lt_add; apply Nat.le_of_pred_lt; apply h; apply n.isLt⟩ := by 
+  lemma take_getLast (l : List A) (ne : l ≠ []) (n : Fin (l.length + 1)) (h : 0 < n.val) : (l.take n.val).getLast (by intro contra; simp at contra; cases contra with | inl h' => rw [h'] at h; contradiction | inr _ => contradiction) = l.get ⟨n.val - 1, by apply Nat.sub_lt_right_of_lt_add; apply Nat.le_of_pred_lt; apply h; apply n.isLt⟩ := by
     have : (l.take n.val).length = n.val := by simp; apply Nat.le_of_lt_succ; apply n.isLt
-    rw [List.getLast_eq_get]
+    rw [List.getLast_eq_getElem]
     simp [this]
     rw [List.getElem_take']
 end List
