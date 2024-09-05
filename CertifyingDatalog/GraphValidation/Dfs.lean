@@ -171,7 +171,7 @@ section FoldlExcept
                 exact eq3
 
     variable {A: Type u} [DecidableEq A] {B: Type v} [DecidableEq B] [Hashable B]
-    open Batteries
+    open Std
 
     omit [DecidableEq A] in lemma foldl_except_is_superset_of_f_is_superset
       (l : List A)
@@ -221,7 +221,7 @@ end FoldlExcept
 
 section Dfs
   variable {A: Type u} [DecidableEq A] [Hashable A]
-  open Batteries
+  open Std
 
   def NodeCondition (A : Type u) := A -> Except String Unit
 
@@ -330,8 +330,7 @@ section Dfs
       simp at h
       rw [← h]
       rw [HashSet.contains_insert]
-      apply Or.inr
-      rfl
+      simp
 
     lemma dfs_step_extends_verified {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) :
       verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedNodes ⊆ verifiedAfter := by
@@ -370,7 +369,8 @@ section Dfs
           · rw [HashSet.subset_iff]
             intro c c_contained
             rw [HashSet.contains_insert]
-            apply Or.inl
+            simp
+            apply Or.inr
             exact c_contained
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
@@ -433,9 +433,10 @@ section Dfs
               exact eq
               exact contains
 
+            simp at node_contained
             cases node_contained with
-            | inl node_contained => apply prop_holds_after_foldl node_contained
-            | inr node_contained =>
+            | inr node_contained => apply prop_holds_after_foldl node_contained
+            | inl node_contained =>
               rw [← node_contained]
               rw [notReachableFromCycleIffPredecessorsNotReachableFromCycle]
               rw [cond_ok_on_all_canReach_iff]
@@ -652,7 +653,7 @@ section Dfs
         intro init_unwrapped init_unwrapped_eq
         injection init_unwrapped_eq with init_unwrapped_eq
         rw [← init_unwrapped_eq]
-        intro node empty_contains_node; apply False.elim; apply HashSet.empty_contains node; exact empty_contains_node
+        intro node empty_contains_node; simp at empty_contains_node
         rw [foldl_eq]
       case h_2 heq =>
         simp
@@ -720,7 +721,7 @@ section Dfs
           intro init_unwrapped init_unwrapped_eq
           injection init_unwrapped_eq with init_unwrapped_eq
           rw [← init_unwrapped_eq]
-          intro node empty_contains_node; apply False.elim; apply HashSet.empty_contains node; exact empty_contains_node
+          intro node empty_contains_node; simp at empty_contains_node
           rw [take_ok]
   end Graph
 end Dfs

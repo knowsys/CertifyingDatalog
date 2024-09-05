@@ -3,13 +3,13 @@ import CertifyingDatalog.Datalog
 import CertifyingDatalog.Unification
 
 def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] :=
-  @Batteries.HashMap (List τ.relationSymbols) (List (Rule τ)) instBEqOfDecidableEq instHashableList
+  Std.HashMap (List τ.relationSymbols) (List (Rule τ))
 
 variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
-def SymbolSequenceMap.empty : SymbolSequenceMap τ := @Batteries.HashMap.empty (List τ.relationSymbols) (List (Rule τ)) instBEqOfDecidableEq instHashableList
+def SymbolSequenceMap.empty : SymbolSequenceMap τ := Std.HashMap.empty
 
-def SymbolSequenceMap.find (m : SymbolSequenceMap τ) (l : List (τ.relationSymbols)) : List (Rule τ) := m.findD l []
+def SymbolSequenceMap.find (m : SymbolSequenceMap τ) (l : List (τ.relationSymbols)) : List (Rule τ) := m.getD l []
 
 namespace Rule
   def symbolSequence (r: Rule τ): List τ.relationSymbols := r.head.symbol :: (List.map Atom.symbol r.body)
@@ -64,11 +64,13 @@ namespace Program
       by_cases l_symb: l = rule.symbolSequence
       · simp [l_symb]
         unfold SymbolSequenceMap.find
-        rw [Batteries.HashMap.findD_insert' init rule.symbolSequence]
+        rw [Std.HashMap.getD_insert_self]
         simp
         tauto
       · unfold SymbolSequenceMap.find
-        rw [Batteries.HashMap.findD_insert'' (h := by intro contra; apply l_symb; rw [contra])]
+        rw [Std.HashMap.getD_insert]
+        split
+        case neg.isTrue h => simp at h; rw [h] at l_symb; contradiction
         constructor
         · intro h
           cases h with
@@ -101,9 +103,6 @@ namespace Program
     unfold toSymbolSequenceMap
     rw [toSymbolSequenceMap_mem]
     simp [SymbolSequenceMap.empty, SymbolSequenceMap.find]
-    rw [Batteries.HashMap.findD_eq_find?]
-    rw [Batteries.HashMap.not_contains_find_none (h := by rw [Batteries.HashMap.empty_contains]; simp)]
-    simp
     rw [And.comm]
 end Program
 

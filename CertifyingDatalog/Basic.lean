@@ -1,8 +1,8 @@
 import CertifyingDatalog.Datastructures.Array
-import CertifyingDatalog.Datastructures.AssocList
+/- import CertifyingDatalog.Datastructures.AssocList -/
 import CertifyingDatalog.Datastructures.Except
 import CertifyingDatalog.Datastructures.Finset
-import CertifyingDatalog.Datastructures.HashMap
+/- import CertifyingDatalog.Datastructures.HashMap -/
 import CertifyingDatalog.Datastructures.HashSet
 import CertifyingDatalog.Datastructures.List
 import CertifyingDatalog.Datastructures.Tree
@@ -19,7 +19,7 @@ namespace Nat
       simp
       apply Nat.lt_of_succ_lt h
 
-  lemma pred_gt_zero_iff_ge_two (n : ℕ) : n.pred > 0 ↔ n ≥ 2 := by 
+  lemma pred_gt_zero_iff_ge_two (n : ℕ) : n.pred > 0 ↔ n ≥ 2 := by
     cases n with
     | zero => simp
     | succ n => cases n <;> simp

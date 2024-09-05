@@ -73,6 +73,8 @@ namespace Array
     rw [mem_def]
     apply getElem_mem_data
 
+  -- TODO: get rid of unneeded lemmas and remaining Batteries uses
+
   -- NOTE: Used in HashMap Results
   lemma splitLemma (as: Array A) (f: A → List B) (i: ℕ) (h: i < as.size) (b:B): (∃ (a:A), a ∈ as ∧ b ∈ f a) ↔ (b ∈ f as[i] ∨ ∃ (j: Fin as.size), j.1 ≠ i ∧ b ∈ f as[j]) := by
     constructor
