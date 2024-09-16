@@ -1,5 +1,5 @@
 {
-  description = "Ruleset Classifier";
+  description = "A certified checker for Datalog entailments, written in Lean";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
   inputs.flake-utils.url = "github:numtide/flake-utils";
@@ -12,7 +12,7 @@
           devShells.default = pkgs.mkShell {
             packages = [
               pkgs.elan
-              pkgs.python3 
+              pkgs.python3
               pkgs.python311Packages.rfc3987
               pkgs.ruby
             ];
