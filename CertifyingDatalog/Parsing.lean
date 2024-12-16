@@ -288,7 +288,7 @@ namespace InputOrderedGraph
               cases Decidable.em (i < graph.val.size) with
               | inl i_lt_g =>
                 simp
-                rw [Array.get_push_lt]
+                rw [Array.getElem_push_lt]
                 apply graph.prop
                 exact i_lt_g
               | inr i_not_lt_g =>
@@ -329,4 +329,3 @@ namespace OrderedGraphVerificationProblem
           program
         }
 end OrderedGraphVerificationProblem
-

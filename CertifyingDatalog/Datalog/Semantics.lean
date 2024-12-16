@@ -4,7 +4,7 @@ import CertifyingDatalog.Datalog.Grounding
 import CertifyingDatalog.Datalog.Substitution
 import CertifyingDatalog.Datalog.Database
 
-structure KnowledgeBase (τ: Signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] where 
+structure KnowledgeBase (τ: Signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] where
   prog : Program τ
   db : Database τ
 
@@ -27,7 +27,7 @@ def ProofTreeSkeleton.isValid (t: ProofTreeSkeleton τ) (kb : KnowledgeBase τ):
   | .node a l => (∃ (r: Rule τ) (g: Grounding τ), r ∈ kb.prog ∧ g.applyRule' r = {head:= a, body:= l.map Tree.root} ∧ l.attach.Forall (fun ⟨st, _h⟩ => isValid st kb)) ∨ (l = [] ∧ kb.db.contains a)
 termination_by sizeOf t
 
-structure ProofTree (kb : KnowledgeBase τ) where 
+structure ProofTree (kb : KnowledgeBase τ) where
   tree : ProofTreeSkeleton τ
   isValid : tree.isValid kb
 
@@ -36,17 +36,17 @@ namespace ProofTree
   def elem {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.elem
   def height {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.height
 
-  def node {kb : KnowledgeBase τ} (a : GroundAtom τ) (l : List (ProofTree kb)) 
-    (a_valid : (∃ (r: Rule τ) (g: Grounding τ), r ∈ kb.prog ∧ g.applyRule' r = {head:= a, body := l.map root}) ∨ (l = [] ∧ kb.db.contains a)) : ProofTree kb := 
+  def node {kb : KnowledgeBase τ} (a : GroundAtom τ) (l : List (ProofTree kb))
+    (a_valid : (∃ (r: Rule τ) (g: Grounding τ), r ∈ kb.prog ∧ g.applyRule' r = {head:= a, body := l.map root}) ∨ (l = [] ∧ kb.db.contains a)) : ProofTree kb :=
     {
       tree := Tree.node a (l.map ProofTree.tree)
-      isValid := by 
+      isValid := by
         unfold ProofTreeSkeleton.isValid
-        cases a_valid with 
-        | inl a_valid => 
+        cases a_valid with
+        | inl a_valid =>
           apply Or.inl
-          rcases a_valid with ⟨r,g,r_in_prog,r_g_apply⟩  
-          use r 
+          rcases a_valid with ⟨r,g,r_in_prog,r_g_apply⟩
+          use r
           use g
           constructor
           · exact r_in_prog
@@ -58,7 +58,7 @@ namespace ProofTree
             simp
             intro st _
             exact st.isValid
-        | inr a_valid => 
+        | inr a_valid =>
           apply Or.inr
           rw [a_valid.left]
           simp
@@ -69,18 +69,18 @@ end ProofTree
 namespace KnowledgeBase
   def proofTheoreticSemantics (kb : KnowledgeBase τ) : Interpretation τ := {a: GroundAtom τ | ∃ (t: ProofTree kb), t.root = a}
 
-  lemma elementsOfEveryProofTreeInSemantics (kb : KnowledgeBase τ) : ∀ (t : ProofTree kb) (ga : GroundAtom τ), t.elem ga -> ga ∈ kb.proofTheoreticSemantics := by 
+  lemma elementsOfEveryProofTreeInSemantics (kb : KnowledgeBase τ) : ∀ (t : ProofTree kb) (ga : GroundAtom τ), t.elem ga -> ga ∈ kb.proofTheoreticSemantics := by
     intro t ga mem
     unfold proofTheoreticSemantics
     simp
-    induction' h': t.height using Nat.strongInductionOn with n ih generalizing t
+    induction' h': t.height using Nat.strongRecOn with n ih generalizing t
     cases eq : t.tree with
     | node a' l =>
       unfold ProofTree.elem at mem
       unfold Tree.elem at mem
       simp [eq] at mem
-      cases mem with 
-      | inl mem => 
+      cases mem with
+      | inl mem =>
         use t
         unfold ProofTree.root
         unfold Tree.root
@@ -121,12 +121,12 @@ namespace KnowledgeBase
     have h: r.body.toFinset.toSet ⊆ kb.proofTheoreticSemantics -> ∃ (l: List (ProofTree kb)), List.map ProofTree.root l = r.body := by
       induction r.body with
       | nil => simp
-      | cons r rs ih => 
+      | cons r rs ih =>
         intro r_and_rs_valid
         simp at r_and_rs_valid
         simp at ih
         rw [Set.insert_subset_iff] at r_and_rs_valid
-        rcases (ih r_and_rs_valid.right) with ⟨rsTrees, h_rsTrees⟩  
+        rcases (ih r_and_rs_valid.right) with ⟨rsTrees, h_rsTrees⟩
         have r_valid := r_and_rs_valid.left
         simp [KnowledgeBase.proofTheoreticSemantics] at r_valid
         rcases r_valid with ⟨rTree, h_rTree⟩
@@ -137,7 +137,7 @@ namespace KnowledgeBase
         · exact h_rsTrees
 
     rcases (h subs) with ⟨l, l_body⟩
-    use ProofTree.node r.head l (by 
+    use ProofTree.node r.head l (by
       apply Or.inl
       unfold Program.groundProgram at rGP
       simp at rGP
@@ -155,7 +155,7 @@ namespace KnowledgeBase
 
   lemma dbElementsHaveProofTrees (kb : KnowledgeBase τ) : ∀ a, kb.db.contains a -> ∃ (t: ProofTree kb), t.root = a := by
     intro a mem
-    use ProofTree.node a [] (by 
+    use ProofTree.node a [] (by
       apply Or.inr
       simp
       exact mem
@@ -168,22 +168,22 @@ namespace KnowledgeBase
     · intro r rGP
       unfold Interpretation.satisfiesRule
       intro h
-      apply proofTreeForRule 
+      apply proofTreeForRule
       apply rGP
       apply h
-    
+
     · intro a mem
       apply dbElementsHaveProofTrees
       apply mem
 
-  lemma proofTreeAtomsInEveryModel (kb: KnowledgeBase τ) : ∀ a, a ∈ kb.proofTheoreticSemantics -> ∀ i : Interpretation τ, i.models kb -> a ∈ i := by 
+  lemma proofTreeAtomsInEveryModel (kb: KnowledgeBase τ) : ∀ a, a ∈ kb.proofTheoreticSemantics -> ∀ i : Interpretation τ, i.models kb -> a ∈ i := by
     intro a pt i m
     unfold proofTheoreticSemantics at pt
     rw [Set.mem_setOf] at pt
     rcases pt with ⟨t, root_t⟩
     unfold Interpretation.models at m
     rcases m with ⟨ruleModel,dbModel⟩
-    induction' h': t.height using Nat.strongInductionOn with n ih  generalizing a t
+    induction' h': t.height using Nat.strongRecOn with n ih  generalizing a t
     cases' eq : t.tree with a' l
     have valid_t := t.isValid
     unfold ProofTreeSkeleton.isValid at valid_t
@@ -191,7 +191,7 @@ namespace KnowledgeBase
     cases valid_t with
     | inl ruleCase =>
       rcases ruleCase with ⟨r,rP,ex_g,all⟩
-      rcases ex_g with ⟨g,r_ground⟩  
+      rcases ex_g with ⟨g,r_ground⟩
 
       have r_true: i.satisfiesRule (g.applyRule' r) := by
         apply ruleModel
@@ -215,9 +215,9 @@ namespace KnowledgeBase
       rcases x_body with ⟨t_x, t_x_l, t_x_root⟩
       rw [List.forall_iff_forall_mem] at all
       simp at all
-      apply ih (m := t_x.height) (t := { 
-        tree := t_x 
-        isValid := by 
+      apply ih (m := t_x.height) (t := {
+        tree := t_x
+        isValid := by
           apply all
           apply t_x_l
         })
@@ -297,4 +297,3 @@ namespace KnowledgeBase
     · apply modelTheoreticSemanticsSubsetOfEachModel
       apply proofTheoreticSemanticsIsModel
 end KnowledgeBase
-

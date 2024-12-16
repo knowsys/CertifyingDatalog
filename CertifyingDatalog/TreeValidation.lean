@@ -162,7 +162,7 @@ namespace ProofTreeSkeleton
 
   lemma checkValidityOkIffIsValid [Inhabited τ.constants] (t: ProofTreeSkeleton τ) (kb: KnowledgeBase τ) : t.checkValidity kb.prog.toSymbolSequenceMap kb.db = Except.ok () ↔ t.isValid kb :=
   by
-    induction' h_t : t.height using Nat.strongInductionOn with n ih generalizing t
+    induction' h_t : t.height using Nat.strongRecOn with n ih generalizing t
     cases t with
     | node a l =>
       unfold checkValidity
@@ -174,7 +174,7 @@ namespace ProofTreeSkeleton
           constructor
           intro _
           right
-          rw [← List.isEmpty_iff_eq_nil]
+          rw [← List.isEmpty_iff]
           constructor
           exact emptyL
           exact contains_a
@@ -185,7 +185,7 @@ namespace ProofTreeSkeleton
           rename_i u checkRuleMatch
           rw [checkRuleMatchOkIffExistsRule] at checkRuleMatch
           left
-          rw [List.isEmpty_iff_eq_nil] at emptyL
+          rw [List.isEmpty_iff] at emptyL
           rcases checkRuleMatch with ⟨r, g, rP, apply_g⟩
           use r
           constructor
@@ -202,7 +202,7 @@ namespace ProofTreeSkeleton
 
           simp
           rename_i checkRuleMatchResult
-          rw [List.isEmpty_iff_eq_nil] at emptyL
+          rw [List.isEmpty_iff] at emptyL
 
           have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := [] } = Except.ok () := by
             rw [checkRuleMatchResult]
@@ -256,7 +256,7 @@ namespace ProofTreeSkeleton
             specialize ih height_t t
             simp at ih
             rw [ih]
-            rw [List.isEmpty_iff_eq_nil] at emptyL
+            rw [List.isEmpty_iff] at emptyL
             simp [emptyL] at h
             rcases h with ⟨_, _, h⟩
             rcases h with ⟨_,h⟩
@@ -265,7 +265,7 @@ namespace ProofTreeSkeleton
             specialize h t t_mem
             apply h
 
-        · rw [List.isEmpty_iff_eq_nil] at emptyL
+        · rw [List.isEmpty_iff] at emptyL
           simp [emptyL]
           rename_i checkRuleMatchResult
           have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
@@ -316,4 +316,3 @@ namespace ProofTreeSkeleton
       rw [checkValidityOfListOkIffAllValid]
       apply h.left
 end ProofTreeSkeleton
-

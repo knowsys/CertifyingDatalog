@@ -2,18 +2,6 @@ import CertifyingDatalog.Basic
 import CertifyingDatalog.Datalog
 
 theorem Std.HashMap.mem_keys_iff_contains [DecidableEq A] [Hashable A] (hm : Std.HashMap A B) (k : A) : k ∈ hm.keys ↔ hm.contains k := by
-  unfold keys
-  unfold Std.DHashMap.keys
-  unfold Std.DHashMap.Raw.keys
-  unfold Std.DHashMap.Raw.fold
-  unfold Std.DHashMap.Raw.foldM
-  rw [Array.foldlM_eq_foldlM_data, List.foldlM_eq_foldl]
-
-  unfold contains
-  unfold Std.DHashMap.contains
-  unfold Std.DHashMap.Internal.Raw₀.contains
-
-  simp
   sorry
 
 theorem Std.HashMap.ofList_mapped_to_pair_contains_iff_list_elem [DecidableEq A] [Hashable A] (l : List A) (a : A) : ∀ b : B, (Std.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by
@@ -44,49 +32,7 @@ theorem Std.HashMap.ofList_mapped_to_pair_contains_iff_list_elem [DecidableEq A]
   /- apply applied_this -/
 
 theorem Std.HashMap.getD_ofList_is_list_find_getD [DecidableEq A] [Hashable A] (l : List (A × B)) (a : A) : ∀ b, (Std.HashMap.ofList l).getD a b = ((l.reverse.find? (fun x => x.fst == a)).map Prod.snd).getD b := by
-  intro b
-  unfold ofList
-  /- simp -/
-
-  have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm l).getD a b = (Option.map Prod.snd (List.find? (fun x => x.1 == a) l.reverse)).getD (hm.getD a b) := by
-    induction l with
-    | nil => simp
-    | cons head tail ih =>
-      simp
-      intro hm
-      rw [ih (hm.insert head.1 head.2)]
-      rw [getD_insert]
-      split
-      case isTrue h =>
-        have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = (tail.reverse.find? (fun x => x.1 == a)).getD head := by
-          rw [List.find_concat]
-          have : [head].find? (fun x => x.1 == a) = some head := by unfold List.find?; simp [h]
-          rw [this]
-          have : ∀ {α} (opt : Option α) (x : α), opt.orElse (fun _ => some x) = Option.some (opt.getD x) := by
-            intro _ opt x
-            unfold Option.orElse
-            split <;> simp
-          rw [this]
-        rw [this]
-        simp
-      case isFalse h =>
-        have : (tail.reverse ++ [head]).find? (fun x => x.1 == a) = tail.reverse.find? (fun x => x.1 == a) := by
-          rw [List.find_concat]
-          have : (head.1 == a) = false := by simp; simp at h; exact h
-          have : [head].find? (fun x => x.1 == a) = none := by unfold List.find?; simp [this]
-          rw [this]
-          have : ∀ {α} (opt : Option α), opt.orElse (fun _ => none) = opt := by
-            intro _ opt
-            unfold Option.orElse
-            split <;> simp
-          rw [this]
-        rw [this]
-
   sorry
-  /- rw [this] -/
-  /- rw [findD_is_default_when_not_contains] -/
-  /- simp -/
-  /- apply empty_contains -/
 
 abbrev PreGraph (A: Type u) [DecidableEq A] [Hashable A] := Std.HashMap A (List A)
 
@@ -200,7 +146,7 @@ namespace PreGraph
         simp
         intro eq
         apply Eq.symm
-        apply Std.HashMap.getD_eq_fallback_of_contains_eq_false
+        rw [Std.HashMap.getD_eq_fallback_of_contains_eq_false]
         rw [← eq]
         simp at h
         exact h
@@ -219,20 +165,7 @@ namespace PreGraph
     intro needle
     unfold from_vertices
     rw [Std.HashMap.getD_ofList_is_list_find_getD]
-
-    induction vs with
-    | nil => simp
-    | cons v vs ih =>
-      simp
-      rw [List.find_concat]
-
-      have : ∀ {α β} (opta optb : Option α) (f : α -> β), (opta.orElse (fun _ => optb)).map f = (opta.map f).orElse (fun _ => (optb.map f)) := by intro _ _ opta optb f; cases opta <;> simp
-      rw [this]
-      have : ∀ {α} (opta optb : Option α) b, (opta.orElse (fun _ => optb)).getD b = opta.getD (optb.getD b) := by intro _ opta optb b; cases opta <;> simp
-      rw [this]
-      have : (Option.map Prod.snd (List.find? (fun x => x.1 == needle) [(v, [])])).getD [] = ([] : List A) := by unfold List.find?; simp; split <;> simp
-      rw [this]
-      apply ih
+    sorry
 
   theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
     let pg := PreGraph.from_vertices vs
@@ -556,4 +489,3 @@ namespace Graph
       apply b_pred
       apply b_pred
 end Graph
-

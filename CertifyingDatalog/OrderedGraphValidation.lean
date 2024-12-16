@@ -12,7 +12,7 @@ namespace OrderedProofGraph
 
   lemma in_labels_iff_exists_index (G : OrderedProofGraph τ) (a : GroundAtom τ) : a ∈ G.labels ↔ ∃ i : Fin G.val.size, (G.val.get i).fst = a := by
     unfold labels
-    rw [Array.toList_eq, ← Array.mem_def, Array.mem_iff_get]
+    rw [← Array.mem_def, Array.mem_iff_get]
     simp
     constructor
     intro h
@@ -58,7 +58,7 @@ namespace OrderedProofGraph
           rw [checkRuleMatchOkIffExistsRule]
           unfold locallyValid
           simp [h]
-          rw [← List.attach_eq_nil] at h
+          rw [← List.attach_eq_nil_iff] at h
           rw [h]
           simp
           intro contra
@@ -187,4 +187,3 @@ namespace OrderedProofGraph
     simp
     exact h
 end OrderedProofGraph
-

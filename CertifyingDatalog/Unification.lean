@@ -42,13 +42,7 @@ section TermMatching
       cases t with
       | constant c' =>
         simp
-        cases Decidable.em (c = c') with
-        | inl eq =>
-          simp [eq]
-          apply subset_refl
-        | inr neq =>
-          unfold matchTerm at h
-          simp [neq] at h
+        apply Substitution.subset_refl
       | variableDL v =>
         cases eq : (s v) with
         | none =>
@@ -57,13 +51,7 @@ section TermMatching
           simp [eq]
         | some c' =>
           simp [eq]
-          cases Decidable.em (c = c') with
-          | inl eq2 =>
-            simp [eq2]
-            apply subset_refl
-          | inr neq =>
-            unfold matchTerm at h
-            simp [eq, neq] at h
+          apply Substitution.subset_refl
 
     lemma matchTermYieldsSubs (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isSome) : ((s.matchTerm t c).get h).applyTerm t = c := by
       unfold matchTerm
@@ -102,43 +90,31 @@ section TermMatching
       cases t with
       | constant c' =>
         simp
-        unfold applyTerm at apply_t
-        simp at apply_t
-        simp [apply_t]
         apply subset
       | variableDL v =>
         cases eq2 : (s v) with
         | some c' =>
           simp [eq2]
-          unfold matchTerm at h
-          simp [eq2] at h
-          have : c = c' := by
-            apply Decidable.by_contra
-            intro contra
-            simp [contra] at h
-          simp [this]
           apply subset
         | none =>
           simp [eq2]
           unfold extend
           unfold_projs
-          unfold subset
+          unfold Substitution.subset
           intro v' v'_dom
-          cases Decidable.em (v' = v) with
-          | inl eqv =>
-            simp [eqv]
+          by_cases h': (v' = v)
+          · simp [h']
             unfold applyTerm at apply_t
             simp at apply_t
             cases eq3 : s' v with
             | none => simp [eq3] at apply_t
             | some c' => simp [eq3] at apply_t; rw [apply_t]
-          | inr neqv =>
-            simp [neqv]
+          · simp [h']
             apply subset
             unfold domain at v'_dom
-            simp [neqv] at v'_dom
+            simp [h'] at v'_dom
             unfold domain
-            simp [neqv]
+            simp [h']
             exact v'_dom
 
     lemma matchTermNoneThenNoSubs (s: Substitution τ) (t: Term τ) (c: τ.constants) (h : (s.matchTerm t c).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyTerm t ≠ c := by
@@ -310,7 +286,7 @@ section AtomMatching
         rw [term_lists_eq_len]
       rw [← fst, ← snd] at match_t_list
       rw [match_t_list]
-      simp [List.map_eq_bind]
+      simp [List.map_eq_flatMap]
 
     lemma matchAtomIsMinimal (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyAtom a = ga -> ((s.matchAtom a ga).get h) ⊆ s' := by
       intro s' ⟨subset, apply_a⟩
@@ -335,7 +311,7 @@ section AtomMatching
         rw [term_lists_eq_len]
       rw [← fst, ← snd]
       rw [terms_eq]
-      simp [List.map_eq_bind]
+      simp [List.map_eq_flatMap]
 
     lemma matchAtomNoneThenNoSubs (s: Substitution τ) (a: Atom τ) (ga: GroundAtom τ) (h : (s.matchAtom a ga).isNone) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyAtom a ≠ ga := by
       intro s' subset apply_a
@@ -361,7 +337,7 @@ section AtomMatching
         rw [term_lists_eq_len]
       rw [← fst, ← snd]
       rw [terms_eq]
-      simp [List.map_eq_bind]
+      simp [List.map_eq_flatMap]
   end Substitution
 end AtomMatching
 
@@ -486,7 +462,7 @@ section RuleMatching
             rw [body_eq_len]
           rw [← fst, ← snd] at match_a_list
           rw [match_a_list]
-          simp [List.map_eq_bind]
+          simp [List.map_eq_flatMap]
 
     theorem matchRuleNoneThenNoSubs (r : Rule τ) (gr : GroundRule τ) (h : (matchRule r gr).isNone) : ∀ s : Substitution τ, s.applyRule r ≠ gr := by
       simp
@@ -527,7 +503,6 @@ section RuleMatching
             rw [body_eq_len]
           rw [← fst, ← snd]
           rw [contra.right]
-          simp [List.map_eq_bind]
+          simp [List.map_eq_flatMap]
   end Substitution
 end RuleMatching
-

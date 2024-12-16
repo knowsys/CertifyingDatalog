@@ -55,7 +55,7 @@ namespace Array
 
   lemma foldl_union [DecidableEq B] (as: Array A) (f: A → Finset B) (S: Finset B) (b: B):  b ∈ (foldl (fun x y => x ∪ f y) S as) ↔ b ∈ S ∨ ∃ (a: A), a ∈ as ∧ b ∈ f a :=
   by
-    simp [foldl_eq_foldl_data, mem_def]
+    simp [foldl_eq_foldl_toList, mem_def]
     cases as with
     | mk data =>
       simp
@@ -71,7 +71,7 @@ namespace Array
   lemma get_mem (as: Array A) (i: Fin as.size): as[i] ∈ as :=
   by
     rw [mem_def]
-    apply getElem_mem_data
+    apply getElem_mem_toList
 
   -- TODO: get rid of unneeded lemmas and remaining Batteries uses
 
