@@ -694,18 +694,17 @@ section Dfs
             HashSet.empty
 
           rw [heq] at foldl_ok
-          simp [Except.isOk, Except.toBool] at foldl_ok
+          rename_i set
+          have set_ok: (Except.ok set : Except String (HashSet A)).isOk = true := by
+            simp [Except.isOk, Except.toBool]
 
-          specialize foldl_ok ⟨i, by rw [List.length_attach]; exact i.isLt⟩
+          specialize foldl_ok set_ok ⟨i, by rw [List.length_attach]; exact i.isLt⟩
           rcases foldl_ok with ⟨res, take_ok, f_ok⟩
 
           let walkFromA : {w : Walk G // w.val.head? = some a'} := ⟨Walk.singleton G a' a'.prop, by unfold Walk.singleton; simp⟩
           rw [this]
           rw [← G.dfs_step_semantics cond walkFromA res]
-
-          split at f_ok
-          case h_1 heq => /-simp [f] at heq; simp [walkFromA]; simp [← this]; rw [heq]; simp [Except.isOk, Except.toBool]-/ sorry
-          · contradiction
+          simp [f_ok]
 
           have foldl_preserves := List.foldl_except_preserves_prop
             (G.vertices.attach.take i)
