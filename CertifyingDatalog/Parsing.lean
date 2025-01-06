@@ -289,8 +289,7 @@ namespace InputOrderedGraph
               | inl i_lt_g =>
                 simp
                 rw [Array.getElem_push_lt]
-                apply graph.prop
-                exact i_lt_g
+                apply graph.prop ⟨i, i_lt_g⟩
               | inr i_not_lt_g =>
                 have : i = graph.val.size := by cases Nat.le_iff_lt_or_eq.mp (Nat.le_of_lt_succ i_lt); contradiction; assumption
                 simp [this]

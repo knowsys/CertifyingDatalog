@@ -175,7 +175,7 @@ namespace Walk
             apply Nat.pred_lt (Ne.symm (Nat.ne_of_lt i_zero))
           simp [h]
           rw [List.getLast?_eq_getElem?] at eq
-          rw [List.getElem?_eq] at eq
+          rw [LawfulGetElem.getElem?_def] at eq
           simp [h] at eq
           rw [eq]
           apply last_pred_of_succ
