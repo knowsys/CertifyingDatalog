@@ -391,7 +391,7 @@ namespace PreGraph
     cases ha with
     | inl contains_and_eq =>
       rw [add_vertex_with_predecessors_getD_semantics_1 pg v a _ contains_and_eq] at ha'
-      rw [List.mem_append_eq] at ha'
+      rw [List.mem_append] at ha'
       cases ha' with
       | inl ha' =>
         cases Decidable.em (a' = v) with

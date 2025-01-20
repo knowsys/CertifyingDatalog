@@ -73,7 +73,6 @@ section FoldlExcept
               simp [foldl_except] at ih
               specialize ih b ok j_fin
               rcases ih with ⟨res, foldl_ok, f_ok⟩
-              simp at foldl_ok
               exists res
               constructor
               · exact foldl_ok
@@ -524,9 +523,11 @@ section Dfs
           · exists pred
             constructor
             · apply List.mem_of_mem_head?
-              simp [cycle]
+              simp only [cycle]
               unfold Walk.prependPredecessor
-              simp
+              rw [List.head?_cons]
+              rw [← List.head?_eq_head]
+              exact walkFromPred.property
             · apply canReach_pred
               exact is_pred
         case isFalse pred_not_mem_walk =>
@@ -704,7 +705,9 @@ section Dfs
           let walkFromA : {w : Walk G // w.val.head? = some a'} := ⟨Walk.singleton G a' a'.prop, by unfold Walk.singleton; simp⟩
           rw [this]
           rw [← G.dfs_step_semantics cond walkFromA res]
-          simp [f_ok]
+          . simp only [f] at f_ok
+            simp only [walkFromA, a']
+            exact f_ok
 
           have foldl_preserves := List.foldl_except_preserves_prop
             (G.vertices.attach.take i)

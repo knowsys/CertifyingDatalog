@@ -191,7 +191,6 @@ namespace CheckableModel
         m.checkPGR adjustedRule (by
           unfold PartialGroundRule.isSafe
           intro v v_in_adj_head
-          simp at v_in_adj_head
           rw [Substitution.applyAtom_remainingVarsNotInDomain] at v_in_adj_head
           rw [Finset.mem_filter_nc] at v_in_adj_head
 
@@ -221,9 +220,9 @@ namespace CheckableModel
             apply Or.inr
             rcases v_in_tl with ⟨a, a_mem, v_in_a⟩
             exists s.applyAtom a
-            simp
             constructor
-            · exists a
+            · simp only [adjustedRule, List.mem_map]
+              exists a
             · rw [Substitution.applyAtom_remainingVarsNotInDomain]
               rw [Finset.mem_filter_nc]
               constructor
