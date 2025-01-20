@@ -1,8 +1,6 @@
 import CertifyingDatalog.Datastructures.Array
-/- import CertifyingDatalog.Datastructures.AssocList -/
 import CertifyingDatalog.Datastructures.Except
 import CertifyingDatalog.Datastructures.Finset
-/- import CertifyingDatalog.Datastructures.HashMap -/
 import CertifyingDatalog.Datastructures.HashSet
 import CertifyingDatalog.Datastructures.List
 import CertifyingDatalog.Datastructures.Tree

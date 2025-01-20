@@ -1,6 +1,7 @@
 import CertifyingDatalog.Datastructures.List
 
 namespace Array
+
   lemma mem_iff_get (a:A) (as: Array A): a ∈ as ↔ ∃ i : Fin as.size, as[i] = a := by
     rw [mem_def, List.mem_iff_get]
     constructor
@@ -70,40 +71,4 @@ namespace Array
     rw [mem_def]
     apply getElem_mem_toList
 
-  -- TODO: get rid of unneeded lemmas and remaining Batteries uses
-
-  -- NOTE: Used in HashMap Results
-  lemma splitLemma (as: Array A) (f: A → List B) (i: ℕ) (h: i < as.size) (b:B): (∃ (a:A), a ∈ as ∧ b ∈ f a) ↔ (b ∈ f as[i] ∨ ∃ (j: Fin as.size), j.1 ≠ i ∧ b ∈ f as[j]) := by
-    constructor
-    intro h
-    rcases h with ⟨a, a_mem, b_a⟩
-    rw [Array.mem_iff_exists] at a_mem
-    rcases a_mem with ⟨k, a_k⟩
-    by_cases k_i: k = i
-    left
-    simp [← k_i]
-    rw [a_k] at b_a
-    apply b_a
-
-    right
-    use k
-    constructor
-    apply k_i
-    rw [a_k] at b_a
-    apply b_a
-
-    --back
-    intro h
-    cases h with
-    | inl hi =>
-      use as[i]
-      constructor
-      apply Array.get_mem as (Fin.mk i h)
-      apply hi
-    | inr hj =>
-      rcases hj with ⟨j, _, b_j⟩
-      use as[j]
-      constructor
-      apply Array.get_mem
-      apply b_j
 end Array
