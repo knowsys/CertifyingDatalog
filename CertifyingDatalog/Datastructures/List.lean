@@ -4,7 +4,7 @@ import Mathlib.Data.Finset.Basic
 namespace List
   def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := l.toFinset.toSet
 
-  lemma toSet_mem {A: Type u} [DecidableEq A] (a:A) (l: List A): a ∈ l ↔ a ∈ l.toSet := by simp [toSet]
+  lemma toSet_mem {A: Type u} [DecidableEq A] {a:A} {l: List A}: a ∈ l ↔ a ∈ l.toSet := by simp [toSet]
 
   def mapExceptUnit (l: List A) (f: A → Except B Unit): Except B Unit :=
     match l with
@@ -14,8 +14,8 @@ namespace List
       | Except.ok () => mapExceptUnit tl f
       | Except.error b => Except.error b
 
-  lemma mapExceptUnit_iff (l: List A) (f: A → Except B Unit): mapExceptUnit l f = Except.ok () ↔ ∀ (a:A), a ∈ l → f a = Except.ok () :=
-  by
+  lemma mapExceptUnit_iff {l: List A} {f: A → Except B Unit}:
+      mapExceptUnit l f = Except.ok () ↔ ∀ (a:A), a ∈ l → f a = Except.ok () := by
     induction l with
     | nil => simp [mapExceptUnit]
     | cons hd tl ih =>
@@ -35,52 +35,51 @@ namespace List
 
   def mapExcept (f: A → Except B C) (l: List A): Except B (List C) := mapExcept.go f l []
 
-  lemma mapExcept_go_ok_length (f: A → Except B C) (l1: List A) (curr l2: List C) (h: mapExcept.go f l1 curr = Except.ok l2):
-    length l1 + length curr = length l2 :=
-    by
-      induction l1 generalizing curr with
-      | nil =>
-        unfold mapExcept.go at h
-        simp at h
-        rw [h]
-        simp
-      | cons hd tl ih =>
-        unfold mapExcept.go at h
-        simp at h
-        cases p:f hd with
-        | error e =>
-          simp [p] at h
-        | ok c =>
-          simp [p] at h
-          specialize ih (curr ++ [c]) h
-          rw [← ih]
-          simp
-          rw [Nat.add_assoc, Nat.add_comm (m:= 1)]
+  lemma mapExcept_go_ok_length {f: A → Except B C} {l1: List A} {curr l2: List C}
+      (h: mapExcept.go f l1 curr = Except.ok l2):
+      length l1 + length curr = length l2 := by
+    induction l1 generalizing curr with
+    | nil =>
+      unfold mapExcept.go at h
+      simp only [Except.ok.injEq] at h
+      rw [h]
+      simp
+    | cons hd tl ih =>
+      unfold mapExcept.go at h
+      simp only [append_eq] at h
+      cases p:f hd with
+      | error e =>
+        simp [p] at h
+      | ok c =>
+        simp only [p] at h
+        rw [← ih h]
+        simp only [length_cons, length_append, length_nil, Nat.zero_add]
+        omega
 
-  lemma mapExcept_ok_length (f: A → Except B C) (l1: List A) (l2: List C) (h: mapExcept f l1 = Except.ok l2): length l1 = length l2 :=
-  by
+  lemma mapExcept_ok_length (f: A → Except B C) (l1: List A) (l2: List C) (h: mapExcept f l1 = Except.ok l2):
+      length l1 = length l2 :=by
     have h': length l1 + @length C nil = length l2 := by
-      apply mapExcept_go_ok_length f l1
       unfold mapExcept at h
-      apply h
-    simp at h'
+      apply mapExcept_go_ok_length h
+    simp only [length_nil, Nat.add_zero] at h'
     apply h'
 
-  def foldl_union {A : Type u} {B : Type v} [DecidableEq B]  (f: A → Finset B) (init: Finset B) (l: List A): Finset B := foldl (fun x y => x ∪ f y) init l
+  def foldl_union {A : Type u} {B : Type v} [DecidableEq B]  (f: A → Finset B) (init: Finset B) (l: List A): Finset B :=
+    foldl (fun x y => x ∪ f y) init l
 
-  lemma mem_foldl_union {A : Type u} {B : Type v} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (b:B): b ∈ foldl_union f init l ↔ b ∈ init ∨ ∃ (a:A), a ∈ l ∧ b ∈ f a :=
-  by
-    unfold foldl_union
-    induction l generalizing init with
-    | nil => simp
-    | cons hd tl ih => simp [ih, or_assoc]
+  lemma mem_foldl_union {A : Type u} {B : Type v} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (b:B):
+    b ∈ foldl_union f init l ↔ b ∈ init ∨ ∃ (a:A), a ∈ l ∧ b ∈ f a := by
+  unfold foldl_union
+  induction l generalizing init with
+  | nil => simp
+  | cons hd tl ih => simp [ih, or_assoc]
 
   lemma subset_foldl_union {A : Type u} {B : Type v} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B): init ⊆ foldl_union f init l := by
     unfold foldl_union
     induction l generalizing init with
     | nil => simp
     | cons hd tl ih =>
-      simp
+      simp only [foldl_cons]
       apply Finset.Subset.trans (s₂ := init ∪ f hd)
       · apply Finset.subset_union_left
       · apply ih
@@ -90,8 +89,8 @@ namespace List
     induction l generalizing init with
     | nil => contradiction
     | cons hd tl ih =>
-      simp at mem
-      simp
+      simp only [mem_cons] at mem
+      simp only [foldl_cons]
       cases mem with
       | inl a_hd =>
         rw [a_hd]
