@@ -73,7 +73,6 @@ section FoldlExcept
               simp [foldl_except] at ih
               specialize ih b ok j_fin
               rcases ih with ⟨res, foldl_ok, f_ok⟩
-              simp at foldl_ok
               exists res
               constructor
               · exact foldl_ok
@@ -171,7 +170,7 @@ section FoldlExcept
                 exact eq3
 
     variable {A: Type u} [DecidableEq A] {B: Type v} [DecidableEq B] [Hashable B]
-    open Batteries
+    open Std
 
     omit [DecidableEq A] in lemma foldl_except_is_superset_of_f_is_superset
       (l : List A)
@@ -221,7 +220,7 @@ end FoldlExcept
 
 section Dfs
   variable {A: Type u} [DecidableEq A] [Hashable A]
-  open Batteries
+  open Std
 
   def NodeCondition (A : Type u) := A -> Except String Unit
 
@@ -330,8 +329,7 @@ section Dfs
       simp at h
       rw [← h]
       rw [HashSet.contains_insert]
-      apply Or.inr
-      rfl
+      simp
 
     lemma dfs_step_extends_verified {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) :
       verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedNodes ⊆ verifiedAfter := by
@@ -370,7 +368,8 @@ section Dfs
           · rw [HashSet.subset_iff]
             intro c c_contained
             rw [HashSet.contains_insert]
-            apply Or.inl
+            simp
+            apply Or.inr
             exact c_contained
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
@@ -433,9 +432,10 @@ section Dfs
               exact eq
               exact contains
 
+            simp at node_contained
             cases node_contained with
-            | inl node_contained => apply prop_holds_after_foldl node_contained
-            | inr node_contained =>
+            | inr node_contained => apply prop_holds_after_foldl node_contained
+            | inl node_contained =>
               rw [← node_contained]
               rw [notReachableFromCycleIffPredecessorsNotReachableFromCycle]
               rw [cond_ok_on_all_canReach_iff]
@@ -523,9 +523,11 @@ section Dfs
           · exists pred
             constructor
             · apply List.mem_of_mem_head?
-              simp [cycle]
+              simp only [cycle]
               unfold Walk.prependPredecessor
-              simp
+              rw [List.head?_cons]
+              rw [← List.head?_eq_head]
+              exact walkFromPred.property
             · apply canReach_pred
               exact is_pred
         case isFalse pred_not_mem_walk =>
@@ -557,14 +559,14 @@ section Dfs
 
             exists pred
             constructor
-            · simp [pred]; apply List.get_mem
+            · simp [pred];
             intro cond_pred
-            let walkFromPred : {w : Walk G // w.val.head? = some pred } := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; simp [pred]; apply List.get_mem), by (unfold Walk.prependPredecessor; simp)⟩
+            let walkFromPred : {w : Walk G // w.val.head? = some pred } := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; simp [pred];), by (unfold Walk.prependPredecessor; simp)⟩
             have : (G.verify_via_dfs_step cond walkFromPred res).isOk := by
               have _termination := G.verify_via_dfs_step_termination_aux walkFromA (b := (G.predecessors a).get ⟨i, by have isLt := i.isLt; simp at isLt; exact isLt⟩) (by apply List.get_mem) (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact (by apply List.get_mem))
               rw [dfs_step_semantics]
               constructor
-              · apply pred_not_reach_cycle; simp [pred]; apply List.get_mem
+              · apply pred_not_reach_cycle; simp [pred];
               · exact cond_pred
 
               have foldl_preserves := List.foldl_except_preserves_prop
@@ -652,7 +654,7 @@ section Dfs
         intro init_unwrapped init_unwrapped_eq
         injection init_unwrapped_eq with init_unwrapped_eq
         rw [← init_unwrapped_eq]
-        intro node empty_contains_node; apply False.elim; apply HashSet.empty_contains node; exact empty_contains_node
+        intro node empty_contains_node; simp at empty_contains_node
         rw [foldl_eq]
       case h_2 heq =>
         simp
@@ -693,18 +695,19 @@ section Dfs
             HashSet.empty
 
           rw [heq] at foldl_ok
-          simp [Except.isOk, Except.toBool] at foldl_ok
+          rename_i set
+          have set_ok: (Except.ok set : Except String (HashSet A)).isOk = true := by
+            simp [Except.isOk, Except.toBool]
 
-          specialize foldl_ok ⟨i, by rw [List.length_attach]; exact i.isLt⟩
+          specialize foldl_ok set_ok ⟨i, by rw [List.length_attach]; exact i.isLt⟩
           rcases foldl_ok with ⟨res, take_ok, f_ok⟩
 
           let walkFromA : {w : Walk G // w.val.head? = some a'} := ⟨Walk.singleton G a' a'.prop, by unfold Walk.singleton; simp⟩
           rw [this]
           rw [← G.dfs_step_semantics cond walkFromA res]
-
-          split at f_ok
-          case h_1 heq => simp [f] at heq; simp [walkFromA]; simp [← this]; rw [heq]; simp [Except.isOk, Except.toBool]
-          · contradiction
+          . simp only [f] at f_ok
+            simp only [walkFromA, a']
+            exact f_ok
 
           have foldl_preserves := List.foldl_except_preserves_prop
             (G.vertices.attach.take i)
@@ -720,7 +723,7 @@ section Dfs
           intro init_unwrapped init_unwrapped_eq
           injection init_unwrapped_eq with init_unwrapped_eq
           rw [← init_unwrapped_eq]
-          intro node empty_contains_node; apply False.elim; apply HashSet.empty_contains node; exact empty_contains_node
+          intro node empty_contains_node; simp at empty_contains_node
           rw [take_ok]
   end Graph
 end Dfs

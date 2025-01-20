@@ -187,7 +187,6 @@ namespace Grounding
     unfold applyRule
     unfold Rule.vars
     simp
-    rw [Finset.union_eq_empty]
     rw [applyAtom_removesVars]
     simp
     rw [List.foldl_union_empty]
@@ -199,4 +198,3 @@ namespace Grounding
 end Grounding
 
 def Program.groundProgram (p : Program τ) := {r : GroundRule τ | ∃ (r': Rule τ) (g: Grounding τ), r' ∈ p ∧ r = g.applyRule' r'}
-

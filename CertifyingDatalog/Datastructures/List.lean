@@ -124,15 +124,6 @@ namespace List
       rw [ih]
       simp [or_assoc]
 
-  theorem foldl_cons_is_concat (as bs : List α) : as.foldl (fun acc a => a :: acc) bs = as.reverse ++ bs := by
-    revert bs
-    induction as with
-    | nil => simp
-    | cons a as ih =>
-      simp
-      intro _
-      apply ih
-
   theorem elem_concat_iff_elem_of_one (as bs : List α) : ∀ e, e ∈ (as ++ bs) ↔ e ∈ as ∨ e ∈ bs := by simp
 
   theorem find_concat (as bs : List α) : ∀ f, (as ++ bs).find? f = (as.find? f).orElse (fun () => bs.find? f) := by
@@ -151,7 +142,7 @@ namespace List
       rw [find_sem]
       split
       case isTrue h => rw [find_sem]; simp[h]
-      case isFalse h => rw [find_sem]; simp[h]; rw [ih]
+      case isFalse h => rw [find_sem]; rw [ih]; simp[h]
 
   lemma find?_mem_iff (l: List A) (p: A → Bool) (a:A) (unique: List.Pairwise (fun x y => ¬ (p x = true ∧ p y = true)) l): l.find? p = some a ↔ a ∈ l ∧ p a = true := by
     induction l with
@@ -404,5 +395,4 @@ namespace List
     have : (l.take n.val).length = n.val := by simp; apply Nat.le_of_lt_succ; apply n.isLt
     rw [List.getLast_eq_getElem]
     simp [this]
-    rw [List.getElem_take']
 end List

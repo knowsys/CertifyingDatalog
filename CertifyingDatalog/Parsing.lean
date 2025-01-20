@@ -1,4 +1,3 @@
-import Batteries.Data.List.Basic
 import CertifyingDatalog.Datalog
 import CertifyingDatalog.Basic
 import CertifyingDatalog.GraphValidation
@@ -86,11 +85,11 @@ namespace ParseArityHelper
     then if helper.arity ⟨symbol, h⟩ = arity then Except.ok helper else Except.error ("Mismatched arity for " ++ symbol ++ " Given ")
     else
       Except.ok {
-        relationList := symbol :: helper.relationList, 
-        arity := (fun x => 
-          if q:(x = symbol) 
-          then arity 
-          else helper.arity ⟨x, by have prop := x.prop; simp [q] at prop; exact prop⟩ 
+        relationList := symbol :: helper.relationList,
+        arity := (fun x =>
+          if q:(x = symbol)
+          then arity
+          else helper.arity ⟨x, by have prop := x.prop; simp [q] at prop; exact prop⟩
         )
       }
 
@@ -99,7 +98,7 @@ namespace ParseArityHelper
 
   def extend_inputAtomList (helper : ParseArityHelper) (as : List InputAtom) : Except String ParseArityHelper :=
     as.foldl_except (fun acc a => acc.extend_inputAtom a) (Except.ok helper)
-  
+
   def extend_inputRule (helper : ParseArityHelper) (r : InputRule) : Except String ParseArityHelper :=
     helper.extend_inputAtomList (r.head :: r.body)
 
@@ -131,7 +130,7 @@ namespace ParseArityHelper
 end ParseArityHelper
 
 namespace InputTerm
-  def toTerm (helper : ParseArityHelper) : InputTerm -> Term (helper.toSignature) 
+  def toTerm (helper : ParseArityHelper) : InputTerm -> Term (helper.toSignature)
   | .constant c => Term.constant c
   | .variable v => Term.variableDL v
 
@@ -153,13 +152,13 @@ namespace InputAtom
         }
       else Except.error ("Wrong arity for relation symbol '" ++ a.toString ++ "'. Expected: " ++ (helper.arity ⟨a.symbol, h⟩).toString ++ "Got: " ++ a.terms.length.toString)
     else Except.error ("Unknown relation symbol: " ++ a.symbol)
-    
+
   def toGroundAtom (helper : ParseArityHelper) (a : InputAtom) : Except String (GroundAtom helper.toSignature) :=
     if h: a.symbol ∈ helper.relationList
     then
       if p: helper.arity ⟨a.symbol, h⟩ = a.terms.length
       then
-        match q : a.terms.mapExcept (InputTerm.toGroundTerm helper) with 
+        match q : a.terms.mapExcept (InputTerm.toGroundTerm helper) with
         | .error err => Except.error err
         | .ok terms =>
           Except.ok {
@@ -173,11 +172,11 @@ end InputAtom
 
 namespace InputRule
   def toRule (helper : ParseArityHelper) (r : InputRule) : Except String (Rule helper.toSignature) :=
-    match r.head.toAtom helper with 
+    match r.head.toAtom helper with
     | .error err => Except.error err
-    | .ok head => 
+    | .ok head =>
       (r.body.mapExcept (InputAtom.toAtom helper)).map (fun body => {
-        head := head 
+        head := head
         body := body
       })
 end InputRule
@@ -187,8 +186,8 @@ namespace InputTree
   | .node label children =>
     match label.toGroundAtom helper with
     | .error err => Except.error err
-    | .ok root => 
-      (children.attach.mapExcept (fun ⟨t, _t_mem_required_for_termination⟩ => 
+    | .ok root =>
+      (children.attach.mapExcept (fun ⟨t, _t_mem_required_for_termination⟩ =>
         t.toProofTreeSkeleton helper
       )).map (fun ts =>
         Tree.node root ts
@@ -202,13 +201,13 @@ structure TreeVerificationProblem where
 
 namespace TreeVerificationProblem
   def fromProblemInput (input : TreeProblemInput) : Except String TreeVerificationProblem :=
-    match ParseArityHelper.fromInputProgram input.program with 
+    match ParseArityHelper.fromInputProgram input.program with
     | .error err => Except.error err
     | .ok helper =>
-      match input.trees.mapExcept (InputTree.toProofTreeSkeleton helper) with 
+      match input.trees.mapExcept (InputTree.toProofTreeSkeleton helper) with
       | .error err => Except.error err
       | .ok trees =>
-        match input.program.mapExcept (InputRule.toRule helper) with 
+        match input.program.mapExcept (InputRule.toRule helper) with
         | .error err => Except.error err
         | .ok program => Except.ok {
           helper
@@ -217,19 +216,19 @@ namespace TreeVerificationProblem
         }
 end TreeVerificationProblem
 
-structure InputEdge where 
+structure InputEdge where
   vertex : InputAtom
   predecessors : List InputAtom
 deriving DecidableEq, Lean.FromJson, Lean.ToJson
 
-structure InputGraph where 
+structure InputGraph where
   edges : List InputEdge
 deriving Lean.FromJson, Lean.ToJson
 
 namespace InputGraph
   def toGraph (helper : ParseArityHelper) (input : InputGraph) : Except String (Graph (GroundAtom helper.toSignature)) :=
-    input.edges.foldl_except (fun graph edge => 
-      match edge.vertex.toGroundAtom helper with 
+    input.edges.foldl_except (fun graph edge =>
+      match edge.vertex.toGroundAtom helper with
       | .error err => Except.error err
       | .ok v =>
         (edge.predecessors.mapExcept (InputAtom.toGroundAtom helper)).map (fun preds =>
@@ -238,7 +237,7 @@ namespace InputGraph
     ) (Except.ok (Graph.from_vertices []))
 end InputGraph
 
-structure GraphProblemInput where 
+structure GraphProblemInput where
   graph : InputGraph
   program : List InputRule
 deriving Lean.FromJson, Lean.ToJson
@@ -250,13 +249,13 @@ structure GraphVerificationProblem where
 
 namespace GraphVerificationProblem
   def fromProblemInput (input : GraphProblemInput) : Except String GraphVerificationProblem :=
-    match ParseArityHelper.fromInputProgram input.program with 
+    match ParseArityHelper.fromInputProgram input.program with
     | .error err => Except.error err
     | .ok helper =>
-      match input.graph.toGraph helper with 
+      match input.graph.toGraph helper with
       | .error err => Except.error err
       | .ok graph =>
-        match input.program.mapExcept (InputRule.toRule helper) with 
+        match input.program.mapExcept (InputRule.toRule helper) with
         | .error err => Except.error err
         | .ok program => Except.ok {
           helper
@@ -270,41 +269,40 @@ structure InputOrderedGraphEdge where
   predecessors : List Nat
 deriving Lean.FromJson, Lean.ToJson
 
-structure InputOrderedGraph where 
+structure InputOrderedGraph where
   edges : Array InputOrderedGraphEdge
 deriving Lean.FromJson, Lean.ToJson
 
 namespace InputOrderedGraph
   def toOrderedProofGraph (helper : ParseArityHelper) (input : InputOrderedGraph) : Except String (OrderedProofGraph helper.toSignature) :=
     input.edges.foldl (fun acc edge =>
-      match acc with 
+      match acc with
       | .error err => Except.error err
       | .ok graph =>
-        if h : edge.predecessors.all (fun pred => pred < graph.val.size) 
+        if h : edge.predecessors.all (fun pred => pred < graph.val.size)
         then
           (edge.label.toGroundAtom helper).map (fun label =>
-            ⟨graph.val.push ⟨label, edge.predecessors⟩, by 
+            ⟨graph.val.push ⟨label, edge.predecessors⟩, by
               intro ⟨i, i_lt⟩
               simp at i_lt
-              cases Decidable.em (i < graph.val.size) with 
-              | inl i_lt_g => 
+              cases Decidable.em (i < graph.val.size) with
+              | inl i_lt_g =>
                 simp
-                rw [Array.get_push_lt]
-                apply graph.prop
-                exact i_lt_g
-              | inr i_not_lt_g => 
+                rw [Array.getElem_push_lt]
+                apply graph.prop ⟨i, i_lt_g⟩
+              | inr i_not_lt_g =>
                 have : i = graph.val.size := by cases Nat.le_iff_lt_or_eq.mp (Nat.le_of_lt_succ i_lt); contradiction; assumption
                 simp [this]
                 simp at h
                 exact h
-            ⟩ 
+            ⟩
           )
-        else 
+        else
           Except.error "The Graph is not properly ordered. Predecessors of nodes must occur before predecessors. You may try the regular graph input instead."
     ) (Except.ok ⟨#[], by intro i; have isLt := i.isLt; simp at isLt⟩)
 end InputOrderedGraph
 
-structure OrderedGraphProblemInput where 
+structure OrderedGraphProblemInput where
   graph : InputOrderedGraph
   program : List InputRule
 deriving Lean.FromJson, Lean.ToJson
@@ -316,13 +314,13 @@ structure OrderedGraphVerificationProblem where
 
 namespace OrderedGraphVerificationProblem
   def fromProblemInput (input : OrderedGraphProblemInput) : Except String OrderedGraphVerificationProblem :=
-    match ParseArityHelper.fromInputProgram input.program with 
+    match ParseArityHelper.fromInputProgram input.program with
     | .error err => Except.error err
     | .ok helper =>
-      match input.graph.toOrderedProofGraph helper with 
+      match input.graph.toOrderedProofGraph helper with
       | .error err => Except.error err
       | .ok graph =>
-        match input.program.mapExcept (InputRule.toRule helper) with 
+        match input.program.mapExcept (InputRule.toRule helper) with
         | .error err => Except.error err
         | .ok program => Except.ok {
           helper
@@ -330,4 +328,3 @@ namespace OrderedGraphVerificationProblem
           program
         }
 end OrderedGraphVerificationProblem
-

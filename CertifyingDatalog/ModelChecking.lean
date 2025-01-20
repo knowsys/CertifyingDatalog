@@ -37,7 +37,7 @@ namespace PartialGroundRule
     unfold fromRule
     simp
 
-  lemma fromRule_safe_iff_rule_safe (r : Rule τ) : (fromRule r).isSafe ↔ r.isSafe := by 
+  lemma fromRule_safe_iff_rule_safe (r : Rule τ) : (fromRule r).isSafe ↔ r.isSafe := by
     unfold isSafe
     unfold Rule.isSafe
     unfold fromRule
@@ -49,7 +49,7 @@ namespace PartialGroundRule
     unfold isSatisfied
     simp only [h]
 
-  lemma head_noVars_of_safe_of_ground (pgr : PartialGroundRule τ) : pgr.isSafe -> pgr.isGround -> pgr.head.vars = ∅ := by 
+  lemma head_noVars_of_safe_of_ground (pgr : PartialGroundRule τ) : pgr.isSafe -> pgr.isGround -> pgr.head.vars = ∅ := by
     unfold isSafe
     unfold isGround
     intro safe ground
@@ -57,7 +57,7 @@ namespace PartialGroundRule
     unfold List.foldl_union at safe
     simp at safe
     apply Finset.Subset.antisymm
-    apply safe
+    rw [safe]
     simp
 
 end PartialGroundRule
@@ -102,7 +102,7 @@ end PartialGroundRule
 namespace CheckableModel
   def substitutionsForAtom (m : CheckableModel τ) (a : Atom τ) : List (Substitution τ) := m.filterMap (fun ga => Substitution.empty.matchAtom a ga)
 
-  lemma noVars_after_applying_substitutionsForAtom (m : CheckableModel τ) (a : Atom τ) : ∀ s ∈ m.substitutionsForAtom a, (s.applyAtom a).vars = ∅ := by 
+  lemma noVars_after_applying_substitutionsForAtom (m : CheckableModel τ) (a : Atom τ) : ∀ s ∈ m.substitutionsForAtom a, (s.applyAtom a).vars = ∅ := by
     unfold substitutionsForAtom
     intro s s_mem
     simp at s_mem
@@ -112,7 +112,7 @@ namespace CheckableModel
     rw [Substitution.matchAtomYieldsSubs]
     exact ga.vars_empty
 
-  lemma substitutionsForAtom_application_in_model (m : CheckableModel τ) (a : Atom τ) : ∀ (h : s ∈ m.substitutionsForAtom a), (s.applyAtom a).toGroundAtom (m.noVars_after_applying_substitutionsForAtom a s h) ∈ m := by 
+  lemma substitutionsForAtom_application_in_model (m : CheckableModel τ) (a : Atom τ) : ∀ (h : s ∈ m.substitutionsForAtom a), (s.applyAtom a).toGroundAtom (m.noVars_after_applying_substitutionsForAtom a s h) ∈ m := by
     intro h
     unfold substitutionsForAtom at h
     simp at h
@@ -124,8 +124,8 @@ namespace CheckableModel
     rw [← this]
     exact ga_mem
 
-  lemma mem_substitutionsForAtom_iff (m : CheckableModel τ) (a : Atom τ) : 
-    ∀ (s : Substitution τ), s ∈ m.substitutionsForAtom a ↔ ∃ ga ∈ m, s.applyAtom a = ga ∧ ∀ (s': Substitution τ), s'.applyAtom a = ga → s ⊆ s' := by 
+  lemma mem_substitutionsForAtom_iff (m : CheckableModel τ) (a : Atom τ) :
+    ∀ (s : Substitution τ), s ∈ m.substitutionsForAtom a ↔ ∃ ga ∈ m, s.applyAtom a = ga ∧ ∀ (s': Substitution τ), s'.applyAtom a = ga → s ⊆ s' := by
     intro s
     constructor
     · intro h
@@ -134,7 +134,7 @@ namespace CheckableModel
       · apply substitutionsForAtom_application_in_model; exact h
       rw [← Atom.toGroundAtom_isSelf]
       simp
-      intro s' eq 
+      intro s' eq
 
       unfold substitutionsForAtom at h
       simp at h
@@ -145,38 +145,38 @@ namespace CheckableModel
       apply Substitution.matchAtomIsMinimal
       constructor
       · apply Substitution.empty_isMinimal
-      · rw [eq, this]; rw [Substitution.matchAtomYieldsSubs] 
+      · rw [eq, this]; rw [Substitution.matchAtomYieldsSubs]
     · intro h
-      rcases h with ⟨ga, mem, ga_eq, minimal⟩ 
+      rcases h with ⟨ga, mem, ga_eq, minimal⟩
       unfold substitutionsForAtom
       simp
       exists ga
       constructor
       · exact mem
-      · cases eq : Substitution.empty.matchAtom a ga with 
-        | none => 
+      · cases eq : Substitution.empty.matchAtom a ga with
+        | none =>
           simp
-          apply @Substitution.matchAtomNoneThenNoSubs τ 
+          apply @Substitution.matchAtomNoneThenNoSubs τ
           rw [eq]
           simp
           apply Substitution.empty_isMinimal
           apply ga_eq
-        | some s' => 
-          simp 
+        | some s' =>
+          simp
           have : s' = (Substitution.empty.matchAtom a ga).get (by simp [eq]) := by simp [eq]
           apply Substitution.subset_antisymm
           · rw [this]
             apply Substitution.matchAtomIsMinimal
             constructor
             · apply Substitution.empty_isMinimal
-            · exact ga_eq 
+            · exact ga_eq
           · apply minimal
             rw [this]
             apply Substitution.matchAtomYieldsSubs
 
-  def checkPGR (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) : Except String Unit := 
-    match eq : pgr.ungroundedBody with 
-    | .nil => if pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe eq) ∈ m 
+  def checkPGR (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) : Except String Unit :=
+    match eq : pgr.ungroundedBody with
+    | .nil => if pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe eq) ∈ m
       then Except.ok ()
       else Except.error ("Unsatisfied rule: " ++ ToString.toString pgr.toRule)
     | .cons hd tl =>
@@ -188,14 +188,13 @@ namespace CheckableModel
         }
 
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [eq]; simp
-        m.checkPGR adjustedRule (by 
+        m.checkPGR adjustedRule (by
           unfold PartialGroundRule.isSafe
           intro v v_in_adj_head
-          simp at v_in_adj_head
           rw [Substitution.applyAtom_remainingVarsNotInDomain] at v_in_adj_head
           rw [Finset.mem_filter_nc] at v_in_adj_head
 
-          have : v ∈ pgr.ungroundedBody.foldl_union Atom.vars ∅ := by 
+          have : v ∈ pgr.ungroundedBody.foldl_union Atom.vars ∅ := by
             unfold PartialGroundRule.isSafe at safe
             apply safe
             exact v_in_adj_head.right
@@ -205,48 +204,48 @@ namespace CheckableModel
           have mem_foldl_union := @List.mem_foldl_union (Atom τ) τ.vars
           simp [List.foldl_union] at mem_foldl_union
           rw [mem_foldl_union] at this
-          cases this with 
-          | inl v_in_hd => 
+          cases this with
+          | inl v_in_hd =>
             have noVars_in_hd := m.noVars_after_applying_substitutionsForAtom hd s s_mem
-            have v_in_applied_hd : v ∈ (s.applyAtom hd).vars := by 
+            have v_in_applied_hd : v ∈ (s.applyAtom hd).vars := by
               rw [Substitution.applyAtom_remainingVarsNotInDomain]
               rw [Finset.mem_filter_nc]
               constructor
-              · exact v_in_adj_head.left 
+              · exact v_in_adj_head.left
               · exact v_in_hd
             rw [noVars_in_hd] at v_in_applied_hd
             contradiction
-          | inr v_in_tl => 
+          | inr v_in_tl =>
             rw [List.mem_foldl_union]
             apply Or.inr
             rcases v_in_tl with ⟨a, a_mem, v_in_a⟩
             exists s.applyAtom a
-            simp
             constructor
-            · exists a
+            · simp only [adjustedRule, List.mem_map]
+              exists a
             · rw [Substitution.applyAtom_remainingVarsNotInDomain]
               rw [Finset.mem_filter_nc]
               constructor
-              · exact v_in_adj_head.left 
+              · exact v_in_adj_head.left
               · exact v_in_a
         )
       )
   termination_by pgr.ungroundedBody.length
 
-  lemma checkPGRIsOkIffRuleIsSatisfied (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) (active : pgr.isActive m.toSet) : m.checkPGR pgr safe = Except.ok () ↔ pgr.isSatisfied m.toSet := by 
+  lemma checkPGRIsOkIffRuleIsSatisfied (m : CheckableModel τ) (pgr : PartialGroundRule τ) (safe : pgr.isSafe) (active : pgr.isActive m.toSet) : m.checkPGR pgr safe = Except.ok () ↔ pgr.isSatisfied m.toSet := by
     unfold checkPGR
     split
     case h_1 heq =>
-      have : ∀ g : Grounding τ, g.applyAtom' pgr.head = pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe heq) := by 
+      have : ∀ g : Grounding τ, g.applyAtom' pgr.head = pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe heq) := by
         intro g
         rw [GroundAtom.eq_iff_toAtom_eq]
         rw [g.applyAtom'_on_Atom_without_vars_unchanged pgr.head (pgr.head_noVars_of_safe_of_ground safe heq)]
         rw [← Atom.toGroundAtom_isSelf]
       split
-      case isTrue h => 
-        simp 
-        unfold PartialGroundRule.isSatisfied 
-        unfold Interpretation.satisfiesRule 
+      case isTrue h =>
+        simp
+        unfold PartialGroundRule.isSatisfied
+        unfold Interpretation.satisfiesRule
         intro g _
         unfold Grounding.applyRule'
         unfold PartialGroundRule.toRule
@@ -257,8 +256,8 @@ namespace CheckableModel
         exact h
       case isFalse h =>
         simp
-        unfold PartialGroundRule.isSatisfied 
-        unfold Interpretation.satisfiesRule 
+        unfold PartialGroundRule.isSatisfied
+        unfold Interpretation.satisfiesRule
         unfold Grounding.applyRule'
         unfold PartialGroundRule.toRule
         rw [heq]
@@ -284,7 +283,7 @@ namespace CheckableModel
       rw [List.mapExceptUnit_iff]
       simp
       unfold PartialGroundRule.isSatisfied
-      unfold Interpretation.satisfiesRule 
+      unfold Interpretation.satisfiesRule
 
       constructor
       · intro subs_works
@@ -301,7 +300,7 @@ namespace CheckableModel
 
         let subs : Substitution τ := (fun v => if v ∈ hd.vars then g v else Option.none)
 
-        have g_after_subs : ∀ a, g.applyAtom' (subs.applyAtom a) = g.applyAtom' a := by 
+        have g_after_subs : ∀ a, g.applyAtom' (subs.applyAtom a) = g.applyAtom' a := by
           intro a
           unfold Substitution.applyAtom
           unfold Grounding.applyAtom'
@@ -309,15 +308,15 @@ namespace CheckableModel
           intro t t_mem
           unfold Substitution.applyTerm
           unfold Grounding.applyTerm'
-          cases t with 
+          cases t with
           | constant c => simp
-          | variableDL v => 
+          | variableDL v =>
             simp [subs]
             cases Decidable.em (v ∈ hd.vars) with
             | inl h => simp [h]
             | inr h => simp [h]
 
-        have g_eq_subs_on_hd : subs.applyAtom hd = g.applyAtom' hd := by 
+        have g_eq_subs_on_hd : subs.applyAtom hd = g.applyAtom' hd := by
           unfold Substitution.applyAtom
           unfold Grounding.applyAtom'
           unfold GroundAtom.toAtom
@@ -325,11 +324,11 @@ namespace CheckableModel
           intro t t_mem
           unfold Substitution.applyTerm
           unfold Grounding.applyTerm'
-          cases t with 
+          cases t with
           | constant c => simp
-          | variableDL v => 
+          | variableDL v =>
             have : v ∈ hd.vars := by
-              unfold Atom.vars 
+              unfold Atom.vars
               rw [List.mem_foldl_union]
               apply Or.inr
               exists Term.variableDL v
@@ -339,14 +338,13 @@ namespace CheckableModel
               · simp
             simp [subs, this]
 
-        have subs_domain : subs.domain = hd.vars := by 
+        have subs_domain : subs.domain = hd.vars := by
           unfold Substitution.domain
           apply Set.ext
           intro v
           simp [subs]
-          split <;> (simp; assumption)
 
-        specialize subs_works subs (by 
+        specialize subs_works subs (by
           rw [mem_substitutionsForAtom_iff]
           exists g.applyAtom' hd
           constructor
@@ -360,39 +358,39 @@ namespace CheckableModel
             simp at v_in_dom
             unfold Substitution.applyAtom at s'_apply_also_ground
             simp at s'_apply_also_ground
-            specialize s'_apply_also_ground (Term.variableDL v) (by 
-              unfold Atom.vars at v_in_dom 
+            specialize s'_apply_also_ground (Term.variableDL v) (by
+              unfold Atom.vars at v_in_dom
               rw [List.mem_foldl_union] at v_in_dom
-              cases v_in_dom; contradiction; 
-              case inr h => 
-              rcases h with ⟨t, t_mem, v_in_t⟩ 
+              cases v_in_dom; contradiction;
+              case inr h =>
+              rcases h with ⟨t, t_mem, v_in_t⟩
               unfold Term.vars at v_in_t
               cases t <;> simp at v_in_t
-              rw [v_in_t] 
+              rw [v_in_t]
               exact t_mem
             )
             unfold Substitution.applyTerm at s'_apply_also_ground
             simp [subs, v_in_dom] at s'_apply_also_ground
             simp [subs, v_in_dom]
-            cases eq : s' v with 
-            | none => simp [eq] at s'_apply_also_ground 
-            | some c => 
+            cases eq : s' v with
+            | none => simp [eq] at s'_apply_also_ground
+            | some c =>
               simp [eq] at s'_apply_also_ground
               rw [s'_apply_also_ground]
         )
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
-        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by 
+        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by
           unfold PartialGroundRule.isActive
           unfold List.toSet
           simp
           intro ga ga_eq
-          cases ga_eq with 
-          | inl ga_eq => 
+          cases ga_eq with
+          | inl ga_eq =>
             specialize g_active_grounded ga
             rw [Grounding.applyAtom'_on_GroundAtom_unchanged] at g_active_grounded
             apply g_active_grounded
             exact ga_eq
-          | inr ga_eq => 
+          | inr ga_eq =>
             apply g_active_ungrounded
             apply Or.inl
             rw [ga_eq]
@@ -415,43 +413,43 @@ namespace CheckableModel
         constructor
         · rw [← (subs.applyAtom hd).toGroundAtom_isSelf]; rw [g_after_subs]; apply g_active_ungrounded; apply Or.inl; rfl
         intro a h
-        cases h with 
-        | inl h => 
-          rcases h with ⟨b, h⟩ 
+        cases h with
+        | inl h =>
+          rcases h with ⟨b, h⟩
           rw [← h.right]
           apply g_active_grounded
           exact h.left
-        | inr h => 
-          rcases h with ⟨b, h⟩ 
+        | inr h =>
+          rcases h with ⟨b, h⟩
           rw [← h.right]
           apply g_active_ungrounded
           apply Or.inr
           exists b
           rw [g_after_subs]
-          simp 
+          simp
           exact h.left
       · intro grounding_works
         intro subs subs_mem
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
-        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by 
+        rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by
           unfold PartialGroundRule.isActive
           unfold List.toSet
           simp
-          intro ga h 
-          cases h with 
-          | inl h => 
-            unfold PartialGroundRule.isActive at active 
-            unfold List.toSet at active 
+          intro ga h
+          cases h with
+          | inl h =>
+            unfold PartialGroundRule.isActive at active
+            unfold List.toSet at active
             simp at active
             apply active
             exact h
-          | inr h => 
+          | inr h =>
             rw [h]
             apply substitutionsForAtom_application_in_model
             exact subs_mem
         )]
         unfold PartialGroundRule.isSatisfied
-        unfold Interpretation.satisfiesRule 
+        unfold Interpretation.satisfiesRule
         unfold Grounding.applyRule'
         unfold PartialGroundRule.toRule
         unfold List.toSet
@@ -467,8 +465,8 @@ namespace CheckableModel
         simp at grounding_works
 
         let grounding : Grounding τ := fun v => (subs v).getD (g v)
-        
-        have : ∀ a, grounding.applyAtom' a = g.applyAtom' (subs.applyAtom a) := by 
+
+        have : ∀ a, grounding.applyAtom' a = g.applyAtom' (subs.applyAtom a) := by
           intro a
           simp [grounding]
           unfold Grounding.applyAtom'
@@ -477,7 +475,7 @@ namespace CheckableModel
           intro t t_mem
           unfold Substitution.applyTerm
           unfold Grounding.applyTerm'
-          cases t with 
+          cases t with
           | constant _ => simp
           | variableDL v => simp; cases subs v <;> simp
 
@@ -490,32 +488,32 @@ namespace CheckableModel
         apply Or.inl
         exists ga
         rw [Grounding.applyAtom'_on_GroundAtom_unchanged]
-        simp 
+        simp
         exact ga_mem
         rw [heq]
         rw [← Atom.toGroundAtom_isSelf] at h
         simp
         constructor
         · rw [this]; exact h.left
-        intro a a_mem 
+        intro a a_mem
         apply h.right
         apply Or.inr
         exists a
         rw [this]
-        simp 
+        simp
         exact a_mem
   termination_by pgr.ungroundedBody.length
 
-  def checkProgram (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : Except String Unit := 
-    p.attach.mapExceptUnit (fun ⟨r, r_mem⟩ => m.checkPGR (PartialGroundRule.fromRule r) (by 
+  def checkProgram (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : Except String Unit :=
+    p.attach.mapExceptUnit (fun ⟨r, r_mem⟩ => m.checkPGR (PartialGroundRule.fromRule r) (by
       rw [PartialGroundRule.fromRule_safe_iff_rule_safe]
       unfold Program.isSafe at safe
-      apply safe 
+      apply safe
       exact r_mem
     ))
 
-  theorem checkProgramIsOkIffAllRulesAreSatisfied (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : 
-    m.checkProgram p safe = Except.ok () ↔ ∀ r ∈ p.groundProgram, Interpretation.satisfiesRule m.toSet r := by 
+  theorem checkProgramIsOkIffAllRulesAreSatisfied (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) :
+    m.checkProgram p safe = Except.ok () ↔ ∀ r ∈ p.groundProgram, Interpretation.satisfiesRule m.toSet r := by
       unfold checkProgram
       rw [List.mapExceptUnit_iff]
       unfold Program.groundProgram
@@ -526,7 +524,7 @@ namespace CheckableModel
         rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)] at h
         unfold PartialGroundRule.isSatisfied at h
         rw [PartialGroundRule.toRule_inv_fromRule] at h
-        rw [eq] 
+        rw [eq]
         apply h
       · intro h r r_mem
         rw [m.checkPGRIsOkIffRuleIsSatisfied _ _ (by apply PartialGroundRule.fromRule_isActive)]
@@ -537,4 +535,3 @@ namespace CheckableModel
         exact r_mem
         rfl
 end CheckableModel
-

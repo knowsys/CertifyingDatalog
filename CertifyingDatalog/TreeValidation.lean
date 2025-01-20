@@ -3,13 +3,13 @@ import CertifyingDatalog.Datalog
 import CertifyingDatalog.Unification
 
 def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] :=
-  @Batteries.HashMap (List τ.relationSymbols) (List (Rule τ)) instBEqOfDecidableEq instHashableList
+  Std.HashMap (List τ.relationSymbols) (List (Rule τ))
 
 variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
-def SymbolSequenceMap.empty : SymbolSequenceMap τ := @Batteries.HashMap.empty (List τ.relationSymbols) (List (Rule τ)) instBEqOfDecidableEq instHashableList
+def SymbolSequenceMap.empty : SymbolSequenceMap τ := Std.HashMap.empty
 
-def SymbolSequenceMap.find (m : SymbolSequenceMap τ) (l : List (τ.relationSymbols)) : List (Rule τ) := m.findD l []
+def SymbolSequenceMap.find (m : SymbolSequenceMap τ) (l : List (τ.relationSymbols)) : List (Rule τ) := m.getD l []
 
 namespace Rule
   def symbolSequence (r: Rule τ): List τ.relationSymbols := r.head.symbol :: (List.map Atom.symbol r.body)
@@ -64,11 +64,13 @@ namespace Program
       by_cases l_symb: l = rule.symbolSequence
       · simp [l_symb]
         unfold SymbolSequenceMap.find
-        rw [Batteries.HashMap.findD_insert' init rule.symbolSequence]
+        rw [Std.HashMap.getD_insert_self]
         simp
         tauto
       · unfold SymbolSequenceMap.find
-        rw [Batteries.HashMap.findD_insert'' (h := by intro contra; apply l_symb; rw [contra])]
+        rw [Std.HashMap.getD_insert]
+        split
+        case neg.isTrue h => simp at h; rw [h] at l_symb; contradiction
         constructor
         · intro h
           cases h with
@@ -101,9 +103,6 @@ namespace Program
     unfold toSymbolSequenceMap
     rw [toSymbolSequenceMap_mem]
     simp [SymbolSequenceMap.empty, SymbolSequenceMap.find]
-    rw [Batteries.HashMap.findD_eq_find?]
-    rw [Batteries.HashMap.not_contains_find_none (h := by rw [Batteries.HashMap.empty_contains]; simp)]
-    simp
     rw [And.comm]
 end Program
 
@@ -163,7 +162,7 @@ namespace ProofTreeSkeleton
 
   lemma checkValidityOkIffIsValid [Inhabited τ.constants] (t: ProofTreeSkeleton τ) (kb: KnowledgeBase τ) : t.checkValidity kb.prog.toSymbolSequenceMap kb.db = Except.ok () ↔ t.isValid kb :=
   by
-    induction' h_t : t.height using Nat.strongInductionOn with n ih generalizing t
+    induction' h_t : t.height using Nat.strongRecOn with n ih generalizing t
     cases t with
     | node a l =>
       unfold checkValidity
@@ -175,7 +174,7 @@ namespace ProofTreeSkeleton
           constructor
           intro _
           right
-          rw [← List.isEmpty_iff_eq_nil]
+          rw [← List.isEmpty_iff]
           constructor
           exact emptyL
           exact contains_a
@@ -186,7 +185,7 @@ namespace ProofTreeSkeleton
           rename_i u checkRuleMatch
           rw [checkRuleMatchOkIffExistsRule] at checkRuleMatch
           left
-          rw [List.isEmpty_iff_eq_nil] at emptyL
+          rw [List.isEmpty_iff] at emptyL
           rcases checkRuleMatch with ⟨r, g, rP, apply_g⟩
           use r
           constructor
@@ -203,7 +202,7 @@ namespace ProofTreeSkeleton
 
           simp
           rename_i checkRuleMatchResult
-          rw [List.isEmpty_iff_eq_nil] at emptyL
+          rw [List.isEmpty_iff] at emptyL
 
           have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := [] } = Except.ok () := by
             rw [checkRuleMatchResult]
@@ -257,7 +256,7 @@ namespace ProofTreeSkeleton
             specialize ih height_t t
             simp at ih
             rw [ih]
-            rw [List.isEmpty_iff_eq_nil] at emptyL
+            rw [List.isEmpty_iff] at emptyL
             simp [emptyL] at h
             rcases h with ⟨_, _, h⟩
             rcases h with ⟨_,h⟩
@@ -266,7 +265,7 @@ namespace ProofTreeSkeleton
             specialize h t t_mem
             apply h
 
-        · rw [List.isEmpty_iff_eq_nil] at emptyL
+        · rw [List.isEmpty_iff] at emptyL
           simp [emptyL]
           rename_i checkRuleMatchResult
           have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
@@ -317,4 +316,3 @@ namespace ProofTreeSkeleton
       rw [checkValidityOfListOkIffAllValid]
       apply h.left
 end ProofTreeSkeleton
-

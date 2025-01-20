@@ -3,16 +3,16 @@ import CertifyingDatalog.Datalog
 import CertifyingDatalog.TreeValidation
 
 abbrev OrderedProofGraph (τ: Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] :=
-  { arr : Array ((GroundAtom τ) × List ℕ) // ∀ i : Fin arr.size, ∀ j ∈ (arr.get i).snd, j < i }
+  { arr : Array ((GroundAtom τ) × List ℕ) // ∀ i : Fin arr.size, ∀ j ∈ arr[i].snd, j < i }
 
 variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Inhabited τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 
 namespace OrderedProofGraph
   def labels (G: OrderedProofGraph τ): List (GroundAtom τ) := (Array.map Prod.fst G.val).toList
 
-  lemma in_labels_iff_exists_index (G : OrderedProofGraph τ) (a : GroundAtom τ) : a ∈ G.labels ↔ ∃ i : Fin G.val.size, (G.val.get i).fst = a := by
+  lemma in_labels_iff_exists_index (G : OrderedProofGraph τ) (a : GroundAtom τ) : a ∈ G.labels ↔ ∃ i : Fin G.val.size, G.val[i].fst = a := by
     unfold labels
-    rw [Array.toList_eq, ← Array.mem_def, Array.mem_iff_get]
+    rw [← Array.mem_def, Array.mem_iff_get]
     simp
     constructor
     intro h
@@ -23,23 +23,23 @@ namespace OrderedProofGraph
     exists ⟨i, by simp⟩
 
   def locallyValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (i : Fin G.val.size) : Prop :=
-    ((G.val.get i).snd = [] ∧ kb.db.contains (G.val.get i).fst)
+    (G.val[i].snd = [] ∧ kb.db.contains G.val[i].fst)
     ∨ (∃ r ∈ kb.prog, ∃ (g : Grounding τ), g.applyRule' r = {
-      head := (G.val.get i).fst
-      body := (G.val.get i).snd.attach.map (fun n => (G.val.get ⟨n.val, by apply lt_trans; apply G.prop i n.val n.prop; exact i.isLt⟩).fst)
+      head := G.val[i].fst
+      body := G.val[i].snd.attach.map (fun n => (G.val.get n.val (by apply lt_trans; apply G.prop i n.val n.prop; exact i.isLt)).fst)
     })
 
   def isValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) : Prop :=
     ∀ i : Fin G.val.size, G.locallyValid kb i
 
   def checkAtIndex (G : OrderedProofGraph τ) (m : SymbolSequenceMap τ) (d : Database τ) (index : Fin G.val.size) : Except String Unit :=
-    let predecessors := (G.val.get index).snd
+    let predecessors := G.val[index].snd
 
     if predecessors.isEmpty
-      then if d.contains (G.val.get index).fst then Except.ok () else checkRuleMatch m { head := (G.val.get index).fst, body := [] }
+      then if d.contains G.val[index].fst then Except.ok () else checkRuleMatch m { head := G.val[index].fst, body := [] }
       else checkRuleMatch m {
-        head := (G.val.get index).fst
-        body := (G.val.get index).snd.attach.map (fun n => (G.val.get ⟨n.val, by apply lt_trans; apply G.prop index n.val n.prop; exact index.isLt⟩).fst)
+        head := G.val[index].fst
+        body := G.val[index].snd.attach.map (fun n => (G.val.get n.val (by apply lt_trans; apply G.prop index n.val n.prop; exact index.isLt)).fst)
       }
 
   lemma checkAtIndexOkIffLocallyValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (i : Fin G.val.size) :
@@ -58,7 +58,7 @@ namespace OrderedProofGraph
           rw [checkRuleMatchOkIffExistsRule]
           unfold locallyValid
           simp [h]
-          rw [← List.attach_eq_nil] at h
+          rw [← List.attach_eq_nil_iff] at h
           rw [h]
           simp
           intro contra
@@ -129,7 +129,7 @@ namespace OrderedProofGraph
     simp
 
   def toProofTreeSkeleton (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) (root : Fin G.val.size) : ProofTreeSkeleton τ :=
-    let current := G.val.get root
+    let current := G.val[root]
     let next_trees := current.snd.attach.map (fun i =>
       let j : Fin G.val.size := ⟨i.val, by apply lt_trans; apply G.prop root i.val i.prop; exact root.isLt⟩
       have _termination : j.val < root.val := by apply G.prop root j i.prop
@@ -187,4 +187,3 @@ namespace OrderedProofGraph
     simp
     exact h
 end OrderedProofGraph
-
