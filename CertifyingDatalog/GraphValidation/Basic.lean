@@ -1,39 +1,6 @@
 import CertifyingDatalog.Basic
 import CertifyingDatalog.Datalog
 
-theorem Std.HashMap.mem_keys_iff_contains [DecidableEq A] [Hashable A] (hm : Std.HashMap A B) (k : A) : k ∈ hm.keys ↔ hm.contains k := by
-  sorry
-
-theorem Std.HashMap.ofList_mapped_to_pair_contains_iff_list_elem [DecidableEq A] [Hashable A] (l : List A) (a : A) : ∀ b : B, (Std.HashMap.ofList (l.map (fun a => (a, b)))).contains a ↔ a ∈ l := by
-  intro b
-  unfold ofList
-  unfold DHashMap.Const.ofList
-  unfold DHashMap.Const.insertMany
-  unfold contains
-  simp
-
-  have : ∀ hm : HashMap A B, (List.foldl (fun m x => m.insert x.1 x.2) hm (List.map (fun a => (a, b)) l)).contains a = true ↔ hm.contains a ∨ a ∈ l := by
-    induction l with
-    | nil => simp
-    | cons head tail ih =>
-      simp
-      intro hm
-      rw [ih (hm.insert head b)]
-      rw [contains_insert]
-      simp
-      have : a = head ↔ head = a := by constructor <;> apply Eq.symm
-      rw [this]
-      conv => left; left; rw [or_comm]
-      rw [or_assoc]
-
-  have applied_this := this empty
-  simp at applied_this
-  sorry
-  /- apply applied_this -/
-
-theorem Std.HashMap.getD_ofList_is_list_find_getD [DecidableEq A] [Hashable A] (l : List (A × B)) (a : A) : ∀ b, (Std.HashMap.ofList l).getD a b = ((l.reverse.find? (fun x => x.fst == a)).map Prod.snd).getD b := by
-  sorry
-
 abbrev PreGraph (A: Type u) [DecidableEq A] [Hashable A] := Std.HashMap A (List A)
 
 namespace PreGraph
@@ -44,8 +11,12 @@ namespace PreGraph
 
   def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.predecessors a) → pg.contains a'
 
-  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by unfold vertices; apply Std.HashMap.mem_keys_iff_contains
-  theorem in_predecessors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.getD a []) := by unfold predecessors; intros; rfl
+  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by
+    unfold vertices
+    rw [Std.HashMap.mem_keys, Std.HashMap.mem_iff_contains]
+
+  theorem in_predecessors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.getD a []) := by
+    unfold predecessors; intros; rfl
 
   def from_vertices (vs : List A) : PreGraph A := Std.HashMap.ofList (vs.map (fun v => (v, [])))
 
@@ -159,13 +130,23 @@ namespace PreGraph
     unfold vertices
     unfold from_vertices
     intro v
-    rw [Std.HashMap.mem_keys_iff_contains, Std.HashMap.ofList_mapped_to_pair_contains_iff_list_elem]
+    rw [Std.HashMap.mem_keys, Std.HashMap.mem_ofList]
+    simp
 
   theorem from_vertices_no_vertex_has_predecessors (vs : List A) : ∀ v, (PreGraph.from_vertices vs).getD v [] = [] := by
-    intro needle
-    unfold from_vertices
-    rw [Std.HashMap.getD_ofList_is_list_find_getD]
-    sorry
+    have aux (pg : PreGraph A) (vs : List A) (precond : ∀ needle, pg.getD needle [] = []): ∀ v, (pg.insertMany (vs.map (fun v => (v, [])))).getD v [] = [] := by
+      intro needle
+      induction vs generalizing pg with
+      | nil => simp [precond]
+      | cons hd tl ih =>
+        rw [List.map_cons, Std.HashMap.insertMany_cons]
+        apply ih
+        intro needle
+        rw [Std.HashMap.getD_insert]
+        simp [precond]
+
+    apply aux Std.HashMap.empty vs
+    simp
 
   theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
     let pg := PreGraph.from_vertices vs
