@@ -42,7 +42,7 @@ variable {τ: Signature}
 namespace GroundAtom
   def toAtom (ga: GroundAtom τ): Atom τ:= {symbol:=ga.symbol, atom_terms:= List.map Term.constant ga.atom_terms,term_length := by rw [List.length_map]; exact ga.term_length}
 
-  lemma eq_iff_toAtom_eq (a1 a2: GroundAtom τ): a1 = a2 ↔ a1.toAtom = a2.toAtom :=
+  lemma eq_iff_toAtom_eq {a1 a2: GroundAtom τ}: a1 = a2 ↔ a1.toAtom = a2.toAtom :=
   by
     constructor
     · intro h
@@ -63,7 +63,7 @@ namespace GroundAtom
   instance: Coe (GroundAtom τ) (Atom τ) where
     coe := GroundAtom.toAtom
 
-  lemma vars_empty (ga : GroundAtom τ) [DecidableEq τ.vars] : ga.toAtom.vars = ∅ := by
+  lemma vars_empty {ga : GroundAtom τ} [DecidableEq τ.vars] : ga.toAtom.vars = ∅ := by
     unfold toAtom
     unfold Atom.vars
     simp only
@@ -82,7 +82,7 @@ namespace Atom
     term_length := by simp; apply a.term_length
   }
 
-  lemma toGroundAtom_isSelf [DecidableEq τ.vars] (a: Atom τ) (h: a.vars = ∅): a = a.toGroundAtom h :=
+  lemma toGroundAtom_isSelf [DecidableEq τ.vars] {a: Atom τ} (h: a.vars = ∅): a = a.toGroundAtom h :=
   by
     unfold GroundAtom.toAtom
     unfold toGroundAtom
@@ -115,7 +115,7 @@ namespace GroundRule
     coe
       | r => r.toRule
 
-  lemma eq_iff_toRule_eq (r1 r2: GroundRule τ): r1 = r2 ↔ r1.toRule = r2.toRule :=
+  lemma eq_iff_toRule_eq {r1 r2: GroundRule τ} : r1 = r2 ↔ r1.toRule = r2.toRule :=
   by
     constructor
     · intro h
@@ -139,7 +139,7 @@ namespace GroundRule
 
   def bodySet [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (r: GroundRule τ): Finset (GroundAtom τ) := List.toFinset r.body
 
-  lemma in_bodySet_iff_in_body [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (r: GroundRule τ) : ∀ a, a ∈ r.body ↔ a ∈ r.bodySet := by simp [bodySet]
+  lemma in_bodySet_iff_in_body [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {r: GroundRule τ} : ∀ a, a ∈ r.body ↔ a ∈ r.bodySet := by simp [bodySet]
 end GroundRule
 
 namespace Grounding
@@ -147,18 +147,18 @@ namespace Grounding
   | Term.constant c => Term.constant c
   | Term.variableDL v => Term.constant (g v)
 
-  lemma applyTerm_removesVars (g: Grounding τ) (t: Term τ): (g.applyTerm t).vars = ∅ := by
+  lemma applyTerm_removesVars {g: Grounding τ} {t: Term τ} : (g.applyTerm t).vars = ∅ := by
     cases t <;> (unfold applyTerm; unfold Term.vars; simp)
 
-  lemma applyTerm_preservesLength (g: Grounding τ) (a: Atom τ): (List.map g.applyTerm a.atom_terms).length = τ.relationArity a.symbol :=
+  lemma applyTerm_preservesLength {g: Grounding τ} {a: Atom τ}: (List.map g.applyTerm a.atom_terms).length = τ.relationArity a.symbol :=
   by
     rcases a with ⟨symbol, terms, term_length⟩
     simp only [List.length_map]
     rw [term_length]
 
-  def applyAtom (g: Grounding τ) (a: Atom τ): Atom τ := {symbol := a.symbol, atom_terms := List.map g.applyTerm a.atom_terms, term_length := applyTerm_preservesLength g a}
+  def applyAtom (g: Grounding τ) (a: Atom τ): Atom τ := {symbol := a.symbol, atom_terms := List.map g.applyTerm a.atom_terms, term_length := applyTerm_preservesLength}
 
-  lemma applyAtom_removesVars [DecidableEq τ.vars] (a: Atom τ) (g: Grounding τ): (g.applyAtom a).vars = ∅ :=
+  lemma applyAtom_removesVars [DecidableEq τ.vars] {a: Atom τ} {g: Grounding τ}: (g.applyAtom a).vars = ∅ :=
   by
     unfold applyAtom
     unfold Atom.vars
@@ -174,16 +174,16 @@ namespace Grounding
   | Term.constant c =>  c
   | Term.variableDL v => (g v)
 
-  lemma applyTerm'_on_constant_unchanged (g : Grounding τ) (c : τ.constants) : g.applyTerm' c = c := by unfold applyTerm'; simp
+  lemma applyTerm'_on_constant_unchanged {g : Grounding τ} {c : τ.constants} : g.applyTerm' c = c := by unfold applyTerm'; simp
 
-  lemma applyTerm'_preservesLength (g: Grounding τ) (a: Atom τ): (List.map g.applyTerm' a.atom_terms ).length = τ.relationArity a.symbol :=
+  lemma applyTerm'_preservesLength {g: Grounding τ} {a: Atom τ}: (List.map g.applyTerm' a.atom_terms ).length = τ.relationArity a.symbol :=
   by
     rw [List.length_map]
     apply a.term_length
 
-  def applyAtom' (g: Grounding τ) (a: Atom τ): GroundAtom τ := {symbol := a.symbol, atom_terms := List.map g.applyTerm' a.atom_terms, term_length := applyTerm'_preservesLength g a}
+  def applyAtom' (g: Grounding τ) (a: Atom τ): GroundAtom τ := {symbol := a.symbol, atom_terms := List.map g.applyTerm' a.atom_terms, term_length := applyTerm'_preservesLength}
 
-  lemma applyAtom'_on_GroundAtom_unchanged (g : Grounding τ) (ga : GroundAtom τ) : g.applyAtom' ga = ga := by
+  lemma applyAtom'_on_GroundAtom_unchanged {g : Grounding τ} {ga : GroundAtom τ} : g.applyAtom' ga = ga := by
     unfold applyAtom'
     rw [GroundAtom.ext_iff]
     simp only [GroundAtom.toAtom, List.map_map, true_and]
@@ -193,13 +193,13 @@ namespace Grounding
       simp only [List.get_eq_getElem, List.getElem_map, Function.comp_apply]
       rw [applyTerm'_on_constant_unchanged]
 
-  lemma applyAtom'_on_Atom_without_vars_unchanged [DecidableEq τ.vars] (g : Grounding τ) (a : Atom τ) (noVars : a.vars = ∅) : g.applyAtom' a = a := by
+  lemma applyAtom'_on_Atom_without_vars_unchanged [DecidableEq τ.vars] {g : Grounding τ} {a : Atom τ} (noVars : a.vars = ∅) : g.applyAtom' a = a := by
     rw [a.toGroundAtom_isSelf noVars]
     rw [applyAtom'_on_GroundAtom_unchanged]
 
   def applyRule (r: Rule τ) (g: Grounding τ): Rule τ := {head := g.applyAtom r.head, body := List.map g.applyAtom r.body }
 
-  lemma applyRule_removesVars [DecidableEq τ.vars] (r: Rule τ) (g: Grounding τ): (g.applyRule r).vars = ∅ := by
+  lemma applyRule_removesVars [DecidableEq τ.vars] {r: Rule τ} {g: Grounding τ}: (g.applyRule r).vars = ∅ := by
     unfold applyRule
     unfold Rule.vars
     simp only [Finset.union_eq_empty]

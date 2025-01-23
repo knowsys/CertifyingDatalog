@@ -239,7 +239,7 @@ namespace CheckableModel
       have : ∀ g : Grounding τ, g.applyAtom' pgr.head = pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe heq) := by
         intro g
         rw [GroundAtom.eq_iff_toAtom_eq]
-        rw [g.applyAtom'_on_Atom_without_vars_unchanged pgr.head (pgr.head_noVars_of_safe_of_ground safe heq)]
+        rw [g.applyAtom'_on_Atom_without_vars_unchanged (pgr.head_noVars_of_safe_of_ground safe heq)]
         rw [← Atom.toGroundAtom_isSelf]
       split
       case isTrue h =>
