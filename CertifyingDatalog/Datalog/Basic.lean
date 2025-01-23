@@ -8,14 +8,34 @@ section Basic
     (relationSymbols: Type w)
     (relationArity: relationSymbols → ℕ)
 
-  inductive Term (τ: Signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] where
+  inductive Term (τ: Signature) where
   | constant : τ.constants → Term τ
   | variableDL : τ.vars → Term τ
-  deriving DecidableEq, Hashable
 
-  variable (τ: Signature) [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
+  instance {τ: Signature} [Hashable τ.constants] [Hashable τ.vars] : Hashable (Term τ) where
+    hash :=
+      fun t =>
+        match t with
+        | .constant c => mixHash (hash c) (hash "constant")
+        | .variableDL v => mixHash (hash v) (hash "variable")
 
-  instance : ToString (Term τ) where
+  instance {τ : Signature} [DecidableEq τ.constants] [DecidableEq τ.vars] : DecidableEq (Term τ) :=
+    fun l r =>
+      match l, r with
+      | .constant _, .variableDL _ => isFalse (by simp)
+      | .constant c, .constant c' =>
+        if h: c = c'
+        then isTrue (by simp[h])
+        else isFalse (by simp[h])
+      | .variableDL v, .variableDL v' =>
+        if h: v = v'
+        then isTrue (by simp[h])
+        else isFalse (by simp[h])
+      | .variableDL _, .constant _ => isFalse (by simp)
+
+  variable (τ: Signature)
+
+  instance [ToString τ.constants] [ToString τ.vars] : ToString (Term τ) where
     toString t := match t with
       | .constant c => ToString.toString c
       | .variableDL v => ToString.toString v
@@ -28,9 +48,21 @@ section Basic
     (symbol: τ.relationSymbols)
     (atom_terms: List (Term τ))
     (term_length: atom_terms.length = τ.relationArity symbol)
-  deriving DecidableEq, Hashable
 
-  instance : ToString (Atom τ) where
+  instance {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] : DecidableEq (Atom τ) :=
+    fun l r =>
+      if h: l.symbol = r.symbol
+      then
+        if h': l.atom_terms = r.atom_terms
+        then isTrue (by ext; exact h; simp [h'])
+        else isFalse (by by_contra p; rw[p] at h'; contradiction)
+      else isFalse (by by_contra p; rw[p] at h; contradiction)
+
+  instance {τ: Signature} [Hashable τ.vars] [Hashable τ.relationSymbols] [Hashable τ.constants] : Hashable (Atom τ) where
+    hash :=
+      fun a => mixHash (hash a.symbol) (hash a.atom_terms)
+
+  instance {τ: Signature} [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] : ToString (Atom τ) where
     toString a :=
       let terms :=
         match a.atom_terms with
@@ -42,9 +74,17 @@ section Basic
   structure Rule where
     (head: Atom τ)
     (body: List (Atom τ))
-  deriving DecidableEq
 
-  instance : ToString (Rule τ) where
+  instance {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] : DecidableEq (Rule τ) :=
+    fun l r =>
+      if h:l.head = r.head
+      then
+        if h':l.body = r.body
+        then isTrue (by ext; rw[h]; rw[h]; rw[h'])
+        else isFalse (by by_contra p; rw [p] at h'; contradiction)
+      else isFalse (by by_contra p; rw[p] at h; contradiction)
+
+  instance {τ: Signature} [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] : ToString (Rule τ) where
     toString r := match r.body with
       | [] => (ToString.toString r.head) ++ "."
       | hd::tl => (ToString.toString r.head) ++ ":-" ++ (List.foldl (fun x y => x ++ "," ++ (ToString.toString y) ) (ToString.toString hd) tl)
@@ -53,7 +93,7 @@ section Basic
 end Basic
 
 section Methods
-  variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] [DecidableEq τ.constants] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
+  variable {τ: Signature} [DecidableEq τ.vars]
 
   namespace Term
     def vars: Term τ → Finset τ.vars
@@ -71,10 +111,10 @@ section Methods
 
     lemma vars_subset_impl_term_vars_subset {a: Atom τ} {t: Term τ}{S: Set τ.vars}(mem: t ∈ a.atom_terms) (subs: ↑ a.vars ⊆ S): ↑ t.vars ⊆ S := by
       apply Set.Subset.trans (b:= a.vars)
-      unfold Atom.vars
-      apply List.subset_result_foldl_union
-      exact mem
-      exact subs
+      · unfold Atom.vars
+        apply List.subset_result_foldl_union
+        exact mem
+      · exact subs
 
     lemma vars_empty_iff (a: Atom τ): a.vars = ∅ ↔ ∀ (t: Term τ), t ∈ a.atom_terms → t.vars = ∅ := by
       unfold Atom.vars
@@ -87,11 +127,11 @@ section Methods
 
     lemma vars_subset_impl_atom_vars_subset {r: Rule τ} {a: Atom τ} {S: Set τ.vars}(mem: a = r.head ∨ a ∈ r.body) (subs: ↑ r.vars ⊆ S): ↑ a.vars ⊆ S :=
     by
-      apply Set.Subset.trans (b:= r.vars)
+      apply Set.Subset.trans _ subs
       unfold Rule.vars
       rw [Set.subset_def]
       intro x x_mem
-      simp
+      simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe]
       cases mem with
       | inl h =>
         rw [h] at x_mem
@@ -106,7 +146,6 @@ section Methods
         constructor
         · exact h
         · exact x_mem
-      apply subs
 
     def isSafe (r: Rule τ) : Prop := r.head.vars ⊆ List.foldl_union Atom.vars ∅ r.body
 
@@ -134,4 +173,3 @@ section Methods
       simp [Rule.checkSafety_iff_isSafe]
   end Program
 end Methods
-
