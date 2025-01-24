@@ -40,8 +40,8 @@ section TreeListValidity
     let model := collectModel problem.trees
     model.checkProgram problem.program safe
 
-  theorem checkTreeListModelHoodUnitIffModel (problem: TreeVerificationProblem) (safe: problem.program.isSafe) : 
-    checkTreeListModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet (collectModel problem.trees)) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by 
+  theorem checkTreeListModelHoodUnitIffModel (problem: TreeVerificationProblem) (safe: problem.program.isSafe) :
+    checkTreeListModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet (collectModel problem.trees)) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by
     unfold checkTreeListModelhood
     simp
     rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
@@ -69,8 +69,8 @@ section DagValidity
     let model : CheckableModel problem.helper.toSignature := problem.graph.vertices
     model.checkProgram problem.program safe
 
-  theorem checkDagModelhoodUnitIffModel (problem: GraphVerificationProblem) (safe: problem.program.isSafe) : 
-    checkDagModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet problem.graph.vertices) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by 
+  theorem checkDagModelhoodUnitIffModel (problem: GraphVerificationProblem) (safe: problem.program.isSafe) :
+    checkDagModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet problem.graph.vertices) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by
     unfold checkDagModelhood
     simp
     rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
@@ -98,8 +98,8 @@ section OrderedProofGraphValidity
     let model : CheckableModel problem.helper.toSignature := problem.graph.labels
     model.checkProgram problem.program safe
 
-  theorem checkOrderedGraphModelhoodUnitIffModel (problem: OrderedGraphVerificationProblem) (safe: problem.program.isSafe) : 
-    checkOrderedGraphModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet problem.graph.labels) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by 
+  theorem checkOrderedGraphModelhoodUnitIffModel (problem: OrderedGraphVerificationProblem) (safe: problem.program.isSafe) :
+    checkOrderedGraphModelhood problem safe = Except.ok () ↔ Interpretation.models (List.toSet problem.graph.labels) {prog := problem.program, db := emptyDatabase problem.helper.toSignature} := by
     unfold checkOrderedGraphModelhood
     simp
     rw [CheckableModel.checkProgramIsOkIffAllRulesAreSatisfied]
@@ -274,4 +274,3 @@ def main(args: List String): IO Unit := do
       | InputFormat.trees => main_trees argsParsed
       | InputFormat.graph => main_dag argsParsed
       | InputFormat.orderedGraph => main_ordered_dag argsParsed
-

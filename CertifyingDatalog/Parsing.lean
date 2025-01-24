@@ -89,7 +89,7 @@ namespace ParseArityHelper
         arity := (fun x =>
           if q:(x = symbol)
           then arity
-          else helper.arity ⟨x, by have prop := x.prop; simp [q] at prop; exact prop⟩
+          else helper.arity ⟨x, by have prop := x.prop; simp[q] at prop; exact prop⟩
         )
       }
 
@@ -284,16 +284,16 @@ namespace InputOrderedGraph
           (edge.label.toGroundAtom helper).map (fun label =>
             ⟨graph.val.push ⟨label, edge.predecessors⟩, by
               intro ⟨i, i_lt⟩
-              simp at i_lt
+              simp only [Fin.getElem_fin, Array.size_push] at i_lt
               cases Decidable.em (i < graph.val.size) with
               | inl i_lt_g =>
-                simp
+                simp only [Fin.getElem_fin]
                 rw [Array.getElem_push_lt]
                 apply graph.prop ⟨i, i_lt_g⟩
               | inr i_not_lt_g =>
                 have : i = graph.val.size := by cases Nat.le_iff_lt_or_eq.mp (Nat.le_of_lt_succ i_lt); contradiction; assumption
-                simp [this]
-                simp at h
+                simp only [Fin.getElem_fin, this, Array.getElem_push_eq]
+                simp only [Fin.getElem_fin, List.all_eq_true, decide_eq_true_eq] at h
                 exact h
             ⟩
           )
