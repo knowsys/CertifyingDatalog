@@ -11,11 +11,11 @@ namespace PreGraph
 
   def complete (pg: PreGraph A) := ∀ (a:A), pg.contains a →  ∀ (a':A), a' ∈ (pg.predecessors a) → pg.contains a'
 
-  theorem in_vertices_iff_contains (pg: PreGraph A) (a : A) : a ∈ pg.vertices ↔ pg.contains a := by
+  theorem in_vertices_iff_contains {pg: PreGraph A} {a : A} : a ∈ pg.vertices ↔ pg.contains a := by
     unfold vertices
     rw [Std.HashMap.mem_keys, Std.HashMap.mem_iff_contains]
 
-  theorem in_predecessors_iff_found (pg: PreGraph A) (a : A) : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.getD a []) := by
+  theorem in_predecessors_iff_found {pg: PreGraph A} {a : A} : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.getD a []) := by
     unfold predecessors; intros; rfl
 
   def from_vertices (vs : List A) : PreGraph A := Std.HashMap.ofList (vs.map (fun v => (v, [])))
@@ -29,98 +29,98 @@ namespace PreGraph
   def add_vertices (pg : PreGraph A) (vs : List A) : PreGraph A :=
     vs.foldl (fun (acc : PreGraph A) u => acc.add_vertex u) pg
 
-  theorem add_vertices_contains_iff_contains_or_in_list (pg : PreGraph A) (vs : List A) : ∀ v, (pg.add_vertices vs).contains v ↔ pg.contains v ∨ (¬ pg.contains v ∧ v ∈ vs) := by
+  theorem add_vertices_contains_iff_contains_or_in_list {pg : PreGraph A} {vs : List A} : ∀ v, (pg.add_vertices vs).contains v ↔ pg.contains v ∨ (¬ pg.contains v ∧ v ∈ vs) := by
     induction vs generalizing pg with
     | nil => simp [add_vertices]
     | cons u us ih =>
-      simp [add_vertices]
+      simp only [add_vertices, List.foldl_cons, Bool.not_eq_true, List.mem_cons]
       intro v
       unfold add_vertices at ih
       rw [ih]
       constructor
-      intro h
-      cases h with
-      | inl hl =>
-        unfold add_vertex at hl
-        split at hl
-        apply Or.inl
-        exact hl
-        rw [Std.HashMap.contains_insert] at hl
-        cases Decidable.em (pg.contains v) with
-        | inl v_in_pg => apply Or.inl; exact v_in_pg
-        | inr v_not_in_pg =>
-          simp at hl
-          cases hl with
-          | inl hl => apply Or.inr; constructor; simp at v_not_in_pg; exact v_not_in_pg; apply Or.inl; apply Eq.symm; exact hl
-          | inr _ => contradiction
-      | inr hr =>
-        unfold add_vertex at hr
-        split at hr
-        apply Or.inr
-        constructor
-        simp at hr
-        exact hr.left
-        apply Or.inr
-        exact hr.right
-        rw [Std.HashMap.contains_insert] at hr
-        cases Decidable.em (pg.contains v) with
-        | inl v_in_pg => apply Or.inl; exact v_in_pg
-        | inr v_not_in_pg => apply Or.inr; constructor; simp at v_not_in_pg; exact v_not_in_pg; apply Or.inr; exact hr.right
-      intro h
-      cases h with
-      | inl hl =>
-        apply Or.inl;
-        unfold add_vertex
-        split
-        exact hl
-        rw [Std.HashMap.contains_insert]
-        simp
-        apply Or.inr
-        exact hl
-      | inr hr =>
-        let ⟨hrl, hrr⟩ := hr
-        cases hrr with
-        | inl v_is_u =>
-          apply Or.inl
+      · intro h
+        cases h with
+        | inl hl =>
+          unfold add_vertex at hl
+          split at hl
+          · apply Or.inl
+            exact hl
+          · rw [Std.HashMap.contains_insert] at hl
+            cases Decidable.em (pg.contains v) with
+            | inl v_in_pg => apply Or.inl; exact v_in_pg
+            | inr v_not_in_pg =>
+              simp only [Bool.or_eq_true, beq_iff_eq] at hl
+              cases hl with
+              | inl hl => apply Or.inr; constructor; simp only [Bool.not_eq_true] at v_not_in_pg; exact v_not_in_pg; apply Or.inl; apply Eq.symm; exact hl
+              | inr _ => contradiction
+        | inr hr =>
+          unfold add_vertex at hr
+          split at hr
+          · apply Or.inr
+            constructor
+            · simp only [Bool.not_eq_true] at hr
+              exact hr.left
+            · apply Or.inr
+              exact hr.right
+          · rw [Std.HashMap.contains_insert] at hr
+            cases Decidable.em (pg.contains v) with
+            | inl v_in_pg => apply Or.inl; exact v_in_pg
+            | inr v_not_in_pg => apply Or.inr; constructor; simp at v_not_in_pg; exact v_not_in_pg; apply Or.inr; exact hr.right
+      · intro h
+        cases h with
+        | inl hl =>
+          apply Or.inl;
           unfold add_vertex
           split
-          case isTrue u_in_pg =>
-            apply False.elim; rw [v_is_u] at hrl
-            have : ¬ pg.contains u := by simp [hrl]
-            contradiction
-          rw [Std.HashMap.contains_insert]
-          simp
-          apply Or.inl
-          rw [v_is_u]
-        | inr v_in_us =>
-          cases Decidable.em ((pg.add_vertex u).contains v)
-          apply Or.inl
-          assumption
-          apply Or.inr
-          constructor
-          assumption
-          exact v_in_us
+          · exact hl
+          · rw [Std.HashMap.contains_insert]
+            simp only [Bool.or_eq_true, beq_iff_eq]
+            apply Or.inr
+            exact hl
+        | inr hr =>
+          let ⟨hrl, hrr⟩ := hr
+          cases hrr with
+          | inl v_is_u =>
+            apply Or.inl
+            unfold add_vertex
+            split
+            · case isTrue u_in_pg =>
+              apply False.elim; rw [v_is_u] at hrl
+              have : ¬ pg.contains u := by simp [hrl]
+              contradiction
+            · rw [Std.HashMap.contains_insert]
+              simp
+              apply Or.inl
+              rw [v_is_u]
+          | inr v_in_us =>
+            cases Decidable.em ((pg.add_vertex u).contains v)
+            · apply Or.inl
+              assumption
+            · apply Or.inr
+              constructor
+              · assumption
+              · exact v_in_us
 
   theorem add_vertices_getD_semantics (pg : PreGraph A) (vs : List A) (a : A): (pg.add_vertices vs).getD a [] = pg.getD a [] := by
     induction vs generalizing pg with
     | nil => simp [add_vertices]
     | cons u us ih =>
-      simp [add_vertices]
+      simp only [add_vertices, List.foldl_cons]
       have ih_plugged_in := ih (pg.add_vertex u)
       unfold add_vertices at ih_plugged_in
       rw [ih_plugged_in]
       unfold add_vertex
       split
       . rfl
-      case isFalse h =>
-        rw [Std.HashMap.getD_insert]
-        simp
-        intro eq
-        apply Eq.symm
-        rw [Std.HashMap.getD_eq_fallback_of_contains_eq_false]
-        rw [← eq]
-        simp at h
-        exact h
+      · case isFalse h =>
+          rw [Std.HashMap.getD_insert]
+          simp only [beq_iff_eq, ite_eq_right_iff, List.nil_eq]
+          intro eq
+          apply Eq.symm
+          rw [Std.HashMap.getD_eq_fallback_of_contains_eq_false]
+          rw [← eq]
+          simp only [Bool.not_eq_true] at h
+          exact h
 
   def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
     let pg_with_added_predecessors := if pg.contains v then pg.insert v ((pg.predecessors v) ++ vs) else pg.insert v vs
@@ -161,206 +161,205 @@ namespace PreGraph
 
   theorem add_vertex_with_predecessors_contains_iff_contains_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, (pg.add_vertex_with_predecessors v vs).contains a ↔ (pg.contains a ∧ a = v) ∨ (pg.contains a ∧ a ≠ v) ∨ ((¬ pg.contains a) ∧ a = v) ∨ ((¬ pg.contains a) ∧ a ≠ v ∧ a ∈ vs) := by
     unfold add_vertex_with_predecessors
-    simp
+    simp only [ne_eq, Bool.not_eq_true]
     intro a
     rw [add_vertices_contains_iff_contains_or_in_list]
     constructor
-    intro h
-    cases h with
-    | inl hl =>
-      split at hl
-      case isTrue hl' =>
-        rw [Std.HashMap.contains_insert] at hl
-        simp at hl
-        cases hl with
+    · intro h
+      cases h with
+      | inl hl =>
+        split at hl
+        case isTrue hl' =>
+          rw [Std.HashMap.contains_insert] at hl
+          simp only [Bool.or_eq_true, beq_iff_eq] at hl
+          cases hl with
+          | inl hll =>
+            apply Or.inl
+            constructor
+            · rw [← hll]
+              apply hl'
+            · rw [hll]
+          | inr hlr =>
+            cases Decidable.em (a = v) with
+            | inl a_eq_v => apply Or.inl; constructor; exact hlr; exact a_eq_v
+            | inr a_neq_v => apply Or.inr; apply Or.inl; constructor; exact hlr; exact a_neq_v
+        case isFalse hr' =>
+          rw [Std.HashMap.contains_insert] at hl
+          simp only [Bool.or_eq_true, beq_iff_eq] at hl
+          cases hl with
+          | inl hll =>
+            apply Or.inr
+            apply Or.inr
+            apply Or.inl
+            constructor
+            · rw [← hll]
+              simp only [Bool.not_eq_true] at hr'
+              apply hr'
+            · rw [hll]
+          | inr hlr =>
+            cases Decidable.em (a = v) with
+            | inl a_eq_v => apply Or.inl; constructor; exact hlr; exact a_eq_v
+            | inr a_neq_v => apply Or.inr; apply Or.inl; constructor; exact hlr; exact a_neq_v
+      | inr hr =>
+        let ⟨hrl, hrr⟩ := hr
+        split at hrl
+        case isTrue hl' =>
+          rw [Std.HashMap.contains_insert] at hrl
+          simp only [Bool.or_eq_true, beq_iff_eq, not_or, Bool.not_eq_true] at hrl
+          cases Decidable.em (a = v) with
+          | inl a_eq_v =>
+            rw [a_eq_v] at hrl
+            have contra := hrl.left
+            contradiction
+          | inr a_neq_v =>
+            cases Decidable.em (pg.contains a) with
+            | inl pg_contains =>
+              rw [pg_contains] at hrl
+              have contra := hrl.right
+              contradiction
+            | inr pg_not_contains =>
+              apply Or.inr
+              apply Or.inr
+              apply Or.inr
+              constructor
+              simp only [Bool.not_eq_true] at pg_not_contains
+              apply pg_not_contains
+              constructor
+              · apply a_neq_v
+              · apply hrr
+        case isFalse hr' =>
+          rw [Std.HashMap.contains_insert] at hrl
+          simp only [Bool.or_eq_true, beq_iff_eq, not_or, Bool.not_eq_true] at hrl
+          cases Decidable.em (a = v) with
+          | inl a_eq_v =>
+            rw [a_eq_v] at hrl
+            have contra := hrl.left
+            contradiction
+          | inr a_neq_v =>
+            cases Decidable.em (pg.contains a) with
+            | inl pg_contains =>
+              rw [pg_contains] at hrl
+              have contra := hrl.right
+              contradiction
+            | inr pg_not_contains =>
+              apply Or.inr
+              apply Or.inr
+              apply Or.inr
+              constructor
+              · simp only [Bool.not_eq_true] at pg_not_contains
+                apply pg_not_contains
+              · constructor
+                · apply a_neq_v
+                · apply hrr
+    · intro h
+      cases h with
+      | inl hll =>
+        apply Or.inl
+        split
+        · rw [Std.HashMap.contains_insert]
+          simp only [Bool.or_eq_true, beq_iff_eq]
+          apply Or.inl
+          rw [hll.right]
+        · rw [Std.HashMap.contains_insert]
+          simp only [Bool.or_eq_true, beq_iff_eq]
+          apply Or.inl
+          rw [hll.right]
+      | inr hlr => cases hlr with
         | inl hll =>
           apply Or.inl
-          constructor
-          rw [← hll]
-          apply hl'
-          rw [hll]
-        | inr hlr =>
-          cases Decidable.em (a = v) with
-          | inl a_eq_v => apply Or.inl; constructor; exact hlr; exact a_eq_v
-          | inr a_neq_v => apply Or.inr; apply Or.inl; constructor; exact hlr; exact a_neq_v
-      case isFalse hr' =>
-        rw [Std.HashMap.contains_insert] at hl
-        simp at hl
-        cases hl with
-        | inl hll =>
-          apply Or.inr
-          apply Or.inr
-          apply Or.inl
-          constructor
-          rw [← hll]
-          simp at hr'
-          apply hr'
-          rw [hll]
-        | inr hlr =>
-          cases Decidable.em (a = v) with
-          | inl a_eq_v => apply Or.inl; constructor; exact hlr; exact a_eq_v
-          | inr a_neq_v => apply Or.inr; apply Or.inl; constructor; exact hlr; exact a_neq_v
-    | inr hr =>
-      let ⟨hrl, hrr⟩ := hr
-      split at hrl
-      case isTrue hl' =>
-        rw [Std.HashMap.contains_insert] at hrl
-        simp at hrl
-        cases Decidable.em (a = v) with
-        | inl a_eq_v =>
-          rw [a_eq_v] at hrl
-          have contra := hrl.left
-          contradiction
-        | inr a_neq_v =>
-          cases Decidable.em (pg.contains a) with
-          | inl pg_contains =>
-            rw [pg_contains] at hrl
-            have contra := hrl.right
-            contradiction
-          | inr pg_not_contains =>
+          split
+          · rw [Std.HashMap.contains_insert]
+            simp only [Bool.or_eq_true, beq_iff_eq]
             apply Or.inr
+            rw [hll.left]
+          · rw [Std.HashMap.contains_insert]
+            simp only [Bool.or_eq_true, beq_iff_eq]
             apply Or.inr
+            rw [hll.left]
+        | inr hlr => cases hlr with
+          | inl hll =>
+            apply Or.inl
+            split
+            · rw [Std.HashMap.contains_insert]
+              simp only [Bool.or_eq_true, beq_iff_eq]
+              apply Or.inr
+              rw [hll.right]
+              assumption
+            · rw [Std.HashMap.contains_insert]
+              simp only [Bool.or_eq_true, beq_iff_eq]
+              apply Or.inl
+              rw [hll.right]
+          | inr hlr =>
             apply Or.inr
-            constructor
-            simp at pg_not_contains
-            apply pg_not_contains
-            constructor
-            apply a_neq_v
-            apply hrr
-      case isFalse hr' =>
-        rw [Std.HashMap.contains_insert] at hrl
-        simp at hrl
-        cases Decidable.em (a = v) with
-        | inl a_eq_v =>
-          rw [a_eq_v] at hrl
-          have contra := hrl.left
-          contradiction
-        | inr a_neq_v =>
-          cases Decidable.em (pg.contains a) with
-          | inl pg_contains =>
-            rw [pg_contains] at hrl
-            have contra := hrl.right
-            contradiction
-          | inr pg_not_contains =>
-            apply Or.inr
-            apply Or.inr
-            apply Or.inr
-            constructor
-            simp at pg_not_contains
-            apply pg_not_contains
-            constructor
-            apply a_neq_v
-            apply hrr
-
-    intro h
-    cases h with
-    | inl hll =>
-      apply Or.inl
-      split
-      rw [Std.HashMap.contains_insert]
-      simp
-      apply Or.inl
-      rw [hll.right]
-      rw [Std.HashMap.contains_insert]
-      simp
-      apply Or.inl
-      rw [hll.right]
-    | inr hlr => cases hlr with
-    | inl hll =>
-      apply Or.inl
-      split
-      rw [Std.HashMap.contains_insert]
-      simp
-      apply Or.inr
-      rw [hll.left]
-      rw [Std.HashMap.contains_insert]
-      simp
-      apply Or.inr
-      rw [hll.left]
-    | inr hlr => cases hlr with
-    | inl hll =>
-      apply Or.inl
-      split
-      rw [Std.HashMap.contains_insert]
-      simp
-      apply Or.inr
-      rw [hll.right]
-      assumption
-      rw [Std.HashMap.contains_insert]
-      simp
-      apply Or.inl
-      rw [hll.right]
-    | inr hlr =>
-      apply Or.inr
-      split
-      rw [Std.HashMap.contains_insert]
-      simp
-      constructor
-      constructor
-      intro contra
-      apply hlr.right.left
-      rw [contra]
-      apply hlr.left
-      apply hlr.right.right
-      constructor
-      intro contra
-      rw [Std.HashMap.contains_insert] at contra
-      simp at contra
-      cases contra with
-      | inl contra => apply hlr.right.left; rw [contra]
-      | inr contra => have contra' := hlr.left; rw [contra'] at contra; contradiction
-      apply hlr.right.right
+            split
+            · rw [Std.HashMap.contains_insert]
+              simp
+              constructor
+              · constructor
+                · intro contra
+                  apply hlr.right.left
+                  rw [contra]
+                · apply hlr.left
+              · apply hlr.right.right
+            · constructor
+              · intro contra
+                rw [Std.HashMap.contains_insert] at contra
+                simp only [Bool.or_eq_true, beq_iff_eq] at contra
+                cases contra with
+                | inl contra => apply hlr.right.left; rw [contra]
+                | inr contra => have contra' := hlr.left; rw [contra'] at contra; contradiction
+              · apply hlr.right.right
 
   theorem add_vertex_with_predecessors_getD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a = v) : (pg.add_vertex_with_predecessors v vs).getD a [] = (pg.predecessors v) ++ vs := by
     unfold add_vertex_with_predecessors
-    simp
+    simp only
     rw [add_vertices_getD_semantics]
     rw [← h.right]
     simp [h.left]
 
   theorem add_vertex_with_predecessors_getD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : pg.contains a ∧ a ≠ v) : (pg.add_vertex_with_predecessors v vs).getD a [] = (pg.predecessors a) := by
     unfold add_vertex_with_predecessors
-    simp
+    simp only
     rw [add_vertices_getD_semantics]
     split
-    rw [Std.HashMap.getD_insert]
-    simp
-    split
-    case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
-    unfold predecessors
-    rfl
-    rw [Std.HashMap.getD_insert]
-    simp
-    split
-    case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
-    unfold predecessors
-    rfl
+    · rw [Std.HashMap.getD_insert]
+      simp only [beq_iff_eq]
+      split
+      · case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
+      · unfold predecessors
+        rfl
+    · rw [Std.HashMap.getD_insert]
+      simp only [beq_iff_eq]
+      split
+      · case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
+      · unfold predecessors
+        rfl
 
   theorem add_vertex_with_predecessors_getD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a = v) : (pg.add_vertex_with_predecessors v vs).getD a [] = vs := by
     unfold add_vertex_with_predecessors
-    simp
+    simp only
     rw [add_vertices_getD_semantics]
     rw [← h.right]
     simp [h.left]
 
   theorem add_vertex_with_predecessors_getD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ pg.contains a) ∧ a ≠ v) : (pg.add_vertex_with_predecessors v vs).getD a [] = [] := by
     unfold add_vertex_with_predecessors
-    simp
-    simp at h
+    simp only
+    simp only [Bool.not_eq_true, ne_eq] at h
     rw [add_vertices_getD_semantics]
     split
-    rw [Std.HashMap.getD_insert]
-    simp
-    split
-    case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
-    rw [Std.HashMap.getD_eq_fallback_of_contains_eq_false]
-    apply h.left
-    rw [Std.HashMap.getD_insert]
-    simp
-    split
-    case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
-    rw [Std.HashMap.getD_eq_fallback_of_contains_eq_false]
-    apply h.left
+    · rw [Std.HashMap.getD_insert]
+      simp
+      split
+      · case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
+      · rw [Std.HashMap.getD_eq_fallback_of_contains_eq_false]
+        apply h.left
+    · rw [Std.HashMap.getD_insert]
+      simp only [beq_iff_eq]
+      split
+      · case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
+      · rw [Std.HashMap.getD_eq_fallback_of_contains_eq_false]
+        apply h.left
 
   theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by
     unfold complete
