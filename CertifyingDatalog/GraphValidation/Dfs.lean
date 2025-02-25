@@ -212,9 +212,9 @@ section FoldlExcept
               · exact a_in_l
               · exact f_ok
             · exact c_in_b
-          · exists ⟨l.indexOf a, by rw [List.indexOf_lt_length]; exact a_in_l⟩
+          · exists ⟨l.idxOf a, by rw [List.idxOf_lt_length_iff]; exact a_in_l⟩
             intro b res _ f_ok
-            simp only [get_eq_getElem, getElem_indexOf] at f_ok
+            simp only [get_eq_getElem, getElem_idxOf] at f_ok
             apply a_prop _ _ f_ok
           · exact eq
   end List
@@ -682,7 +682,7 @@ section Dfs
               rcases h with ⟨b, elem, _⟩
               apply mem_of_has_pred _ _ _ elem
         | inl a_in_G =>
-          let i : Fin G.vertices.length := ⟨G.vertices.indexOf a, by rw [List.indexOf_lt_length]; apply a_in_G⟩
+          let i : Fin G.vertices.length := ⟨G.vertices.idxOf a, by rw [List.idxOf_lt_length_iff]; apply a_in_G⟩
           let a' := G.vertices.attach.get ⟨i, by rw [List.length_attach]; exact i.isLt⟩
           have : a = a' := by simp [a', i]
 
