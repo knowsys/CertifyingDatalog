@@ -105,6 +105,17 @@ namespace Atom
       apply h'
 end Atom
 
+namespace GroundAtom
+  lemma toAtom_toGroundAtom [DecidableEq τ.vars] (ga : GroundAtom τ) : ga.toAtom.toGroundAtom GroundAtom.vars_empty = ga := by
+    simp only [Atom.toGroundAtom]
+    rw [GroundAtom.eq_iff_toAtom_eq]
+    simp only [GroundAtom.toAtom, List.map_map, Atom.mk.injEq, true_and]
+    apply List.ext_get
+    · simp
+    · intro n h1 h2
+      simp [Term.toConstant]
+end GroundAtom
+
 namespace GroundRule
   def toRule (r: GroundRule τ): Rule τ := {head:= r.head.toAtom, body := List.map GroundAtom.toAtom r.body}
 
