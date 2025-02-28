@@ -77,6 +77,11 @@ namespace Grounding
     · intro _ _ _
       simp only [List.getElem_map, Function.comp_apply]
       rw [applyAtom'_on_GroundAtom_unchanged]
+
+    lemma applyPartialGroundRule_eq_apply_only_ungrounded' (g : Grounding τ) (pgr : PartialGroundRule τ) :
+    g.applyRule' pgr.toRule = { head := g.applyAtom' pgr.head, body := pgr.groundedBody ++ pgr.ungroundedBody.map g.applyAtom'} := by
+    rw [← applyPartialGroundRule_eq_apply_only_ungrounded]
+    simp [applyPartialGroundRule]
 end Grounding
 
 namespace PartialGroundRule
@@ -243,126 +248,69 @@ namespace CheckableModel
   lemma checkPGRIsOkIffRuleIsSatisfied [Inhabited τ.constants] {m : CheckableModel τ} {pgr : PartialGroundRule τ} (safe : pgr.isSafe) (active : pgr.isActive m.toSet) : m.checkPGR pgr safe = Except.ok () ↔ pgr.isSatisfied m.toSet := by
     unfold checkPGR
     split
-    · case h_1 heq =>
-        have : ∀ g : Grounding τ, g.applyAtom' pgr.head = pgr.head.toGroundAtom (pgr.head_noVars_of_safe_of_ground safe heq) := by
-          intro g
-          rw [GroundAtom.eq_iff_toAtom_eq]
-          rw [g.applyAtom'_on_Atom_without_vars_unchanged (pgr.head_noVars_of_safe_of_ground safe heq)]
-          rw [← Atom.toGroundAtom_isSelf]
-        split
-        case isTrue h =>
-          simp
-          unfold PartialGroundRule.isSatisfied
-          unfold Interpretation.satisfiesRule
-          intro g _
-          unfold Grounding.applyRule'
-          unfold PartialGroundRule.toRule
-          simp only
-          rw [this]
-          unfold List.toSet
-          simp only [List.coe_toFinset, Set.mem_setOf_eq]
-          exact h
-        case isFalse h =>
-          simp
-          unfold PartialGroundRule.isSatisfied
-          unfold Interpretation.satisfiesRule
-          unfold Grounding.applyRule'
-          unfold PartialGroundRule.toRule
-          rw [heq]
-          simp only [List.append_nil, List.map_map, not_forall, Classical.not_imp]
-          let g : Grounding τ := (fun _ => Inhabited.default (α := τ.constants))
-          exists g
-          unfold GroundRule.bodySet
-          simp only [List.coe_toFinset, List.mem_map, Function.comp_apply]
+    case h_1 h =>
+      simp [List.toSet_mem, ite_eq_left_iff, reduceCtorEq, imp_false, not_not,
+        PartialGroundRule.isSatisfied, Interpretation.satisfiesRule]
+      have noVars := (pgr.head_noVars_of_safe_of_ground safe h)
+      have : ∀ (g: Grounding τ), (g.applyRule' pgr.toRule).head = pgr.head.toGroundAtom noVars := by
+        intro g
+        simp only [Grounding.applyRule', PartialGroundRule.toRule, List.map_append, List.map_map,
+          GroundAtom.eq_iff_toAtom_eq]
+        rw [Grounding.applyAtom'_on_Atom_without_vars_unchanged noVars]
+        rw [← Atom.toGroundAtom_isSelf noVars]
+      simp [this]
+      have : ∀ (g: Grounding τ), ↑(g.applyRule' pgr.toRule).bodySet ⊆ List.toSet m := by
+        intro g
+        simp only [Set.subset_def, Finset.mem_coe, ← GroundRule.in_bodySet_iff_in_body]
+        intro x
+        simp only [Grounding.applyPartialGroundRule_eq_apply_only_ungrounded', h, List.map_nil,
+          List.append_nil]
+        simp only [PartialGroundRule.isActive] at active
+        apply active
+      simp [this]
+    case h_2 hd tl heq =>
+      rw [List.mapExceptUnit_iff]
+      simp [PartialGroundRule.isSatisfied, Interpretation.satisfiesRule]
+      constructor
+      · intro subs_works g
+        simp only [Grounding.applyPartialGroundRule_eq_apply_only_ungrounded', heq, List.map_cons,
+          Set.subset_def, Finset.mem_coe, ← GroundRule.in_bodySet_iff_in_body, List.mem_append,
+          List.mem_cons, List.mem_map]
+        let subs : Substitution τ := (fun v => if v ∈ hd.vars then g v else Option.none)
+        intro body_subset
+        simp [← List.toSet_mem] at body_subset
+        have g_eq_subs_on_hd : subs.applyAtom hd = g.applyAtom' hd := by
+          simp only [Substitution.applyAtom, GroundAtom.toAtom, Grounding.applyAtom', List.map_map,
+            Atom.mk.injEq, List.map_inj_left, Function.comp_apply, true_and]
+          intro t t_mem
+          simp only [Substitution.applyTerm, Grounding.applyTerm']
+          cases t with
+          | constant c => simp
+          | variableDL v =>
+            have : v ∈ hd.vars := by
+              simp only [Atom.vars, List.mem_foldl_union, Finset.not_mem_empty, false_or]
+              exists Term.variableDL v
+              simp [Term.vars, t_mem]
+            simp [subs, this]
+        have subs_domain : subs.domain = hd.vars := by
+          simp [Substitution.domain, Set.ext_iff, subs]
+        have g_after_subs : ∀ a, g.applyAtom' (subs.applyAtom a) = g.applyAtom' a := by
+          simp only [Grounding.applyAtom', Substitution.applyAtom, List.map_map,
+            GroundAtom.mk.injEq, List.map_inj_left, Function.comp_apply, Grounding.applyTerm',
+            Substitution.applyTerm, true_and, subs]
+          intro a t t_mem
+          cases t with
+          | constant c => simp
+          | variableDL v =>
+            by_cases hv: v ∈ hd.vars
+            · simp [hv]
+            · simp [hv]
+        have subs_in_substitutionsForAtom : subs ∈ m.substitutionsForAtom hd := by
+          rw [mem_substitutionsForAtom_iff]
+          exists g.applyAtom' hd
           constructor
-          · rw[this]
-            unfold List.toSet
-            simp only [List.coe_toFinset, Set.mem_setOf_eq]
-            exact h
-          · unfold PartialGroundRule.isActive at active
-            intro a a_mem
-            simp only [Set.mem_setOf_eq] at a_mem
-            apply active
-            rcases a_mem with ⟨a', a'_mem, a'_eq⟩
-            rw [g.applyAtom'_on_GroundAtom_unchanged] at a'_eq
-            rw [a'_eq] at a'_mem
-            exact a'_mem
-    · case h_2 hd tl heq =>
-        rw [List.mapExceptUnit_iff]
-        simp
-        unfold PartialGroundRule.isSatisfied
-        unfold Interpretation.satisfiesRule
-
-        constructor
-        · intro subs_works
-          unfold Grounding.applyRule'
-          unfold PartialGroundRule.toRule
-          unfold GroundRule.bodySet
-          simp only [List.map_append, List.map_map, List.toFinset_append, Finset.coe_union,
-            List.coe_toFinset, List.mem_map, Function.comp_apply, Set.union_subset_iff, and_imp]
-          intro g g_active_grounded g_active_ungrounded
-          unfold List.toSet at g_active_grounded
-          simp only [List.coe_toFinset, Set.setOf_subset_setOf, forall_exists_index, and_imp,
-            forall_apply_eq_imp_iff₂] at g_active_grounded
-          rw [heq] at g_active_ungrounded
-          unfold List.toSet at g_active_ungrounded
-          simp only [List.mem_cons, exists_eq_or_imp, List.coe_toFinset,
-            Set.setOf_subset_setOf] at g_active_ungrounded
-
-          let subs : Substitution τ := (fun v => if v ∈ hd.vars then g v else Option.none)
-
-          have g_after_subs : ∀ a, g.applyAtom' (subs.applyAtom a) = g.applyAtom' a := by
-            intro a
-            unfold Substitution.applyAtom
-            unfold Grounding.applyAtom'
-            simp only [List.map_map, GroundAtom.mk.injEq, List.map_inj_left, Function.comp_apply,
-              true_and]
-            intro t t_mem
-            unfold Substitution.applyTerm
-            unfold Grounding.applyTerm'
-            cases t with
-            | constant c => simp
-            | variableDL v =>
-              simp only [subs]
-              cases Decidable.em (v ∈ hd.vars) with
-              | inl h => simp [h]
-              | inr h => simp [h]
-
-          have g_eq_subs_on_hd : subs.applyAtom hd = g.applyAtom' hd := by
-            unfold Substitution.applyAtom
-            unfold Grounding.applyAtom'
-            unfold GroundAtom.toAtom
-            simp only [List.map_map, Atom.mk.injEq, List.map_inj_left, Function.comp_apply,
-              true_and, subs]
-            intro t t_mem
-            unfold Substitution.applyTerm
-            unfold Grounding.applyTerm'
-            cases t with
-            | constant c => simp
-            | variableDL v =>
-              have : v ∈ hd.vars := by
-                unfold Atom.vars
-                rw [List.mem_foldl_union]
-                apply Or.inr
-                exists Term.variableDL v
-                unfold Term.vars
-                constructor
-                · exact t_mem
-                · simp only [Finset.mem_singleton, subs]
-              simp [subs, this]
-
-          have subs_domain : subs.domain = hd.vars := by
-            unfold Substitution.domain
-            apply Set.ext
-            intro v
-            simp only [Option.isSome_ite, Finset.setOf_mem, Finset.mem_coe, subs]
-
-          specialize subs_works subs (by
-            rw [mem_substitutionsForAtom_iff]
-            exists g.applyAtom' hd
-            constructor
-            · apply g_active_ungrounded; apply Or.inl; rfl
-            constructor
+          · simp [body_subset]
+          · constructor
             · exact g_eq_subs_on_hd
             · intro s' s'_apply_also_ground
               rw [← g_eq_subs_on_hd] at s'_apply_also_ground
@@ -382,150 +330,96 @@ namespace CheckableModel
                 rw [v_in_t]
                 exact t_mem
               )
-              unfold Substitution.applyTerm at s'_apply_also_ground
-              simp only [v_in_dom, ↓reduceIte, subs] at s'_apply_also_ground
+              simp only [Substitution.applyTerm, v_in_dom, ↓reduceIte, subs] at s'_apply_also_ground
               simp only [v_in_dom, ↓reduceIte, subs]
               cases eq : s' v with
               | none => simp [eq] at s'_apply_also_ground
               | some c =>
-                simp only [eq, Term.constant.injEq, subs] at s'_apply_also_ground
+                simp [eq] at s'_apply_also_ground
                 rw [s'_apply_also_ground]
-          )
-          have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
-          rw [m.checkPGRIsOkIffRuleIsSatisfied _ (by
-            unfold PartialGroundRule.isActive
-            unfold List.toSet
-            simp
-            intro ga ga_eq
-            cases ga_eq with
-            | inl ga_eq =>
-              specialize g_active_grounded ga
-              rw [Grounding.applyAtom'_on_GroundAtom_unchanged] at g_active_grounded
-              apply g_active_grounded
-              exact ga_eq
-            | inr ga_eq =>
-              apply g_active_ungrounded
-              apply Or.inl
-              rw [ga_eq]
-              rw [GroundAtom.eq_iff_toAtom_eq]
-              rw [← Atom.toGroundAtom_isSelf]
-              rw [g_eq_subs_on_hd]
-          )] at subs_works
-          unfold PartialGroundRule.isSatisfied at subs_works
-          unfold Interpretation.satisfiesRule at subs_works
-          unfold PartialGroundRule.toRule at subs_works
-          unfold GroundRule.bodySet at subs_works
-          unfold Grounding.applyRule' at subs_works
-          simp only [List.map_append, List.map_cons, List.map_nil, List.append_assoc,
-            List.singleton_append, List.map_map, List.toFinset_append, List.toFinset_cons,
-            Finset.union_insert, Finset.coe_insert, Finset.coe_union, List.coe_toFinset,
-            List.mem_map, Function.comp_apply, subs] at subs_works
-          specialize subs_works g
-          rw [g_after_subs] at subs_works
+        specialize subs_works subs subs_in_substitutionsForAtom
+        have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
+        rw [checkPGRIsOkIffRuleIsSatisfied] at subs_works
+        · simp only [← List.toSet_mem, subs]
+          simp only [PartialGroundRule.isSatisfied, Interpretation.satisfiesRule,
+            Grounding.applyPartialGroundRule_eq_apply_only_ungrounded', List.map_map,
+            List.append_assoc, List.singleton_append, ← List.toSet_mem, subs] at subs_works
+          rw [← g_after_subs]
           apply subs_works
-          unfold List.toSet
-          rw [Set.subset_def]
-          simp only [Set.mem_insert_iff, Set.mem_union, Set.mem_setOf_eq, List.coe_toFinset,
-            forall_eq_or_imp, subs]
-          constructor
-          · rw [← (subs.applyAtom hd).toGroundAtom_isSelf]; rw [g_after_subs]; apply g_active_ungrounded; apply Or.inl; rfl
-          · intro a h
-            cases h with
-            | inl h =>
-              rcases h with ⟨b, h⟩
-              rw [← h.right]
-              apply g_active_grounded
-              exact h.left
-            | inr h =>
-              rcases h with ⟨b, h⟩
-              rw [← h.right]
-              apply g_active_ungrounded
-              apply Or.inr
-              exists b
-              rw [g_after_subs]
-              simp only [and_true, subs]
-              exact h.left
-        · intro grounding_works
-          intro subs subs_mem
-          have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
-          rw [m.checkPGRIsOkIffRuleIsSatisfied _ (by
-            unfold PartialGroundRule.isActive
-            unfold List.toSet
-            simp only [List.mem_append, List.mem_singleton, List.coe_toFinset, Set.mem_setOf_eq]
-            intro ga h
-            cases h with
-            | inl h =>
-              unfold PartialGroundRule.isActive at active
-              unfold List.toSet at active
-              simp only [List.coe_toFinset, Set.mem_setOf_eq] at active
-              apply active
-              exact h
-            | inr h =>
-              rw [h]
-              apply substitutionsForAtom_application_in_model
-              exact subs_mem
-          )]
-          unfold PartialGroundRule.isSatisfied
-          unfold Interpretation.satisfiesRule
-          unfold Grounding.applyRule'
-          unfold PartialGroundRule.toRule
-          unfold List.toSet
-          unfold GroundRule.bodySet
-          simp only [List.map_append, List.map_cons, List.map_nil, List.append_assoc,
-            List.singleton_append, List.map_map, List.toFinset_append, List.toFinset_cons,
-            Finset.union_insert, Finset.coe_insert, Finset.coe_union, List.coe_toFinset,
-            List.mem_map, Function.comp_apply, Set.mem_setOf_eq]
-          intro g h
-          rw [Set.subset_def] at h
-          simp only [Set.mem_insert_iff, Set.mem_union, Set.mem_setOf_eq, forall_eq_or_imp] at h
-          unfold List.toSet at grounding_works
-          unfold PartialGroundRule.toRule at grounding_works
-          unfold Grounding.applyRule' at grounding_works
-          unfold GroundRule.bodySet at grounding_works
-          simp only [List.map_append, List.map_map, List.toFinset_append, Finset.coe_union,
-            List.coe_toFinset, List.mem_map, Function.comp_apply, Set.union_subset_iff,
-            Set.setOf_subset_setOf, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
-            Set.mem_setOf_eq] at grounding_works
+          intro ga h
+          rw [← List.toSet_mem]
+          apply body_subset
+          simp only [g_after_subs, g_eq_subs_on_hd, GroundAtom.toAtom_toGroundAtom, Finset.mem_coe,
+            ← GroundRule.in_bodySet_iff_in_body, List.mem_append, List.mem_cons, List.mem_map,
+            Function.comp_apply, subs] at h
+          apply h
+        · simp only [PartialGroundRule.isActive, List.mem_append, List.mem_singleton, subs]
+          intro ga ga_mem
+          cases ga_mem with
+          | inl ga_mem =>
+            simp only [PartialGroundRule.isActive, subs] at active
+            apply active ga ga_mem
+          | inr ga_mem =>
+            simp only [ga_mem, ← List.toSet_mem, subs]
+            apply substitutionsForAtom_application_in_model subs_in_substitutionsForAtom
+      · intro grounding_works
+        intro subs subs_mem
+        have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
+        rw [m.checkPGRIsOkIffRuleIsSatisfied _ (by
+          simp only [PartialGroundRule.isActive, List.mem_append, List.mem_singleton, ←
+            List.toSet_mem]
+          intro ga h
+          cases h with
+          | inl h =>
+            simp only [PartialGroundRule.isActive, ← List.toSet_mem] at active
+            apply active _ h
+          | inr h =>
+            rw [h]
+            apply substitutionsForAtom_application_in_model subs_mem
+        )]
+        simp only [PartialGroundRule.isSatisfied, Interpretation.satisfiesRule,
+          Grounding.applyPartialGroundRule_eq_apply_only_ungrounded', List.map_map,
+          List.append_assoc, List.singleton_append, Set.subset_def, Finset.mem_coe, ←
+          GroundRule.in_bodySet_iff_in_body, List.mem_append, List.mem_cons, List.mem_map,
+          Function.comp_apply, ← List.toSet_mem]
+        intro g h
+        simp only [Grounding.applyPartialGroundRule_eq_apply_only_ungrounded', Set.subset_def,
+          Finset.mem_coe, ← GroundRule.in_bodySet_iff_in_body, List.mem_append, List.mem_map, ←
+          List.toSet_mem] at grounding_works
 
-          let grounding : Grounding τ := fun v => (subs v).getD (g v)
+        let grounding : Grounding τ := fun v => (subs v).getD (g v)
 
-          have : ∀ a, grounding.applyAtom' a = g.applyAtom' (subs.applyAtom a) := by
-            intro a
-            simp only [grounding]
-            unfold Grounding.applyAtom'
-            unfold Substitution.applyAtom
-            simp only [List.map_map, GroundAtom.mk.injEq, List.map_inj_left, Function.comp_apply,
-              true_and, grounding]
-            intro t t_mem
-            unfold Substitution.applyTerm
-            unfold Grounding.applyTerm'
-            cases t with
-            | constant _ => simp
-            | variableDL v => simp; cases subs v <;> simp
+        have : ∀ a, grounding.applyAtom' a = g.applyAtom' (subs.applyAtom a) := by
+          simp only [Grounding.applyAtom', Substitution.applyAtom, List.map_map,
+            GroundAtom.mk.injEq, List.map_inj_left, Grounding.applyTerm', Function.comp_apply,
+            Substitution.applyTerm, true_and, grounding]
+          intro a t t_mem
+          cases t with
+          | constant _ => simp
+          | variableDL v => simp; cases subs v <;> simp
 
-          specialize grounding_works grounding
-          rw [this] at grounding_works
-          apply grounding_works
-          · intro ga ga_mem
-            rw [Grounding.applyAtom'_on_GroundAtom_unchanged]
-            apply h.right
-            apply Or.inl
-            exists ga
-            rw [Grounding.applyAtom'_on_GroundAtom_unchanged]
-            simp only [and_true, grounding]
-            exact ga_mem
-          · rw [heq]
-            rw [← Atom.toGroundAtom_isSelf] at h
-            simp only [List.mem_cons, forall_eq_or_imp]
-            constructor
-            · rw [this]; exact h.left
-            · intro a a_mem
-              apply h.right
-              apply Or.inr
-              exists a
-              rw [this]
-              simp only [and_true]
-              exact a_mem
+        specialize grounding_works grounding
+        rw [this] at grounding_works
+        apply grounding_works
+        intro ga ga_mem
+        apply h
+        cases ga_mem with
+        | inl ga_mem => simp [ga_mem]
+        | inr ga_mem =>
+          right
+          rcases ga_mem with ⟨a, a_mem, ground_a⟩
+          simp only [heq, List.mem_cons, grounding] at a_mem
+          cases a_mem with
+          | inl a_mem =>
+            rw [a_mem] at ground_a
+            left
+            simp [← ground_a, this, GroundAtom.eq_iff_toAtom_eq]
+            rw [Grounding.applyAtom'_on_Atom_without_vars_unchanged, ← Atom.toGroundAtom_isSelf]
+            exact noVars_after_applying_substitutionsForAtom _ subs_mem
+          | inr a_mem =>
+            right
+            use a
+            simp [a_mem, ← ground_a, this]
   termination_by pgr.ungroundedBody.length
 
   def checkProgram (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : Except String Unit :=
@@ -538,25 +432,17 @@ namespace CheckableModel
 
   theorem checkProgramIsOkIffAllRulesAreSatisfied [Inhabited τ.constants] {m : CheckableModel τ} {p : Program τ} (safe : p.isSafe) :
     m.checkProgram p safe = Except.ok () ↔ ∀ r ∈ p.groundProgram, Interpretation.satisfiesRule m.toSet r := by
-      unfold checkProgram
-      rw [List.mapExceptUnit_iff]
-      unfold Program.groundProgram
-      simp only [List.mem_attach, forall_const, Subtype.forall, exists_and_left, Set.mem_setOf_eq,
-        forall_exists_index, and_imp]
+      simp [checkProgram, List.mapExceptUnit_iff, Program.groundProgram]
       constructor
       · intro h gr r r_mem g eq
         specialize h r r_mem
         rw [m.checkPGRIsOkIffRuleIsSatisfied _ (by apply PartialGroundRule.fromRule_isActive)] at h
-        unfold PartialGroundRule.isSatisfied at h
-        rw [PartialGroundRule.toRule_inv_fromRule] at h
+        simp only [PartialGroundRule.isSatisfied, PartialGroundRule.toRule_inv_fromRule] at h
         rw [eq]
         apply h
       · intro h r r_mem
         rw [m.checkPGRIsOkIffRuleIsSatisfied _ (by apply PartialGroundRule.fromRule_isActive)]
-        unfold PartialGroundRule.isSatisfied
-        rw [PartialGroundRule.toRule_inv_fromRule]
+        simp only [PartialGroundRule.isSatisfied, PartialGroundRule.toRule_inv_fromRule]
         intro g
-        apply h
-        exact r_mem
-        rfl
+        apply h (g.applyRule' r) r r_mem g rfl
 end CheckableModel
