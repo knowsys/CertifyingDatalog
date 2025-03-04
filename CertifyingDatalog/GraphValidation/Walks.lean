@@ -230,7 +230,7 @@ namespace Walk
     have this2 : 0 < w.tail.val.length := by
       apply Decidable.by_contra
       intro contra
-      simp only [not_lt, Nat.le_zero_eq, List.length_eq_zero_iff] at contra
+      simp only [not_lt, Nat.le_zero_eq, List.length_eq_zero] at contra
       unfold tail at contra
       simp only at contra
       rw [contra] at neq
@@ -370,7 +370,7 @@ namespace Walk
     split
     case isTrue contra =>
       have : 0 < (w.tail.takeUntil (w.val.head neq)).val.length := by
-        rw [List.length_pos_iff]
+        rw [List.length_pos]
         apply takeUnil_ne_of_ne
         intro contra; rw [contra] at h; simp at h
       have : ¬ (w.tail.takeUntil (w.val.head neq)).val.length + 1 < 2 := by
@@ -652,7 +652,7 @@ namespace Graph
           | cons c cs =>
             have : cs = [] := by
               rw [eq] at contra
-              simp only [List.length_cons, Nat.add_one_sub_one, List.length_eq_zero_iff] at contra
+              simp only [List.length_cons, Nat.add_one_sub_one, List.length_eq_zero] at contra
               exact contra
             rw [this] at eq
             simp only [eq, List.getLast_singleton] at w_b
