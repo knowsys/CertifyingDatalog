@@ -88,7 +88,7 @@ namespace Graph
         simp
 
       unfold check_local_validity
-      simp only [List.isEmpty_eq_true]
+      simp only [List.isEmpty_iff]
       split
       case isTrue h =>
         split

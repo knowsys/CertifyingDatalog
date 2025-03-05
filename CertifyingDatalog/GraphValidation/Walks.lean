@@ -32,7 +32,7 @@ namespace Walk
       w.val.get (Fin.mk 0 len_gt_zero) = w.val.get (Fin.mk w.val.length.pred (Nat.pred_lt (Ne.symm (Nat.ne_of_lt len_gt_zero))))
 
   def prevInCycle {G: Graph A} (w : Walk G) (cyc : w.isCycle) (b : A) : A :=
-    match eq : w.val.indexOf b with
+    match eq : w.val.idxOf b with
     | .zero => w.val.get ⟨w.val.length - 2, by
       rw [Nat.sub_lt_iff_lt_add']
       simp only [Nat.lt_add_right_iff_pos, Nat.zero_lt_succ]
@@ -42,7 +42,7 @@ namespace Walk
       simp only [contra, ↓reduceDIte] at cyc
     ⟩
       -- (by intro contra; simp [contra] at b_mem)
-    | .succ n => w.val.get ⟨n, by apply Nat.lt_of_succ_le; rw [← eq]; apply List.indexOf_le_length⟩
+    | .succ n => w.val.get ⟨n, by apply Nat.lt_of_succ_le; rw [← eq]; apply List.idxOf_le_length⟩
 
   lemma prevInCycleIsInCycle {G: Graph A} (w : Walk G) (cyc : w.isCycle) (b : A) : w.prevInCycle cyc b ∈ w.val := by
     unfold prevInCycle
@@ -56,7 +56,7 @@ namespace Walk
       have : ¬ w.val.length < 2 := by apply Decidable.by_contra; intro contra; simp at contra; simp [contra] at cyc
       simp only [this, ↓reduceDIte, List.get_eq_getElem, Nat.pred_eq_sub_one] at cyc
       simp only [Nat.zero_eq] at eq
-      simp only [← eq, List.getElem_indexOf] at cyc
+      simp only [← eq, List.getElem_idxOf] at cyc
       rw [cyc]
       have prop := w.prop.right
       apply prop
@@ -64,7 +64,7 @@ namespace Walk
       simp only [not_lt] at this
       omega
     case h_2 n eq =>
-      have : b = w.val.get ⟨n.succ, by rw [← eq, List.indexOf_lt_length]; exact b_mem⟩ := by simp at eq; simp [← eq]
+      have : b = w.val.get ⟨n.succ, by rw [← eq, List.idxOf_lt_length_iff]; exact b_mem⟩ := by simp at eq; simp [← eq]
       simp only [this, Nat.succ_eq_add_one, List.get_eq_getElem]
       have prop := w.prop.right
       apply prop (n + 1)
@@ -259,7 +259,7 @@ namespace Walk
       apply i_gt_0
   ⟩
 
-  def takeUntil {G : Graph A} (walk : Walk G) (a : A) : Walk G := walk.take (walk.val.indexOf a + 1)
+  def takeUntil {G : Graph A} (walk : Walk G) (a : A) : Walk G := walk.take (walk.val.idxOf a + 1)
 
   lemma takeUnil_ne_of_ne {G : Graph A} (w : Walk G) (ne : w.val ≠ []) (a : A) : (w.takeUntil a).val ≠ [] := by
     unfold takeUntil
@@ -287,9 +287,9 @@ namespace Walk
     unfold Walk.take
     rw [List.getElem_take]
     simp [List.length_take_of_le (by
-      show w.val.indexOf a + 1 ≤ w.val.length
+      show w.val.idxOf a + 1 ≤ w.val.length
       apply Nat.succ_le_of_lt
-      rw [List.indexOf_lt_length]
+      rw [List.idxOf_lt_length_iff]
       exact mem
     )]
 
@@ -454,7 +454,7 @@ namespace Graph
         simp
       | inr neq =>
         unfold Walk.concat
-        rw [List.getLast_append' w_a_b.val w_b_c.val.tail neq]
+        rw [List.getLast_append_of_right_ne_nil w_a_b.val w_b_c.val.tail neq]
         rw [List.tail_getLast]
         exact w_last_c
 

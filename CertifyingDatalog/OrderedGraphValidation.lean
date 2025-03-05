@@ -21,11 +21,12 @@ namespace OrderedProofGraph
     rcases h with ⟨i, h⟩
     exists ⟨i, by simp⟩
 
-  def locallyValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (i : Fin G.val.size) : Prop :=
+  def locallyValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ)
+    (i : Fin G.val.size) : Prop :=
     (G.val[i].snd = [] ∧ kb.db.contains G.val[i].fst)
     ∨ (∃ r ∈ kb.prog, ∃ (g : Grounding τ), g.applyRule' r = {
       head := G.val[i].fst
-      body := G.val[i].snd.attach.map (fun n => (G.val.get n.val (by apply lt_trans; apply G.prop i n.val n.prop; exact i.isLt)).fst)
+      body := G.val[i].snd.attach.map (fun n => (G.val[n.val]' (by apply lt_trans; apply G.prop i n.val n.prop; exact i.isLt)).fst)
     })
 
   def isValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) : Prop :=
@@ -42,13 +43,13 @@ namespace OrderedProofGraph
       then if d.contains G.val[index].fst then Except.ok () else checkRuleMatch m { head := G.val[index].fst, body := [] }
       else checkRuleMatch m {
         head := G.val[index].fst
-        body := G.val[index].snd.attach.map (fun n => (G.val.get n.val (by apply lt_trans; apply G.prop index n.val n.prop; exact index.isLt)).fst)
+        body := G.val[index].snd.attach.map (fun n => (G.val[n.val]'(by apply lt_trans; apply G.prop index n.val n.prop; exact index.isLt)).fst)
       }
 
   lemma checkAtIndexOkIffLocallyValid {G : OrderedProofGraph τ} {kb : KnowledgeBase τ} {i : Fin G.val.size} :
     G.checkAtIndex kb.prog.toSymbolSequenceMap kb.db i = Except.ok () ↔ G.locallyValid kb i := by
       unfold checkAtIndex
-      simp only [Array.length_toList, Fin.getElem_fin, List.isEmpty_eq_true, Array.get_eq_getElem]
+      simp only [Array.length_toList, Fin.getElem_fin, List.isEmpty_iff]
       split
       case isTrue h =>
         split
@@ -69,7 +70,7 @@ namespace OrderedProofGraph
       case isFalse h =>
         rw [checkRuleMatchOkIffExistsRule]
         unfold locallyValid
-        simp only [exists_and_left, Array.length_toList, Fin.getElem_fin, Array.get_eq_getElem,
+        simp only [exists_and_left, Array.length_toList, Fin.getElem_fin,
           iff_or_self, and_imp]
         intro contra
         contradiction
