@@ -30,3 +30,18 @@ namespace Nat
       simp
 end Nat
 
+namespace Option
+universe u
+
+lemma filter_true {α : Type u} {o : Option α}:
+    o.filter (fun _ => true) = o := by
+  unfold Option.filter
+  cases o <;> rfl
+
+lemma forall_ne {α : Type u} {o : Option α} :
+    (∀ (a : α), ¬ o = some a) ↔ o = none := by
+  cases o with
+  | none => simp
+  | some a' => simp
+
+end Option

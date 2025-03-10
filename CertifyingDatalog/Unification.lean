@@ -419,9 +419,7 @@ section RuleMatching
           · apply apply_t.left
 
     def matchRule (r: Rule τ) (gr: GroundRule τ): Option (Substitution τ):=
-      match empty.matchAtom r.head gr.head with
-      | .none => Option.none
-      | .some s => if r.body.length = gr.body.length then s.matchAtomList (r.body.zip gr.body) else Option.none
+      ((empty.matchAtom r.head gr.head).bind fun s => s.matchAtomList (r.body.zip gr.body)).filter (fun _ => r.body.length = gr.body.length)
 
     theorem matchRuleYieldsSubs {r : Rule τ} {gr : GroundRule τ} (h : (matchRule r gr).isSome) : ((matchRule r gr).get h).applyRule r = gr := by
       cases eq : empty.matchAtom r.head gr.head with
@@ -429,24 +427,24 @@ section RuleMatching
       | some s =>
         have body_eq_len : r.body.length = gr.body.length := by
           unfold matchRule at h
-          simp only [eq] at h
-          apply Decidable.by_contra
-          intro contra
-          simp [contra] at h
+          simp only [eq, Option.some_bind, Option.isSome_iff_exists, Option.filter_eq_some,
+            Option.mem_def, decide_eq_true_eq, exists_and_right] at h
+          apply And.right h
         unfold applyRule
         unfold GroundRule.toRule
         simp only [Rule.mk.injEq]
         constructor
         · apply s.subset_applyAtom_eq
           · unfold matchRule
-            simp only [eq, body_eq_len, ↓reduceIte]
+            simp [eq, body_eq_len, ↓reduceIte, Option.filter_true]
             apply matchAtomListSubset
           · have : (empty.matchAtom r.head gr.head).isSome := by simp [eq]
             have : s = (empty.matchAtom r.head gr.head).get this := by simp [eq]
             rw [this]
             apply matchAtomYieldsSubs
-        · simp only [matchRule, eq, body_eq_len, ↓reduceIte]
-          simp only [matchRule, eq, body_eq_len, ↓reduceIte] at h
+        · simp only [matchRule, body_eq_len, decide_true, eq, Option.some_bind, Option.filter_true]
+          simp only [matchRule, body_eq_len, decide_true, eq, Option.some_bind,
+            Option.filter_true] at h
           let atom_list := r.body.zip gr.body
           have match_a_list := s.matchAtomListYieldsSubs h
           have fst : r.body = atom_list.map Prod.fst := by
@@ -479,7 +477,8 @@ section RuleMatching
           have : (r.body.map s.applyAtom).length = (gr.body.map GroundAtom.toAtom).length := by rw [contra.right]
           rw [List.length_map, List.length_map] at this
           exact this
-        simp only [eq, body_eq_len] at h
+        simp only [body_eq_len, decide_true, eq, Option.some_bind, Option.filter_eq_none,
+          Option.mem_def, not_true_eq_false, imp_false, Option.forall_ne, or_self] at h
         let atom_list := r.body.zip gr.body
         apply s'.matchAtomListNoneThenNoSubs h
         · have isSome : (empty.matchAtom r.head gr.head).isSome := by simp [eq]
