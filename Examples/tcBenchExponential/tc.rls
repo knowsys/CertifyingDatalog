@@ -1,4 +1,4 @@
-@source edge[2]: load-csv("sources/edge.csv").
+@import edge :- csv{resource="sources/edge.csv"} .
 
 trans(?X,?Y) :- edge(?X,?Y).
 t(?X,?Y) :- trans(?X,?Y).
