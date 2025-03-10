@@ -19,5 +19,9 @@ namespace Except
     unfold Except.isOk
     unfold Except.toBool
     simp
-end Except
 
+  theorem not_equal_ok_unit (e: Except A Unit): ¬ e = Except.ok () ↔ ∃ (a:A), e = Except.error a := by
+    cases e with
+    | ok u => simp
+    | error e => simp
+end Except
