@@ -291,7 +291,7 @@ section Dfs
               simp only [List.toFinset_cons, Finset.mem_insert, List.mem_toFinset]
               apply Or.inr; exact mem_walk_a
 
-    def verify_via_dfs_step {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) : Except String (HashSet A) :=
+    def verify_via_dfs_step (a : A) (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) : Except String (HashSet A) :=
       if verifiedNodes.contains a then Except.ok verifiedNodes
       else match cond a with
         | Except.error msg => Except.error msg
@@ -305,16 +305,14 @@ section Dfs
                 have _termination := G.verify_via_dfs_step_termination_aux walkFromA mem (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact mem)
 
                 G.verify_via_dfs_step
-                  cond
-                  walkFromPred
-                  verified
+                  pred cond walkFromPred verified
               ) (Except.ok verifiedNodes)
 
             verifiedAfterRecursion.map (fun verified => verified.insert a)
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
     lemma dfs_step_result_contains_a {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) :
-      verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedAfter.contains a := by
+      verify_via_dfs_step a G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedAfter.contains a := by
       intro h
       unfold verify_via_dfs_step at h
       simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at h
@@ -333,7 +331,7 @@ section Dfs
               simp
 
     lemma dfs_step_extends_verified {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) :
-      verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedNodes ⊆ verifiedAfter := by
+      verify_via_dfs_step a G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedNodes ⊆ verifiedAfter := by
       intro h
       unfold verify_via_dfs_step at h
       simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at h
@@ -354,7 +352,7 @@ section Dfs
                 apply HashSet.subset_trans
                 · apply List.foldl_except_is_superset_of_f_is_superset (G.predecessors a).attach (fun b pred =>
                     let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                  verify_via_dfs_step G cond walkFromPred b
+                  verify_via_dfs_step pred.1 G cond walkFromPred b
                   ) verifiedNodes
                   · intro set res pred _ eq
                     have _termination := G.verify_via_dfs_step_termination_aux walkFromA pred.prop (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred.prop)
@@ -376,7 +374,7 @@ section Dfs
       (walkFromA : {w : Walk G // w.val.head? = some a})
       (verifiedNodes : HashSet A)
       (verifiedAfter : HashSet A)
-      (verifiedAfterIsResult : verify_via_dfs_step G cond walkFromA verifiedNodes = Except.ok verifiedAfter)
+      (verifiedAfterIsResult : verify_via_dfs_step a G cond walkFromA verifiedNodes = Except.ok verifiedAfter)
       (verifiedNodesValid : ∀ node, verifiedNodes.contains node ->
         (¬ G.reachableFromCycle node ∧
           G.cond_ok_on_all_canReach node cond)
@@ -406,7 +404,7 @@ section Dfs
               let extendWalkToA (c : A) (c_pred : c ∈ G.predecessors a) : {w : Walk G // w.val.head? = some c} := ⟨walkFromA.val.prependPredecessor c (by unfold Walk.predecessors; simp [walkFromA.prop]; exact c_pred), by (unfold Walk.prependPredecessor; simp)⟩
 
               let foldl_f : HashSet A -> {c : A // c ∈ G.predecessors a} -> Except String (HashSet A) := (fun b pred =>
-                  verify_via_dfs_step G cond (extendWalkToA pred.val pred.prop) b
+                  verify_via_dfs_step pred.1 G cond (extendWalkToA pred.val pred.prop) b
                 )
 
               have foldl_preserves := (G.predecessors a).attach.foldl_except_preserves_prop foldl_f (Except.ok verifiedNodes)
@@ -468,10 +466,10 @@ section Dfs
       (verifiedNodesValid : ∀ node, verifiedNodes.contains node ->
         (¬ G.reachableFromCycle node ∧
           G.cond_ok_on_all_canReach node cond)
-      ) : (G.verify_via_dfs_step cond walkFromA verifiedNodes).isOk ↔ (¬ G.reachableFromCycle a ∧ G.cond_ok_on_all_canReach a cond) := by
+      ) : (G.verify_via_dfs_step a cond walkFromA verifiedNodes).isOk ↔ (¬ G.reachableFromCycle a ∧ G.cond_ok_on_all_canReach a cond) := by
       constructor
       · intro check_ok
-        cases eq : G.verify_via_dfs_step cond walkFromA verifiedNodes with
+        cases eq : G.verify_via_dfs_step a cond walkFromA verifiedNodes with
         | error _ => rw [eq] at check_ok; simp [Except.isOk, Except.toBool] at check_ok
         | ok verifiedAfter =>
           apply G.dfs_step_result_valid cond walkFromA verifiedNodes verifiedAfter eq verifiedNodesValid
@@ -541,7 +539,7 @@ section Dfs
                   (G.predecessors a).attach
                   (fun b pred =>
                     let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                    verify_via_dfs_step G cond walkFromPred b
+                    verify_via_dfs_step pred.1 G cond walkFromPred b
                   )
                   verifiedNodes
                   err
@@ -556,7 +554,7 @@ section Dfs
                 · simp only [List.get_eq_getElem, List.getElem_attach, pred]
                   intro cond_pred
                   let walkFromPred : {w : Walk G // w.val.head? = some pred } := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; simp [pred];), by (unfold Walk.prependPredecessor; simp)⟩
-                  have : (G.verify_via_dfs_step cond walkFromPred res).isOk := by
+                  have : (G.verify_via_dfs_step pred.1 cond walkFromPred res).isOk := by
                     have _termination := G.verify_via_dfs_step_termination_aux walkFromA (b := (G.predecessors a).get ⟨i, by have isLt := i.isLt; simp at isLt; exact isLt⟩) (by apply List.get_mem) (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact (by apply List.get_mem))
                     rw [dfs_step_semantics]
                     constructor
@@ -568,7 +566,7 @@ section Dfs
                       ((G.predecessors a).attach.take i)
                       (fun b pred =>
                         let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                        verify_via_dfs_step G cond walkFromPred b
+                        verify_via_dfs_step pred.1 G cond walkFromPred b
                       )
                       (Except.ok verifiedNodes)
                       (fun set => ∀ node, set.contains node -> (¬ G.reachableFromCycle node ∧ G.cond_ok_on_all_canReach node cond))
@@ -601,14 +599,14 @@ section Dfs
 
     def verify_via_dfs (G : Graph A) (cond : NodeCondition A) : Except String Unit :=
       (G.vertices.attach.foldl_except
-        (fun acc ⟨a, h⟩ => G.verify_via_dfs_step (a := a) cond ⟨Walk.singleton G a h, by unfold Walk.singleton; simp⟩ acc)
+        (fun acc ⟨a, h⟩ => G.verify_via_dfs_step a cond ⟨Walk.singleton G a h, by unfold Walk.singleton; simp⟩ acc)
         (Except.ok HashSet.empty)).map (fun _ => ())
 
     lemma dfs_semantics (G : Graph A) (cond : NodeCondition A) : G.verify_via_dfs cond = Except.ok () ↔ G.isAcyclic ∧ ∀ a ∈ G.vertices, cond.true a := by
       let f :=
         (fun b (node : {a : A // a ∈ G.vertices}) =>
           let walkFromPred : {w : Walk G // w.val.head? = some node} := ⟨Walk.singleton G node node.prop, by unfold Walk.singleton; simp⟩
-          verify_via_dfs_step G cond walkFromPred b
+          verify_via_dfs_step node.1 G cond walkFromPred b
         )
 
       unfold verify_via_dfs
