@@ -293,9 +293,7 @@ section Dfs
 
     def verify_via_dfs_step (a : A) (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) : Except String (HashSet A) :=
       if verifiedNodes.contains a then Except.ok verifiedNodes
-      else match cond a with
-        | Except.error msg => Except.error msg
-        | Except.ok _ =>
+      else (cond a).bind (fun _ =>
           if pred_not_mem_walk : (G.predecessors a).any (fun pred => pred ∈ walkFromA.val.val)
           then Except.error "Cycle detected"
           else
@@ -308,7 +306,7 @@ section Dfs
                   pred cond walkFromPred verified
               ) (Except.ok verifiedNodes)
 
-            verifiedAfterRecursion.map (fun verified => verified.insert a)
+            verifiedAfterRecursion.map (fun verified => verified.insert a))
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
     lemma dfs_step_result_contains_a {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) :
@@ -318,7 +316,8 @@ section Dfs
       simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at h
       split at h
       · injection h with h; rw [← h]; assumption
-      · split at h
+      · simp only [Except.bind] at h
+        split at h
         · contradiction
         · split at h
           · contradiction
@@ -337,7 +336,8 @@ section Dfs
       simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at h
       split at h
       · injection h with h; rw [h]; apply HashSet.subset_refl
-      · split at h
+      · simp only [Except.bind] at h
+        split at h
         · contradiction
         · split at h
           · contradiction
@@ -385,7 +385,8 @@ section Dfs
       simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at verifiedAfterIsResult
       split at verifiedAfterIsResult
       · injection verifiedAfterIsResult with verifiedAfterIsResult; rw [← verifiedAfterIsResult]; assumption
-      · split at verifiedAfterIsResult
+      · simp only [Except.bind] at verifiedAfterIsResult
+        split at verifiedAfterIsResult
         · contradiction
         · case h_2 cond_a =>
           split at verifiedAfterIsResult
@@ -478,7 +479,8 @@ section Dfs
       simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite, and_imp]
       split
       · simp [Except.isOk, Except.toBool]
-      · split
+      · simp only [Except.bind]
+        split
         case h_1 heq =>
           simp only [Except.isOk, Except.toBool, Bool.false_eq_true, imp_false]
           intro a_not_cycle cond_a
