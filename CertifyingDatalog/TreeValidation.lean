@@ -159,7 +159,7 @@ namespace ProofTreeSkeleton
             else
               (checkRuleMatch m {head:= a, body := []}).map (fun _ => ())
       else
-        (checkRuleMatch m {head:= a, body := l.map Tree.root}).bind (fun _ => (l.attach.mapExceptUnit (fun ⟨t, _h⟩ => checkValidity t m d)).map (fun _ => ()))
+        (checkRuleMatch m {head:= a, body := l.map Tree.root}).bind (fun _ => (l.attach.mapExceptUnit (fun ⟨t, _h⟩ => checkValidity t m d)))
 
   lemma checkValidityOkIffIsValid [Inhabited τ.constants] {t: ProofTreeSkeleton τ} {kb: KnowledgeBase τ} : t.checkValidity kb.prog.toSymbolSequenceMap kb.db = Except.ok () ↔ t.isValid kb :=
   by
@@ -206,9 +206,9 @@ namespace ProofTreeSkeleton
 
       · simp only [emptyL, Bool.false_eq_true, ↓reduceIte, Except.bind, exists_and_left,
         exists_and_right]
+        rw [List.isEmpty_iff] at emptyL
         split
-        · rw [List.isEmpty_iff] at emptyL
-          simp only [reduceCtorEq, emptyL, false_and, or_false, false_iff, not_exists, not_and,
+        · simp only [reduceCtorEq, emptyL, false_and, or_false, false_iff, not_exists, not_and,
             forall_exists_index]
           rename_i checkRuleMatchResult
           have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
@@ -219,46 +219,34 @@ namespace ProofTreeSkeleton
           intro r rP g ground
           specialize checkRuleMatch' r rP g
           contradiction
-        · rename_i checkRuleMatchResult
-          rw [List.isEmpty_iff] at emptyL
-          simp [emptyL]
-          rw [checkRuleMatchOkIffExistsRule] at checkRuleMatchResult
-          rcases checkRuleMatchResult with ⟨r,g,rP, rulegrounding⟩
-          simp [Except.map]
-          split
-          · simp
-            intro r rP g apply_g
-            rename_i e s h
-            simp [List.forall_iff_forall_mem]
-            have := List.mapExceptUnit_error h
-            simp at this
-            rcases this with ⟨t, t_mem, ht⟩
-            use t
-            have height_t: t.height < n := by
-              rw [← h_t]
-              apply Tree.heightOfMemberIsSmaller
-              simp [Tree.member, t_mem]
-            specialize ih t.height
-            simp [t_mem, ← ih height_t rfl, Except.not_equal_ok_unit]
-            use s
-          · rename_i e u h
-            rw [List.mapExceptUnit_iff] at h
-            simp
+        · rename_i e u h
+          rw [checkRuleMatchOkIffExistsRule] at h
+          simp only [emptyL, false_and, or_false]
+          have height : ∀ (t: Tree (GroundAtom τ)), t ∈ l → t.height < n := by
+            simp only [← h_t]
+            intro t ht
+            apply Tree.heightOfMemberIsSmaller
+            simp only [Tree.member]
+            exact ht
+          constructor
+          · intro h'
+            rcases h with ⟨r, g, rP, hg⟩
             use r
             refine And.intro rP (And.intro (by use g) ?_)
-            rw [List.forall_iff_forall_mem]
-            simp only [List.mem_attach, forall_const, Subtype.forall]
-            intro t t_mem
-            specialize ih t.height
-            have height_t: t.height < n := by
-              rw [← h_t]
-              apply Tree.heightOfMemberIsSmaller
-              unfold Tree.member
-              simp [t_mem]
-            simp only [List.mem_attach, forall_const, Subtype.forall] at h
-            specialize h t t_mem
-            rw [ih height_t rfl] at h
-            exact h
+            simp only [List.forall_iff_forall_mem, List.mem_attach, forall_const, Subtype.forall]
+            simp only [List.mapExceptUnit_iff, List.mem_attach, forall_const, Subtype.forall] at h'
+            intro t ht
+            specialize ih t.height (height t ht) rfl
+            rw [← ih]
+            exact h' t ht
+          · intro h'
+            simp only [List.mapExceptUnit_iff, List.mem_attach, forall_const, Subtype.forall]
+            intro t ht
+            rw [ih t.height (height t ht) rfl]
+            rcases h' with ⟨_, _, _, h'⟩
+            simp only [List.forall_iff_forall_mem, List.mem_attach, forall_const,
+              Subtype.forall] at h'
+            exact h' t ht
 
   def checkValidityOfList (l: List (ProofTreeSkeleton τ)) (kb : KnowledgeBase τ) : Except String Unit :=
     let m := kb.prog.toSymbolSequenceMap
