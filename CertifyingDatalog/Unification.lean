@@ -28,31 +28,46 @@ section TermMatching
           simp at p
       · simp [v'_v]
 
+    lemma extend_subset_self [DecidableEq τ.vars] {s: Substitution τ} {v: τ.vars} {c: τ.constants} (p: s v = some c): s ⊆ extend s v c := by
+      unfold extend
+      unfold_projs
+      unfold subset
+      intro v'
+      simp only
+      intro h
+      by_cases v'_v: v' = v
+      · simp only [v'_v, ↓reduceIte]
+        exact p
+      · simp [v'_v]
+
     def matchTerm [DecidableEq τ.vars] [DecidableEq τ.constants] (s: Substitution τ) (t: Term τ) (c: τ.constants) : Option (Substitution τ) :=
       match t with
       | .constant c' => if c = c' then Option.some s else Option.none
-      | .variableDL v => match s v with
-        | .some c' => if c = c' then Option.some s else Option.none
-        | .none => s.extend v c
+      | .variableDL v =>
+        (some (extend s v c)).filter (fun s' => (s v).isSome → s v = s' v)
 
     lemma matchTermSubset [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : s ⊆ ((s.matchTerm t c).get h) := by
-      unfold matchTerm
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+        Option.bnot_isSome] at h ⊢
       cases t with
       | constant c' =>
-        simp
+        simp only [Option.get_ite]
         apply Substitution.subset_refl
       | variableDL v =>
-        cases eq : (s v) with
-        | none =>
-          simp [eq]
+        simp [Option.isSome_iff_exists] at h
+        cases h with
+        | inl h =>
+          simp only [h, Option.isNone_none, Bool.true_or, Option.filter_true, Option.get_some]
           apply extend_subset
-          simp [eq]
-        | some c' =>
-          simp [eq]
-          apply Substitution.subset_refl
+          simp [h]
+        | inr h =>
+          simp [h, Option.filter]
+          simp [extend] at h
+          apply extend_subset_self h
 
     lemma matchTermYieldsSubs [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : ((s.matchTerm t c).get h).applyTerm t = c := by
-      unfold matchTerm
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+        Option.bnot_isSome] at h ⊢
       cases t with
       | constant c' =>
         simp only [Option.get_ite]
@@ -62,77 +77,72 @@ section TermMatching
           unfold applyTerm
           simp
         | inr neq =>
-          unfold matchTerm at h
           simp [neq] at h
       | variableDL v =>
-        cases eq : (s v) with
-        | none =>
-          simp only [eq, Option.get_some]
-          unfold applyTerm
-          unfold extend
-          simp
-        | some c' =>
-          simp only [eq, Option.get_ite]
-          cases Decidable.em (c = c') with
-          | inl eq2 =>
-            simp only [eq2]
-            unfold applyTerm
-            simp [eq]
-          | inr neq =>
-            unfold matchTerm at h
-            simp [eq, neq] at h
+        simp [Option.filter, extend, applyTerm] at h ⊢
 
     lemma matchTermIsMinimal [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyTerm t = c -> ((s.matchTerm t c).get h) ⊆ s' := by
       intro s' ⟨subset, apply_t⟩
-      unfold matchTerm
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+        Option.bnot_isSome] at h ⊢
       cases t with
       | constant c' =>
         simp only [Option.get_ite]
         apply subset
       | variableDL v =>
-        cases eq2 : (s v) with
-        | some c' =>
-          simp only [eq2, Option.get_ite]
-          apply subset
-        | none =>
-          simp only [eq2, Option.get_some]
-          unfold extend
+        simp only [Option.filter, Bool.or_eq_true, Option.isNone_iff_eq_none, decide_eq_true_eq,
+          Option.isSome_ite, Option.get_ite] at h ⊢
+        cases h with
+        | inl h =>
           unfold_projs
-          unfold Substitution.subset
-          intro v' v'_dom
-          by_cases h': (v' = v)
-          · simp only [h', ↓reduceIte]
-            unfold applyTerm at apply_t
-            simp only at apply_t
-            cases eq3 : s' v with
-            | none => simp [eq3] at apply_t
-            | some c' => simp [eq3] at apply_t; rw [apply_t]
-          · simp only [h', ↓reduceIte]
+          simp only [Substitution.subset, domain, extend, Set.mem_setOf_eq]
+          intro v'
+          by_cases v_v': v' = v
+          · simp only [v_v', ↓reduceIte, Option.isSome_some, forall_const]
+            simp only [applyTerm] at apply_t
+            split at apply_t
+            · rename_i o c' hc'
+              simp only [v_v', hc', Option.some.injEq]
+              simp only [Term.constant.injEq] at apply_t
+              exact apply_t.symm
+            · simp at apply_t
+          · simp only [v_v', ↓reduceIte]
             apply subset
-            unfold domain at v'_dom
-            simp only [Set.mem_setOf_eq, h', ↓reduceIte] at v'_dom
-            unfold domain
-            simp only [Set.mem_setOf_eq]
-            exact v'_dom
+        | inr h =>
+          unfold_projs
+          simp only [Substitution.subset, domain, extend, Set.mem_setOf_eq]
+          intro v'
+          by_cases v_v': v' = v
+          · simp only [v_v', ↓reduceIte, Option.isSome_some, forall_const]
+            simp only [extend, ↓reduceIte] at h
+            apply Eq.symm
+            apply subset_some _ _ subset _ _ h
+          · simp only [v_v', ↓reduceIte, Option.isSome_iff_exists, forall_exists_index]
+            intro c' h'
+            simp only [h', Eq.comm]
+            apply subset_some _ _ subset _ _ h'
+
 
     lemma matchTermNoneThenNoSubs [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ}{c: τ.constants} (h : (s.matchTerm t c) = none) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyTerm t ≠ c := by
       intro s' subset apply_t
-      unfold matchTerm at h
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+        Option.bnot_isSome] at h
       cases t with
       | constant c' =>
         unfold applyTerm at apply_t
         simp only [Term.constant.injEq] at apply_t
         simp [apply_t] at h
       | variableDL v =>
-        simp only [Option.isNone_iff_eq_none] at h
-        cases eq : (s v) with
-        | none => simp [eq] at h
-        | some c' =>
-          simp only [eq, ite_eq_right_iff, reduceCtorEq, imp_false] at h
-          have : s.applyTerm (Term.variableDL v) = Term.constant c' := by unfold applyTerm; simp [eq]
-          rw [subset_applyTerm_eq subset this] at apply_t
-          injection apply_t with apply_t
-          simp [apply_t] at h
+        simp only [Option.filter_eq_none, reduceCtorEq, Option.mem_def, Option.some.injEq,
+          Bool.or_eq_true, Option.isNone_iff_eq_none, decide_eq_true_eq, not_or,
+          Option.ne_none_iff_exists, forall_eq', extend, ↓reduceIte, false_or] at h
+        rcases h with ⟨hl, hr⟩
+        rcases hl with ⟨c', hc'⟩
+        simp only [← hc', Option.some.injEq] at hr
+        have:= subset_some _ _ subset _ _ (Eq.symm hc')
+        simp only [applyTerm, this, Term.constant.injEq] at apply_t
+        contradiction
+
   end Substitution
 end TermMatching
 
