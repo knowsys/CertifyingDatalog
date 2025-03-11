@@ -23,6 +23,21 @@ namespace List
       | ok u => simp [eq, mapExceptUnit, ih]
       | error e => simp [eq, mapExceptUnit]
 
+  lemma mapExceptUnit_error {l: List A} {f: A → Except B Unit} {b : B}
+    (h: mapExceptUnit l f = Except.error b) : ∃ a ∈ l, f a = Except.error b := by
+  induction l with
+  | nil => simp[mapExceptUnit] at h
+  | cons hd tl ih =>
+    simp only [mapExceptUnit] at h
+    split at h
+    · rename_i h
+      simp
+      right
+      apply ih h
+    · rename_i e b h'
+      use hd
+      simp [h', h]
+
   def mapExcept.go (f: A → Except B C) (l: List A) (curr: List C): Except B (List C) :=
     match l with
     | nil => Except.ok curr

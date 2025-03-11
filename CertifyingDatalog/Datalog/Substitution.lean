@@ -352,13 +352,13 @@ namespace Grounding
 
   def toSubstitution (g: Grounding τ): Substitution τ := fun t => Option.some (g t)
 
-  lemma toSubsitution_applyTerm_eq {g: Grounding τ} {t: Term τ}: g.applyTerm' t = g.toSubstitution.applyTerm t := by
+  lemma toSubstitution_applyTerm_eq {g: Grounding τ} {t: Term τ}: g.applyTerm' t = g.toSubstitution.applyTerm t := by
     unfold applyTerm'
     unfold toSubstitution
     unfold Substitution.applyTerm
     cases t <;> simp
 
-  lemma toSubsitution_applyAtom_eq {a: Atom τ} {g: Grounding τ}: g.applyAtom' a = g.toSubstitution.applyAtom a := by
+  lemma toSubstitution_applyAtom_eq {a: Atom τ} {g: Grounding τ}: g.applyAtom' a = g.toSubstitution.applyAtom a := by
     rw [Atom.ext_iff]
     unfold applyAtom'
     unfold Substitution.applyAtom
@@ -369,9 +369,9 @@ namespace Grounding
     · unfold GroundAtom.toAtom
       simp only [List.map_map, List.map_inj_left, Function.comp_apply]
       intros
-      rw [toSubsitution_applyTerm_eq]
+      rw [toSubstitution_applyTerm_eq]
 
-  lemma toSubsitution_applyRule_eq {r: Rule τ} {g: Grounding τ} : g.applyRule' r = g.toSubstitution.applyRule r := by
+  lemma toSubstitution_applyRule_eq {r: Rule τ} {g: Grounding τ} : g.applyRule' r = g.toSubstitution.applyRule r := by
     simp only
     unfold applyRule'
     unfold Substitution.applyRule
@@ -379,10 +379,10 @@ namespace Grounding
     rw [Rule.ext_iff]
     constructor
     · simp only
-      apply toSubsitution_applyAtom_eq
+      apply toSubstitution_applyAtom_eq
     · simp only [List.map_map, List.map_inj_left, Function.comp_apply]
       intros
-      rw [toSubsitution_applyAtom_eq]
+      rw [toSubstitution_applyAtom_eq]
 end Grounding
 
 theorem grounding_substitution_equiv {τ: Signature} [DecidableEq τ.vars] [Inhabited τ.constants] {r: GroundRule τ} {r': Rule τ}: (∃ (g: Grounding τ), g.applyRule' r' = r) ↔ (∃ (s: Substitution τ), s.applyRule r'= r) :=
@@ -393,7 +393,7 @@ theorem grounding_substitution_equiv {τ: Signature} [DecidableEq τ.vars] [Inha
       rcases h with ⟨g, g_prop⟩
       use g.toSubstitution
       rw [← g_prop]
-      simp [Grounding.toSubsitution_applyRule_eq]
+      simp [Grounding.toSubstitution_applyRule_eq]
     · intro h
       rcases h with ⟨s, s_prop⟩
       use s.toGrounding
