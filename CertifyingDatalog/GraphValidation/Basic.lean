@@ -8,15 +8,15 @@ variable (A) in abbrev PreGraph := Std.HashMap A (List A)
 namespace PreGraph
 
   def vertices (g : PreGraph A) : List A := g.keys
-  def preds (g : PreGraph A) (a : A) : List A := g.getD a []
+  def predecessors (g : PreGraph A) (a : A) : List A := g.getD a []
 
-  def complete (g: PreGraph A) := ∀ a ∈ g, (g.preds a).all fun x => x ∈ g
+  def complete (g: PreGraph A) := ∀ a ∈ g, (g.predecessors a).all fun x => x ∈ g
   theorem in_vertices_iff_mem {pg: PreGraph A} {a : A} : a ∈ pg.vertices ↔ a ∈ pg := by
     unfold vertices
     rw [Std.HashMap.mem_keys, Std.HashMap.mem_iff_contains]
 
-  theorem in_predecessors_iff_found {pg: PreGraph A} {a : A} : ∀ b, b ∈ pg.preds a ↔ b ∈ (pg.getD a []) := by
-    unfold preds; intros; rfl
+  theorem in_predecessors_iff_found {pg: PreGraph A} {a : A} : ∀ b, b ∈ pg.predecessors a ↔ b ∈ (pg.getD a []) := by
+    unfold predecessors; intros; rfl
 
   def from_vertices (vs : List A) : PreGraph A := Std.HashMap.ofList (vs.map (fun v => (v, [])))
 
@@ -120,7 +120,7 @@ namespace PreGraph
           simp [← eq, h]
 
   def add_vertex_with_predecessors (pg : PreGraph A) (v : A) (vs : List A) : PreGraph A :=
-    let pg_with_added_predecessors := if v ∈ pg then pg.insert v ((pg.preds v) ++ vs) else pg.insert v vs
+    let pg_with_added_predecessors := if v ∈ pg then pg.insert v ((pg.predecessors v) ++ vs) else pg.insert v vs
     PreGraph.add_vertices pg_with_added_predecessors vs
 
   theorem mem_from_vertices_iff_mem (vs : List A) : ∀ v, v ∈ (PreGraph.from_vertices vs).vertices ↔ v ∈ vs := by
@@ -150,7 +150,7 @@ namespace PreGraph
       intro v
       apply from_vertices_no_vertex_has_predecessors
     intro a ha
-    simp [List.all_eq_true, decide_eq_true_eq, preds, this a]
+    simp [List.all_eq_true, decide_eq_true_eq, predecessors, this a]
 
   theorem mem_add_vertex_with_predecessors_iff_mem_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, a ∈ (pg.add_vertex_with_predecessors v vs) ↔ (a ∈ pg ∧ a = v) ∨ (a ∈ pg ∧ a ≠ v) ∨ ((¬ a ∈ pg) ∧ a = v) ∨ ((¬ a ∈ pg) ∧ a ≠ v ∧ a ∈ vs) := by
     unfold add_vertex_with_predecessors
@@ -299,14 +299,14 @@ namespace PreGraph
                 | inr contra => have contra' := hlr.left; contradiction
               · apply hlr.right.right
 
-  theorem add_vertex_with_predecessors_getD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : a ∈ pg ∧ a = v) : (pg.add_vertex_with_predecessors v vs).getD a [] = (pg.preds v) ++ vs := by
+  theorem add_vertex_with_predecessors_getD_semantics_1 (pg : PreGraph A) (v a : A) (vs : List A) (h : a ∈ pg ∧ a = v) : (pg.add_vertex_with_predecessors v vs).getD a [] = (pg.predecessors v) ++ vs := by
     unfold add_vertex_with_predecessors
     simp only
     rw [add_vertices_getD_semantics]
     rw [← h.right]
     simp [h.left]
 
-  theorem add_vertex_with_predecessors_getD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : a ∈ pg ∧ a ≠ v) : (pg.add_vertex_with_predecessors v vs).getD a [] = (pg.preds a) := by
+  theorem add_vertex_with_predecessors_getD_semantics_2 (pg : PreGraph A) (v a : A) (vs : List A) (h : a ∈ pg ∧ a ≠ v) : (pg.add_vertex_with_predecessors v vs).getD a [] = (pg.predecessors a) := by
     unfold add_vertex_with_predecessors
     simp only
     rw [add_vertices_getD_semantics]
@@ -315,12 +315,12 @@ namespace PreGraph
       simp [beq_iff_eq]
       split
       · case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
-      · simp [preds]
+      · simp [predecessors]
     · rw [Std.HashMap.getD_insert]
       simp only [beq_iff_eq]
       split
       · case isTrue eq => have h_right := h.right; rw [eq] at h_right; contradiction
-      · simp [preds]
+      · simp [predecessors]
 
   theorem add_vertex_with_predecessors_getD_semantics_3 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ a ∈ pg) ∧ a = v) : (pg.add_vertex_with_predecessors v vs).getD a [] = vs := by
     unfold add_vertex_with_predecessors
@@ -350,7 +350,7 @@ namespace PreGraph
 
   theorem add_vertex_with_predecessors_still_complete (pg : PreGraph A) (v : A) (vs : List A) (pg_is_complete : pg.complete) : (pg.add_vertex_with_predecessors v vs).complete := by
     simp [complete] at pg_is_complete
-    simp [complete, preds]
+    simp [complete, predecessors]
     intro a ha
     rw [mem_add_vertex_with_predecessors_iff_mem_or_in_new_vertices] at ha
     intro a' ha'
@@ -402,7 +402,7 @@ variable (A) in abbrev Graph := { pg : PreGraph A // pg.complete }
 
 namespace Graph
   def vertices (g : Graph A) : List A := g.val.vertices
-  def predecessors (g : Graph A) (a : A) : List A := g.val.preds a
+  def predecessors (g : Graph A) (a : A) : List A := g.val.predecessors a
 
   theorem complete (g : Graph A) : ∀ (a:A), a ∈ g.vertices →  ∀ (a':A), a' ∈ g.predecessors a → a' ∈ g.vertices := by
     intro a ha b hb
