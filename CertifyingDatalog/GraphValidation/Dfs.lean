@@ -402,10 +402,10 @@ section Dfs
               rw [← verifiedAfterIsResult] at node_contained
               rw [HashSet.contains_insert] at node_contained
 
-              let extendWalkToA (c : A) (c_pred : c ∈ G.predecessors a) : {w : Walk G // w.val.head? = some c} := ⟨walkFromA.val.prependPredecessor c (by unfold Walk.predecessors; simp [walkFromA.prop]; exact c_pred), by (unfold Walk.prependPredecessor; simp)⟩
+              let extendwalkFromA (c : A) (c_pred : c ∈ G.predecessors a) : {w : Walk G // w.val.head? = some c} := ⟨walkFromA.val.prependPredecessor c (by unfold Walk.predecessors; simp [walkFromA.prop]; exact c_pred), by (unfold Walk.prependPredecessor; simp)⟩
 
               let foldl_f : HashSet A -> {c : A // c ∈ G.predecessors a} -> Except String (HashSet A) := (fun b pred =>
-                  verify_via_dfs_step pred.1 G cond (extendWalkToA pred.val pred.prop) b
+                  verify_via_dfs_step pred.1 G cond (extendwalkFromA pred.val pred.prop) b
                 )
 
               have foldl_preserves := (G.predecessors a).attach.foldl_except_preserves_prop foldl_f (Except.ok verifiedNodes)
