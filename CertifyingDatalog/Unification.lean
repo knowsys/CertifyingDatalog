@@ -3,8 +3,6 @@ import CertifyingDatalog.Datalog
 section TermMatching
   variable {τ: Signature}
 
-  set_option pp.universes true
-
   namespace Substitution
     def extend [DecidableEq τ.vars] (s: Substitution τ) (v: τ.vars) (c: τ.constants) : Substitution τ := fun x => if x = v then Option.some c else s x
 
