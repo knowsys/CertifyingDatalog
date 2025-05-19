@@ -1,10 +1,9 @@
 import CertifyingDatalog.Basic
 
 section Basic
-  -- TODO: using different universes for constants and vars causes problems for some reason...
   structure Signature where
     (constants: Type u)
-    (vars: Type u)
+    (vars: Type v)
     (relationSymbols: Type w)
     (relationArity: relationSymbols → ℕ)
 
