@@ -1,5 +1,6 @@
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Finset.Basic
+import Mathlib.Algebra.Group.Defs
 
 namespace List
   def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := l.toFinset.toSet
@@ -410,3 +411,319 @@ namespace List
     rw [List.getLast_eq_getElem]
     simp [this]
 end List
+
+
+section dedup
+  variable {A : Type u} [DecidableEq A]
+
+  def List.drop_until (l : List A) (a : A) : List A :=
+    match l with
+    | [] => []
+    | hd :: tl =>
+      if a = hd
+      then hd :: tl
+      else List.drop_until tl a
+
+  theorem List.drop_until_length {l : List A} {a : A} : (List.drop_until l a).length ≤ l.length := by
+    induction l with
+    | nil => simp [drop_until]
+    | cons hd tl ih =>
+      simp only [drop_until, List.length_cons]
+      split
+      · simp
+      · omega
+
+  theorem List.drop_until_length_lt_length_add_one_of_mem {l : List A} {a : A} (h : a ∈ l):
+      (List.drop_until l a).length < l.length + 1 := by
+    induction l with
+    | nil => simp at h
+    | cons hd tl ih =>
+      simp only [drop_until, List.length_cons]
+      split
+      · simp
+      · rename_i h'
+        simp only [List.mem_cons, h', false_or] at h
+        specialize ih h
+        omega
+
+  theorem List.drop_until_not_eq_nil_of_mem {l : List A} {a : A} (h : a ∈ l) : ¬ List.drop_until l a = [] := by
+    induction l with
+    | nil => simp at h
+    | cons hd tl ih =>
+      simp only [drop_until]
+      split
+      · simp
+      · rename_i h'
+        simp only [List.mem_cons, h', false_or] at h
+        apply ih h
+
+  theorem List.drop_until_head_of_mem {l : List A} {a : A} (h : a ∈ l) :
+      (List.drop_until l a).head (drop_until_not_eq_nil_of_mem h) = a := by
+    induction l with
+    | nil => simp at h
+    | cons hd tl ih =>
+      simp only [drop_until]
+      split
+      · simp [*]
+      · rename_i h'
+        simp only [List.mem_cons, h', false_or] at h
+        apply ih h
+
+  theorem List.drop_until_getLast_of_mem {l : List A} {a : A} (h : a ∈ l) :
+      (List.drop_until l a).getLast (drop_until_not_eq_nil_of_mem h) = l.getLast (List.ne_nil_of_mem h) := by
+    induction l with
+    | nil => simp at h
+    | cons hd tl ih =>
+      simp only [drop_until]
+      split
+      · simp [*]
+      · rename_i h'
+        simp only [List.mem_cons, h', false_or] at h
+        rw [List.getLast_cons (List.ne_nil_of_mem h)]
+        apply ih h
+
+  theorem List.drop_until_not_mem_preserved {l : List A} {a b: A} (h : ¬ a ∈ l) :
+      ¬ a ∈ List.drop_until l b := by
+    induction l with
+    | nil => simp [drop_until]
+    | cons hd tl ih =>
+      simp [drop_until]
+      split
+      · exact h
+      · apply ih
+        simp at h
+        exact h.2
+
+  def List.walk_dedup (l : List A) : List A :=
+    match l with
+    | [] => []
+    | (hd :: tl) =>
+      if hd ∈ tl
+      then List.walk_dedup (List.drop_until tl hd)
+      else hd :: (List.walk_dedup tl)
+  termination_by l.length
+  decreasing_by
+    · simp only [List.length_cons, gt_iff_lt]
+      have := @ List.drop_until_length _ _ tl hd
+      omega
+    · simp
+
+  theorem List.walk_dedup_not_mem_preserved {l : List A} {a : A} (h : ¬ a ∈ l) :
+      ¬ a ∈ List.walk_dedup l := by
+    induction' h':l.length using Nat.strong_induction_on generalizing l
+    rename_i n ih
+    cases n with
+    | zero =>
+      simp only [List.length_eq_zero] at h'
+      simp [h', walk_dedup]
+    | succ m =>
+      have := List.exists_of_length_succ _ h'
+      rcases this with ⟨hd, tl, hl'⟩
+      rw [hl'] at h ⊢
+      simp only [walk_dedup]
+      simp only [List.mem_cons, not_or] at h
+      simp only [hl', List.length_cons, Nat.add_right_cancel_iff] at h'
+      rw [← h'] at ih
+      split
+      · rename_i mem
+        have := List.drop_until_length_lt_length_add_one_of_mem mem
+        specialize ih (drop_until tl hd).length this
+        · exact (drop_until tl hd)
+        · apply ih
+          · apply drop_until_not_mem_preserved h.2
+          · rfl
+      · simp [h]
+        specialize ih m (by simp [h'])
+        · exact tl
+        · specialize ih h.2
+          apply ih h'
+
+  theorem List.walk_dedup_not_empty_iff {l : List A} : List.walk_dedup l ≠ [] ↔ l ≠ [] := by
+    induction' h:l.length using Nat.strong_induction_on generalizing l
+    rename_i n ih
+    cases n with
+    | zero =>
+      simp only [List.length_eq_zero] at h
+      simp [h, walk_dedup]
+    | succ m =>
+      have := List.exists_of_length_succ _ h
+      rcases this with ⟨hd, tl, h'⟩
+      simp only [h', ne_eq, reduceCtorEq, not_false_eq_true, iff_true]
+      simp only [walk_dedup]
+      split
+      · rename_i mem
+        specialize ih (drop_until tl hd).length
+        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
+        rw [← h] at ih
+        specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
+        · exact drop_until tl hd
+        · simp only [ne_eq, forall_const] at ih
+          rw [ih]
+          apply drop_until_not_eq_nil_of_mem mem
+      · simp
+
+  theorem List.walk_dedup_head_eq_head {l : List A} (hl : l ≠ []) :
+      List.head (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.head hl := by
+    induction' h:l.length using Nat.strong_induction_on generalizing l
+    rename_i n ih
+    cases n with
+    | zero =>
+      simp only [List.length_eq_zero] at h
+      contradiction
+    | succ m =>
+      have := List.exists_of_length_succ _ h
+      rcases this with ⟨hd, tl, h'⟩
+      simp only [h', walk_dedup, List.head_cons]
+      simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
+      split
+      · rename_i mem
+        specialize ih (drop_until tl hd).length
+        rw [← h] at ih
+        specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
+        · exact drop_until tl hd
+        · simp only [ne_eq, forall_const] at ih
+          specialize ih (drop_until_not_eq_nil_of_mem mem)
+          rw [ih, drop_until_head_of_mem mem]
+      · simp
+
+  theorem List.walk_dedup_getLast_eq_getLast {l : List A} (hl : l ≠ []) :
+      List.getLast (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.getLast hl := by
+    induction' h:l.length using Nat.strong_induction_on generalizing l
+    rename_i n ih
+    cases n with
+    | zero =>
+      simp only [List.length_eq_zero] at h
+      contradiction
+    | succ m =>
+      have := List.exists_of_length_succ _ h
+      rcases this with ⟨hd, tl, h'⟩
+      simp only [h', walk_dedup, List.head_cons]
+      simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
+      split
+      · rename_i mem
+        specialize ih (drop_until tl hd).length
+        rw [← h] at ih
+        specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
+        · exact drop_until tl hd
+        · simp only [ne_eq, forall_const] at ih
+          specialize ih (drop_until_not_eq_nil_of_mem mem)
+          rw [ih, drop_until_getLast_of_mem mem]
+          cases tl with
+          | nil => simp at mem
+          | cons hd' tl' => simp
+      · by_cases htl : tl = []
+        · simp [htl, walk_dedup]
+        · rw [List.getLast_cons]
+          specialize ih m (by omega)
+          · exact tl
+          · specialize ih htl h
+            rw [ih, List.getLast_cons]
+
+  theorem List.nodup_walk_dedup (l : List A) : List.Nodup (List.walk_dedup l) := by
+    induction' h:l.length using Nat.strong_induction_on generalizing l
+    rename_i n ih
+    cases n with
+    | zero =>
+      simp at h
+      rw [h]
+      simp [walk_dedup]
+    | succ m =>
+      have := List.exists_of_length_succ _ h
+      rcases this with ⟨hd, tl, h'⟩
+      simp [h'] at h ⊢
+      simp [walk_dedup]
+      split
+      · rename_i mem
+        have := List.drop_until_length_lt_length_add_one_of_mem mem
+        rw [← h] at ih
+        exact ih (drop_until tl hd).length this (drop_until tl hd) rfl
+      · simp
+        constructor
+        · apply walk_dedup_not_mem_preserved
+          assumption
+        · exact ih m (by simp) tl h
+
+  theorem List.length_le_length_of_nodup_subset {l1 l2 : List A} (h1 : l1 ⊆ l2) (h2 : List.Nodup l1) :
+      l1.length ≤ l2.length := by
+    induction l1 generalizing l2 with
+    | nil => simp
+    | cons hd tl ih =>
+      simp at h1
+      simp at h2
+      have subset : tl ⊆ (l2.erase hd) := by
+        simp [List.subset_def]
+        intro a mem
+        have ha : ¬ a = hd := by
+          by_contra p
+          rw [p] at mem
+          simp [mem] at h2
+        simp [ha]
+        rw [List.subset_def] at h1
+        apply h1.right mem
+      specialize ih subset (And.right h2)
+      simp
+      simp [List.length_erase] at ih
+      split at ih
+      · rename_i mem
+        rw [← Nat.succ_le_succ_iff] at ih
+        have hl2 : 1 ≤ l2.length := by
+          cases l2 with
+          | nil => simp at mem
+          | cons hd' tl' => simp
+        omega
+      · rename_i mem
+        simp [mem] at h1
+
+end dedup
+
+section generateAll
+  variable {A : Type u} [DecidableEq A]
+
+  --suggested by Eric Wieser on zulip
+  def generateAll (l : List A) (n : ℕ) : List (List A) :=
+  match n with
+  | 0 => [[]]
+  | n + 1 =>
+    let last := generateAll l n
+    [] :: l.flatMap fun x => last.map fun ls => x :: ls
+
+  theorem generateAll_iff (l l': List A) (n : ℕ):
+      l' ∈ generateAll l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
+    induction n generalizing l' with
+    | zero =>
+      simp only [generateAll, List.mem_cons, List.not_mem_nil, or_false, Nat.le_zero_eq,
+        List.length_eq_zero, iff_self_and]
+      intro h x hx
+      simp [h] at hx
+    | succ m ih =>
+      simp only [generateAll, List.mem_cons, List.mem_flatMap, List.mem_map, Nat.le_succ_iff,
+        Nat.succ_eq_add_one]
+      constructor
+      · intro h
+        cases h with
+        | inl h =>
+          simp [h]
+        | inr h =>
+          rcases h with ⟨hd, hhd, tl, htl, h⟩
+          rw [ih] at htl
+          simp only [← h, List.length_cons, add_left_inj, List.mem_cons, forall_eq_or_imp]
+          constructor
+          · omega
+          · simp [hhd]
+            apply htl.2
+      · intro h
+        rcases h with ⟨h1, h2⟩
+        by_cases h' : l' = []
+        · simp [h']
+        · simp only [h', false_or]
+          use l'.head h'
+          apply And.intro (h2 (l'.head h') (by simp))
+          use l'.tail
+          rw [ih]
+          simp only [List.length_tail, Nat.sub_le_iff_le_add, List.head_cons_tail, and_true]
+          constructor
+          · omega
+          · intro x hx
+            apply h2 x (List.mem_of_mem_tail hx)
+
+end generateAll
