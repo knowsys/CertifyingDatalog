@@ -4,7 +4,413 @@ variable {A: Type u} [DecidableEq A] [Hashable A]
 
 def List.isWalk (l : List A) (G: Graph A) : Prop := (∀ (a:A), a ∈ l → a ∈ G.vertices) ∧ ∀ i > 0, ∀ (g: i < l.length), l[i.pred]'(Nat.pred_lt_of_lt' i l.length g) ∈ G.predecessors l[i]
 
+def List.isWalk_computable (l : List A) (G: Graph A) : Bool :=  l ⊆ G.vertices ∧
+  (List.range l.length).attach.all fun ⟨x, h⟩ =>
+    if 0 < x
+    then
+      l[x.pred]'(by simp at h; exact Nat.pred_lt_of_lt' x l.length h) ∈ G.predecessors (l[x]'(by simp at h; exact h))
+    else true
+
+theorem List.isWalk_iff_isWalk_computable_eq_true (l : List A) (G: Graph A) :
+    l.isWalk G ↔ l.isWalk_computable G = true := by
+  simp only [isWalk, gt_iff_lt, Nat.pred_eq_sub_one, isWalk_computable, Bool.if_true_right,
+    all_eq_true, mem_attach, Bool.or_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true,
+    decide_eq_false_iff_not, not_lt, Nat.le_zero_eq, decide_eq_true_eq, forall_const,
+    Subtype.forall, mem_range, Bool.decide_and, Bool.and_eq_true]
+  rw [List.subset_def]
+  constructor
+  · intro h
+    constructor
+    · apply h.1
+    · have := h.2
+      intro i hi
+      by_cases h' : 0 < i
+      · right
+        apply this i h' hi
+      · omega
+  · intro h
+    constructor
+    · intro a ha
+      apply h.1 ha
+    · intro i hi1 hi2
+      have := h.2
+      specialize this i hi2
+      have not_zero : ¬ i = 0 := by omega
+      simp only [not_zero, false_or] at this
+      exact this
+
+instance (G : Graph A) (l : List A) : Decidable (List.isWalk l G) :=
+  decidable_of_bool (List.isWalk_computable l G) (Iff.symm (List.isWalk_iff_isWalk_computable_eq_true l G))
+
 def Walk (G : Graph A) := {l : List A // l.isWalk G}
+
+section dedup
+    def List.drop_until (l : List A) (a : A) : List A :=
+      match l with
+      | [] => []
+      | hd :: tl =>
+        if a = hd
+        then hd :: tl
+        else List.drop_until tl a
+
+    omit [Hashable A] in
+    theorem List.drop_until_length {l : List A} {a : A} : (List.drop_until l a).length ≤ l.length := by
+      induction l with
+      | nil => simp [drop_until]
+      | cons hd tl ih =>
+        simp only [drop_until, List.length_cons]
+        split
+        · simp
+        · omega
+
+    omit [Hashable A] in
+    theorem List.drop_until_length_lt_length_add_one_of_mem {l : List A} {a : A} (h : a ∈ l):
+        (List.drop_until l a).length < l.length + 1 := by
+      induction l with
+      | nil => simp at h
+      | cons hd tl ih =>
+        simp only [drop_until, List.length_cons]
+        split
+        · simp
+        · rename_i h'
+          simp only [List.mem_cons, h', false_or] at h
+          specialize ih h
+          omega
+
+    omit [Hashable A] in
+    theorem List.drop_until_not_eq_nil_of_mem {l : List A} {a : A} (h : a ∈ l) : ¬ List.drop_until l a = [] := by
+      induction l with
+      | nil => simp at h
+      | cons hd tl ih =>
+        simp only [drop_until]
+        split
+        · simp
+        · rename_i h'
+          simp only [List.mem_cons, h', false_or] at h
+          apply ih h
+
+    omit [Hashable A] in
+    theorem List.drop_until_head_of_mem {l : List A} {a : A} (h : a ∈ l) :
+        (List.drop_until l a).head (drop_until_not_eq_nil_of_mem h) = a := by
+      induction l with
+      | nil => simp at h
+      | cons hd tl ih =>
+        simp only [drop_until]
+        split
+        · simp [*]
+        · rename_i h'
+          simp only [List.mem_cons, h', false_or] at h
+          apply ih h
+
+    omit [Hashable A] in
+    theorem List.drop_until_getLast_of_mem {l : List A} {a : A} (h : a ∈ l) :
+        (List.drop_until l a).getLast (drop_until_not_eq_nil_of_mem h) = l.getLast (List.ne_nil_of_mem h) := by
+      induction l with
+      | nil => simp at h
+      | cons hd tl ih =>
+        simp only [drop_until]
+        split
+        · simp [*]
+        · rename_i h'
+          simp only [List.mem_cons, h', false_or] at h
+          rw [List.getLast_cons (List.ne_nil_of_mem h)]
+          apply ih h
+
+    theorem List.drop_until_isWalk_of_isWalk {G : Graph A} {l : List A} {a : A} (h : l.isWalk G) :
+        (List.drop_until l a).isWalk G := by
+      induction l with
+      | nil => simp [drop_until, h]
+      | cons hd tl ih =>
+        simp [drop_until]
+        split
+        · exact h
+        · apply ih
+          simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+            Nat.pred_eq_sub_one] at h ⊢
+          rcases h with ⟨h1, h2⟩
+          apply And.intro h1.right
+          intro i hi1 hi2
+          have hi1': 0 < i +1 := by omega
+          have hi2' : i + 1 < tl.length +1 := by omega
+          specialize h2 (i+1) hi1' hi2'
+          cases i with
+          | zero => simp at hi1
+          | succ j =>
+            simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at h2 ⊢
+            exact h2
+
+    omit [Hashable A] in
+    theorem List.drop_until_not_mem_preserved {l : List A} {a b: A} (h : ¬ a ∈ l) :
+        ¬ a ∈ List.drop_until l b := by
+      induction l with
+      | nil => simp [drop_until]
+      | cons hd tl ih =>
+        simp [drop_until]
+        split
+        · exact h
+        · apply ih
+          simp at h
+          exact h.2
+
+    def List.walk_dedup (l : List A) : List A :=
+      match l with
+      | [] => []
+      | (hd :: tl) =>
+        if hd ∈ tl
+        then List.walk_dedup (List.drop_until tl hd)
+        else hd :: (List.walk_dedup tl)
+    termination_by l.length
+    decreasing_by
+      · simp only [List.length_cons, gt_iff_lt]
+        have := @ List.drop_until_length _ _ tl hd
+        omega
+      · simp
+
+    omit [Hashable A] in
+    theorem List.walk_dedup_not_mem_preserved {l : List A} {a : A} (h : ¬ a ∈ l) :
+        ¬ a ∈ List.walk_dedup l := by
+      induction' h':l.length using Nat.strong_induction_on generalizing l
+      rename_i n ih
+      cases n with
+      | zero =>
+        simp only [List.length_eq_zero] at h'
+        simp [h', walk_dedup]
+      | succ m =>
+        have := List.exists_of_length_succ _ h'
+        rcases this with ⟨hd, tl, hl'⟩
+        rw [hl'] at h ⊢
+        simp only [walk_dedup]
+        simp only [List.mem_cons, not_or] at h
+        simp only [hl', List.length_cons, Nat.add_right_cancel_iff] at h'
+        rw [← h'] at ih
+        split
+        · rename_i mem
+          have := List.drop_until_length_lt_length_add_one_of_mem mem
+          specialize ih (drop_until tl hd).length this
+          · exact (drop_until tl hd)
+          · apply ih
+            · apply drop_until_not_mem_preserved h.2
+            · rfl
+        · simp [h]
+          specialize ih m (by simp [h'])
+          · exact tl
+          · specialize ih h.2
+            apply ih h'
+
+    omit [Hashable A] in
+    theorem List.walk_dedup_not_empty_iff {l : List A} : List.walk_dedup l ≠ [] ↔ l ≠ [] := by
+      induction' h:l.length using Nat.strong_induction_on generalizing l
+      rename_i n ih
+      cases n with
+      | zero =>
+        simp only [List.length_eq_zero] at h
+        simp [h, walk_dedup]
+      | succ m =>
+        have := List.exists_of_length_succ _ h
+        rcases this with ⟨hd, tl, h'⟩
+        simp only [h', ne_eq, reduceCtorEq, not_false_eq_true, iff_true]
+        simp only [walk_dedup]
+        split
+        · rename_i mem
+          specialize ih (drop_until tl hd).length
+          simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
+          rw [← h] at ih
+          specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
+          · exact drop_until tl hd
+          · simp only [ne_eq, forall_const] at ih
+            rw [ih]
+            apply drop_until_not_eq_nil_of_mem mem
+        · simp
+
+    omit [Hashable A] in
+    theorem List.walk_dedup_head_eq_head {l : List A} (hl : l ≠ []) :
+        List.head (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.head hl := by
+      induction' h:l.length using Nat.strong_induction_on generalizing l
+      rename_i n ih
+      cases n with
+      | zero =>
+        simp only [List.length_eq_zero] at h
+        contradiction
+      | succ m =>
+        have := List.exists_of_length_succ _ h
+        rcases this with ⟨hd, tl, h'⟩
+        simp only [h', walk_dedup, List.head_cons]
+        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
+        split
+        · rename_i mem
+          specialize ih (drop_until tl hd).length
+          rw [← h] at ih
+          specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
+          · exact drop_until tl hd
+          · simp only [ne_eq, forall_const] at ih
+            specialize ih (drop_until_not_eq_nil_of_mem mem)
+            rw [ih, drop_until_head_of_mem mem]
+        · simp
+
+    omit [Hashable A] in
+    theorem List.walk_dedup_getLast_eq_getLast {l : List A} (hl : l ≠ []) :
+        List.getLast (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.getLast hl := by
+      induction' h:l.length using Nat.strong_induction_on generalizing l
+      rename_i n ih
+      cases n with
+      | zero =>
+        simp only [List.length_eq_zero] at h
+        contradiction
+      | succ m =>
+        have := List.exists_of_length_succ _ h
+        rcases this with ⟨hd, tl, h'⟩
+        simp only [h', walk_dedup, List.head_cons]
+        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
+        split
+        · rename_i mem
+          specialize ih (drop_until tl hd).length
+          rw [← h] at ih
+          specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
+          · exact drop_until tl hd
+          · simp only [ne_eq, forall_const] at ih
+            specialize ih (drop_until_not_eq_nil_of_mem mem)
+            rw [ih, drop_until_getLast_of_mem mem]
+            cases tl with
+            | nil => simp at mem
+            | cons hd' tl' => simp
+        · by_cases htl : tl = []
+          · simp [htl, walk_dedup]
+          · rw [List.getLast_cons]
+            specialize ih m (by omega)
+            · exact tl
+            · specialize ih htl h
+              rw [ih, List.getLast_cons]
+
+    theorem List.walk_dedup_isWalk {G : Graph A} (w : Walk G) : List.isWalk (List.walk_dedup w.1) G := by
+      suffices ∀ (l : List A), l.isWalk G → (List.walk_dedup l).isWalk G from this w.1 w.2
+      intro l hl
+      induction' h:l.length using Nat.strong_induction_on generalizing l
+      rename_i n ih
+      cases n with
+      | zero =>
+        simp only [List.length_eq_zero] at h
+        rw [h] at hl
+        simp [h, walk_dedup, hl]
+      | succ k =>
+        have := List.exists_of_length_succ _ h
+        rcases this with ⟨hd, tl, h'⟩
+        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
+        simp only [walk_dedup]
+        have htl : tl.isWalk G := by
+          simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+            Nat.pred_eq_sub_one] at hl ⊢
+          rcases hl with ⟨hl1, hl2⟩
+          apply And.intro hl1.right
+          intro i hi1 hi2
+          cases i with
+          | zero => simp at hi1
+          | succ j =>
+            simp only [Nat.add_one_sub_one]
+            specialize hl2 (j+2) (by omega) (by omega)
+            simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at hl2
+            exact hl2
+        split
+        · rename_i mem
+          have : (drop_until tl hd).length < k + 1 := by
+            rw [← h]
+            rw [Nat.lt_succ_iff]
+            apply drop_until_length
+          specialize ih (drop_until tl hd).length this (drop_until tl hd)
+          have walk : (drop_until tl hd).isWalk G := by
+            apply drop_until_isWalk_of_isWalk htl
+          apply ih walk rfl
+        · simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+          Nat.pred_eq_sub_one] at hl ⊢
+          specialize ih k (by omega) tl htl h
+          simp only [List.isWalk, gt_iff_lt, Nat.pred_eq_sub_one] at ih
+          apply And.intro (And.intro hl.1.1 ih.1)
+          rcases ih with ⟨_, ih⟩
+          intro i hi1 hi2
+          cases i with
+          | zero => simp at hi1
+          | succ j =>
+            cases j with
+            | zero =>
+              simp only [Nat.zero_add, List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero]
+              rcases hl with ⟨_, hl⟩
+              specialize hl 1 (by simp)
+              simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
+              have htl' : tl ≠ [] := by
+                rw [@List.length_pos_iff_ne_nil] at hi2
+                rw [walk_dedup_not_empty_iff] at hi2
+                exact hi2
+              have : 0 < tl.length := by
+                rw [@List.length_pos_iff_ne_nil]
+                apply htl'
+              specialize hl (by omega)
+              simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
+              have head_tl := walk_dedup_head_eq_head (l := tl) htl'
+              simp only [List.head_eq_getElem_zero] at head_tl
+              simp [head_tl, hl]
+            | succ m =>
+              simp only [List.getElem_cons_succ, Nat.add_one_sub_one]
+              specialize ih (m + 1) (by omega) (by omega)
+              simp only [Nat.add_one_sub_one] at ih
+              exact ih
+
+    omit [Hashable A] in
+    theorem List.nodup_walk_dedup (l : List A) : List.Nodup (List.walk_dedup l) := by
+      induction' h:l.length using Nat.strong_induction_on generalizing l
+      rename_i n ih
+      cases n with
+      | zero =>
+        simp at h
+        rw [h]
+        simp [walk_dedup]
+      | succ m =>
+        have := List.exists_of_length_succ _ h
+        rcases this with ⟨hd, tl, h'⟩
+        simp [h'] at h ⊢
+        simp [walk_dedup]
+        split
+        · rename_i mem
+          have := List.drop_until_length_lt_length_add_one_of_mem mem
+          rw [← h] at ih
+          exact ih (drop_until tl hd).length this (drop_until tl hd) rfl
+        · simp
+          constructor
+          · apply walk_dedup_not_mem_preserved
+            assumption
+          · exact ih m (by simp) tl h
+
+    omit [Hashable A] in
+    theorem List.length_le_length_of_nodup_subset {l1 l2 : List A} (h1 : l1 ⊆ l2) (h2 : List.Nodup l1) :
+        l1.length ≤ l2.length := by
+      induction l1 generalizing l2 with
+      | nil => simp
+      | cons hd tl ih =>
+        simp at h1
+        simp at h2
+        have subset : tl ⊆ (l2.erase hd) := by
+          simp [List.subset_def]
+          intro a mem
+          have ha : ¬ a = hd := by
+            by_contra p
+            rw [p] at mem
+            simp [mem] at h2
+          simp [ha]
+          rw [List.subset_def] at h1
+          apply h1.right mem
+        specialize ih subset (And.right h2)
+        simp
+        simp [List.length_erase] at ih
+        split at ih
+        · rename_i mem
+          rw [← Nat.succ_le_succ_iff] at ih
+          have hl2 : 1 ≤ l2.length := by
+            cases l2 with
+            | nil => simp at mem
+            | cons hd' tl' => simp
+          omega
+        · rename_i mem
+          simp [mem] at h1
+
+end dedup
 
 namespace Walk
   def singleton (G : Graph A) (a:A) (mem: a ∈ G.vertices) : Walk G := ⟨[a], by
@@ -395,374 +801,8 @@ namespace Walk
       rw [List.getLast_eq_getElem] at applied_takeUntil_getLast_is_target
       rw [applied_takeUntil_getLast_is_target]
 
-  section dedup
-    def List.drop_until (l : List A) (a : A) : List A :=
-      match l with
-      | [] => []
-      | hd :: tl =>
-        if a = hd
-        then hd :: tl
-        else List.drop_until tl a
-
-    omit [Hashable A] in
-    theorem List.drop_until_length {l : List A} {a : A} : (List.drop_until l a).length ≤ l.length := by
-      induction l with
-      | nil => simp [drop_until]
-      | cons hd tl ih =>
-        simp only [drop_until, List.length_cons]
-        split
-        · simp
-        · omega
-
-    omit [Hashable A] in
-    theorem List.drop_until_length_lt_length_add_one_of_mem {l : List A} {a : A} (h : a ∈ l):
-        (List.drop_until l a).length < l.length + 1 := by
-      induction l with
-      | nil => simp at h
-      | cons hd tl ih =>
-        simp only [drop_until, List.length_cons]
-        split
-        · simp
-        · rename_i h'
-          simp only [List.mem_cons, h', false_or] at h
-          specialize ih h
-          omega
-
-    omit [Hashable A] in
-    theorem List.drop_until_not_eq_nil_of_mem {l : List A} {a : A} (h : a ∈ l) : ¬ List.drop_until l a = [] := by
-      induction l with
-      | nil => simp at h
-      | cons hd tl ih =>
-        simp only [drop_until]
-        split
-        · simp
-        · rename_i h'
-          simp only [List.mem_cons, h', false_or] at h
-          apply ih h
-
-    omit [Hashable A] in
-    theorem List.drop_until_head_of_mem {l : List A} {a : A} (h : a ∈ l) :
-        (List.drop_until l a).head (drop_until_not_eq_nil_of_mem h) = a := by
-      induction l with
-      | nil => simp at h
-      | cons hd tl ih =>
-        simp only [drop_until]
-        split
-        · simp [*]
-        · rename_i h'
-          simp only [List.mem_cons, h', false_or] at h
-          apply ih h
-
-    omit [Hashable A] in
-    theorem List.drop_until_getLast_of_mem {l : List A} {a : A} (h : a ∈ l) :
-        (List.drop_until l a).getLast (drop_until_not_eq_nil_of_mem h) = l.getLast (List.ne_nil_of_mem h) := by
-      induction l with
-      | nil => simp at h
-      | cons hd tl ih =>
-        simp only [drop_until]
-        split
-        · simp [*]
-        · rename_i h'
-          simp only [List.mem_cons, h', false_or] at h
-          rw [List.getLast_cons (List.ne_nil_of_mem h)]
-          apply ih h
-
-    theorem List.drop_until_isWalk_of_isWalk {G : Graph A} {l : List A} {a : A} (h : l.isWalk G) :
-        (List.drop_until l a).isWalk G := by
-      induction l with
-      | nil => simp [drop_until, h]
-      | cons hd tl ih =>
-        simp [drop_until]
-        split
-        · exact h
-        · apply ih
-          simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-            Nat.pred_eq_sub_one] at h ⊢
-          rcases h with ⟨h1, h2⟩
-          apply And.intro h1.right
-          intro i hi1 hi2
-          have hi1': 0 < i +1 := by omega
-          have hi2' : i + 1 < tl.length +1 := by omega
-          specialize h2 (i+1) hi1' hi2'
-          cases i with
-          | zero => simp at hi1
-          | succ j =>
-            simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at h2 ⊢
-            exact h2
-
-    omit [Hashable A] in
-    theorem List.drop_until_not_mem_preserved {l : List A} {a b: A} (h : ¬ a ∈ l) :
-        ¬ a ∈ List.drop_until l b := by
-      induction l with
-      | nil => simp [drop_until]
-      | cons hd tl ih =>
-        simp [drop_until]
-        split
-        · exact h
-        · apply ih
-          simp at h
-          exact h.2
-
-    def List.walk_dedup (l : List A) : List A :=
-      match l with
-      | [] => []
-      | (hd :: tl) =>
-        if hd ∈ tl
-        then List.walk_dedup (List.drop_until tl hd)
-        else hd :: (List.walk_dedup tl)
-    termination_by l.length
-    decreasing_by
-      · simp only [List.length_cons, gt_iff_lt]
-        have := @ List.drop_until_length _ _ tl hd
-        omega
-      · simp
-
-    omit [Hashable A] in
-    theorem List.walk_dedup_not_mem_preserved {l : List A} {a : A} (h : ¬ a ∈ l) :
-        ¬ a ∈ List.walk_dedup l := by
-      induction' h':l.length using Nat.strong_induction_on generalizing l
-      rename_i n ih
-      cases n with
-      | zero =>
-        simp only [List.length_eq_zero] at h'
-        simp [h', walk_dedup]
-      | succ m =>
-        have := List.exists_of_length_succ _ h'
-        rcases this with ⟨hd, tl, hl'⟩
-        rw [hl'] at h ⊢
-        simp only [walk_dedup]
-        simp only [List.mem_cons, not_or] at h
-        simp only [hl', List.length_cons, Nat.add_right_cancel_iff] at h'
-        rw [← h'] at ih
-        split
-        · rename_i mem
-          have := List.drop_until_length_lt_length_add_one_of_mem mem
-          specialize ih (drop_until tl hd).length this
-          · exact (drop_until tl hd)
-          · apply ih
-            · apply drop_until_not_mem_preserved h.2
-            · rfl
-        · simp [h]
-          specialize ih m (by simp [h'])
-          · exact tl
-          · specialize ih h.2
-            apply ih h'
-
-    omit [Hashable A] in
-    theorem List.walk_dedup_not_empty_iff {l : List A} : List.walk_dedup l ≠ [] ↔ l ≠ [] := by
-      induction' h:l.length using Nat.strong_induction_on generalizing l
-      rename_i n ih
-      cases n with
-      | zero =>
-        simp only [List.length_eq_zero] at h
-        simp [h, walk_dedup]
-      | succ m =>
-        have := List.exists_of_length_succ _ h
-        rcases this with ⟨hd, tl, h'⟩
-        simp only [h', ne_eq, reduceCtorEq, not_false_eq_true, iff_true]
-        simp only [walk_dedup]
-        split
-        · rename_i mem
-          specialize ih (drop_until tl hd).length
-          simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
-          rw [← h] at ih
-          specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
-          · exact drop_until tl hd
-          · simp only [ne_eq, forall_const] at ih
-            rw [ih]
-            apply drop_until_not_eq_nil_of_mem mem
-        · simp
-
-    omit [Hashable A] in
-    theorem List.walk_dedup_head_eq_head {l : List A} (hl : l ≠ []) :
-        List.head (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.head hl := by
-      induction' h:l.length using Nat.strong_induction_on generalizing l
-      rename_i n ih
-      cases n with
-      | zero =>
-        simp only [List.length_eq_zero] at h
-        contradiction
-      | succ m =>
-        have := List.exists_of_length_succ _ h
-        rcases this with ⟨hd, tl, h'⟩
-        simp only [h', walk_dedup, List.head_cons]
-        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
-        split
-        · rename_i mem
-          specialize ih (drop_until tl hd).length
-          rw [← h] at ih
-          specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
-          · exact drop_until tl hd
-          · simp only [ne_eq, forall_const] at ih
-            specialize ih (drop_until_not_eq_nil_of_mem mem)
-            rw [ih, drop_until_head_of_mem mem]
-        · simp
-
-    omit [Hashable A] in
-    theorem List.walk_dedup_getLast_eq_getLast {l : List A} (hl : l ≠ []) :
-        List.getLast (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.getLast hl := by
-      induction' h:l.length using Nat.strong_induction_on generalizing l
-      rename_i n ih
-      cases n with
-      | zero =>
-        simp only [List.length_eq_zero] at h
-        contradiction
-      | succ m =>
-        have := List.exists_of_length_succ _ h
-        rcases this with ⟨hd, tl, h'⟩
-        simp only [h', walk_dedup, List.head_cons]
-        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
-        split
-        · rename_i mem
-          specialize ih (drop_until tl hd).length
-          rw [← h] at ih
-          specialize ih (drop_until_length_lt_length_add_one_of_mem mem)
-          · exact drop_until tl hd
-          · simp only [ne_eq, forall_const] at ih
-            specialize ih (drop_until_not_eq_nil_of_mem mem)
-            rw [ih, drop_until_getLast_of_mem mem]
-            cases tl with
-            | nil => simp at mem
-            | cons hd' tl' => simp
-        · by_cases htl : tl = []
-          · simp [htl, walk_dedup]
-          · rw [List.getLast_cons]
-            specialize ih m (by omega)
-            · exact tl
-            · specialize ih htl h
-              rw [ih, List.getLast_cons]
-
-    theorem List.walk_dedup_isWalk {G : Graph A} (w : Walk G) : List.isWalk (List.walk_dedup w.1) G := by
-      suffices ∀ (l : List A), l.isWalk G → (List.walk_dedup l).isWalk G from this w.1 w.2
-      intro l hl
-      induction' h:l.length using Nat.strong_induction_on generalizing l
-      rename_i n ih
-      cases n with
-      | zero =>
-        simp only [List.length_eq_zero] at h
-        rw [h] at hl
-        simp [h, walk_dedup, hl]
-      | succ k =>
-        have := List.exists_of_length_succ _ h
-        rcases this with ⟨hd, tl, h'⟩
-        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
-        simp only [walk_dedup]
-        have htl : tl.isWalk G := by
-          simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-            Nat.pred_eq_sub_one] at hl ⊢
-          rcases hl with ⟨hl1, hl2⟩
-          apply And.intro hl1.right
-          intro i hi1 hi2
-          cases i with
-          | zero => simp at hi1
-          | succ j =>
-            simp only [Nat.add_one_sub_one]
-            specialize hl2 (j+2) (by omega) (by omega)
-            simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at hl2
-            exact hl2
-        split
-        · rename_i mem
-          have : (drop_until tl hd).length < k + 1 := by
-            rw [← h]
-            rw [Nat.lt_succ_iff]
-            apply drop_until_length
-          specialize ih (drop_until tl hd).length this (drop_until tl hd)
-          have walk : (drop_until tl hd).isWalk G := by
-            apply drop_until_isWalk_of_isWalk htl
-          apply ih walk rfl
-        · simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-          Nat.pred_eq_sub_one] at hl ⊢
-          specialize ih k (by omega) tl htl h
-          simp only [List.isWalk, gt_iff_lt, Nat.pred_eq_sub_one] at ih
-          apply And.intro (And.intro hl.1.1 ih.1)
-          rcases ih with ⟨_, ih⟩
-          intro i hi1 hi2
-          cases i with
-          | zero => simp at hi1
-          | succ j =>
-            cases j with
-            | zero =>
-              simp only [Nat.zero_add, List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero]
-              rcases hl with ⟨_, hl⟩
-              specialize hl 1 (by simp)
-              simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
-              have htl' : tl ≠ [] := by
-                rw [@List.length_pos_iff_ne_nil] at hi2
-                rw [walk_dedup_not_empty_iff] at hi2
-                exact hi2
-              have : 0 < tl.length := by
-                rw [@List.length_pos_iff_ne_nil]
-                apply htl'
-              specialize hl (by omega)
-              simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
-              have head_tl := walk_dedup_head_eq_head (l := tl) htl'
-              simp only [List.head_eq_getElem_zero] at head_tl
-              simp [head_tl, hl]
-            | succ m =>
-              simp only [List.getElem_cons_succ, Nat.add_one_sub_one]
-              specialize ih (m + 1) (by omega) (by omega)
-              simp only [Nat.add_one_sub_one] at ih
-              exact ih
-
-    omit [Hashable A] in
-    theorem List.nodup_walk_dedup (l : List A) : List.Nodup (List.walk_dedup l) := by
-      induction' h:l.length using Nat.strong_induction_on generalizing l
-      rename_i n ih
-      cases n with
-      | zero =>
-        simp at h
-        rw [h]
-        simp [walk_dedup]
-      | succ m =>
-        have := List.exists_of_length_succ _ h
-        rcases this with ⟨hd, tl, h'⟩
-        simp [h'] at h ⊢
-        simp [walk_dedup]
-        split
-        · rename_i mem
-          have := List.drop_until_length_lt_length_add_one_of_mem mem
-          rw [← h] at ih
-          exact ih (drop_until tl hd).length this (drop_until tl hd) rfl
-        · simp
-          constructor
-          · apply walk_dedup_not_mem_preserved
-            assumption
-          · exact ih m (by simp) tl h
-
-    omit [Hashable A] in
-    theorem length_le_length_of_nodup_subset {l1 l2 : List A} (h1 : l1 ⊆ l2) (h2 : List.Nodup l1) :
-        l1.length ≤ l2.length := by
-      induction l1 generalizing l2 with
-      | nil => simp
-      | cons hd tl ih =>
-        simp at h1
-        simp at h2
-        have subset : tl ⊆ (l2.erase hd) := by
-          simp [List.subset_def]
-          intro a mem
-          have ha : ¬ a = hd := by
-            by_contra p
-            rw [p] at mem
-            simp [mem] at h2
-          simp [ha]
-          rw [List.subset_def] at h1
-          apply h1.right mem
-        specialize ih subset (And.right h2)
-        simp
-        simp [List.length_erase] at ih
-        split at ih
-        · rename_i mem
-          rw [← Nat.succ_le_succ_iff] at ih
-          have hl2 : 1 ≤ l2.length := by
-            cases l2 with
-            | nil => simp at mem
-            | cons hd' tl' => simp
-          omega
-        · rename_i mem
-          simp [mem] at h1
 
     def dedup {G : Graph A} (w : Walk G) : Walk G := ⟨List.walk_dedup w.1, List.walk_dedup_isWalk w⟩
-  end dedup
 
 end Walk
 
@@ -779,17 +819,17 @@ namespace Graph
     · intro h
       rcases h with ⟨w, neq, h⟩
       use w.dedup
-      have h' := Walk.List.walk_dedup_isWalk w
+      have h' := List.walk_dedup_isWalk w
       constructor
-      · apply Walk.length_le_length_of_nodup_subset
+      · apply List.length_le_length_of_nodup_subset
         · simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt] at h'
           simp only [List.subset_def]
           apply h'.1
-        · apply Walk.List.nodup_walk_dedup
-      · have := Walk.List.walk_dedup_not_empty_iff (l := w.1)
+        · apply List.nodup_walk_dedup
+      · have := List.walk_dedup_not_empty_iff (l := w.1)
         use (this.mpr neq)
         simp only [Walk.dedup]
-        rw [Walk.List.walk_dedup_head_eq_head neq, Walk.List.walk_dedup_getLast_eq_getLast neq]
+        rw [List.walk_dedup_head_eq_head neq, List.walk_dedup_getLast_eq_getLast neq]
         exact h
     · intro h
       rcases h with ⟨w, _, neq, h⟩
