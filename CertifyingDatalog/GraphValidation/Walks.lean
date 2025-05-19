@@ -1,5 +1,5 @@
 import CertifyingDatalog.GraphValidation.Basic
-import Mathlib.Data.Fintype.Vector
+import Mathlib.Algebra.Group.Defs
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 
