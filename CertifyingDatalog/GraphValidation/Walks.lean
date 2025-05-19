@@ -1,5 +1,5 @@
 import CertifyingDatalog.GraphValidation.Basic
-import Mathlib.Data.Finset.Image
+import Mathlib.Data.Fintype.Vector
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 
@@ -404,16 +404,54 @@ section dedup
 end dedup
 
 section generateAll
+  variable {A : Type u} [DecidableEq A]
 
-  def generateAll (l : List A) (n : ℕ) : Finset (List A) :=
-    match n with
-    | .zero => ∅
-    | .succ m =>
-      generateAll l m ∪ sorry
+  --suggested by Eric Wieser on zulip
+  def generateAll (l : List A) (n : ℕ) : List (List A) :=
+  match n with
+  | 0 => [[]]
+  | n + 1 =>
+    let last := generateAll l n
+    [] :: l.flatMap fun x => last.map fun ls => x :: ls
 
   theorem generateAll_iff (l l': List A) (n : ℕ):
       l' ∈ generateAll l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
-    sorry
+    induction n generalizing l' with
+    | zero =>
+      simp only [generateAll, List.mem_cons, List.not_mem_nil, or_false, Nat.le_zero_eq,
+        List.length_eq_zero, iff_self_and]
+      intro h x hx
+      simp [h] at hx
+    | succ m ih =>
+      simp only [generateAll, List.mem_cons, List.mem_flatMap, List.mem_map, Nat.le_succ_iff,
+        Nat.succ_eq_add_one]
+      constructor
+      · intro h
+        cases h with
+        | inl h =>
+          simp [h]
+        | inr h =>
+          rcases h with ⟨hd, hhd, tl, htl, h⟩
+          rw [ih] at htl
+          simp only [← h, List.length_cons, add_left_inj, List.mem_cons, forall_eq_or_imp]
+          constructor
+          · omega
+          · simp [hhd]
+            apply htl.2
+      · intro h
+        rcases h with ⟨h1, h2⟩
+        by_cases h' : l' = []
+        · simp [h']
+        · simp only [h', false_or]
+          use l'.head h'
+          apply And.intro (h2 (l'.head h') (by simp))
+          use l'.tail
+          rw [ih]
+          simp only [List.length_tail, Nat.sub_le_iff_le_add, List.head_cons_tail, and_true]
+          constructor
+          · omega
+          · intro x hx
+            apply h2 x (List.mem_of_mem_tail hx)
 
 end generateAll
 
