@@ -402,6 +402,20 @@ section dedup
 
 end dedup
 
+section generateAll
+
+  def generateAll (l : List A) (n : ℕ) : Finset (List A) :=
+    match n with
+    | .zero => ∅
+    | .succ m =>
+      generateAll l m ∪ sorry
+
+  theorem generateAll_iff (l l': List A) (n : ℕ):
+    l' ∈ generateAll l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
+    sorry
+
+end generateAll
+
 namespace Walk
   def singleton (G : Graph A) (a:A) (mem: a ∈ G.vertices) : Walk G := ⟨[a], by
     unfold List.isWalk
@@ -826,6 +840,32 @@ namespace Graph
       use w
       use neq
 
+  def canReach_computable (G : Graph A) (a b : A) : Bool :=
+    (generateAll G.vertices G.vertices.length).filter (fun x =>
+      if h: x ≠ []
+      then List.isWalk x G ∧ x.head h = a ∧ x.getLast h = b
+      else false) ≠ ∅
+
+  theorem canReach_iff_canReach_computable_eq_true (G : Graph A) (a b : A) :
+      canReach G a b ↔ canReach_computable G a b := by
+    simp [canReach_iff_canReach_with_at_most_vertice_length, canReach_computable, Finset.eq_empty_iff_forall_not_mem, generateAll_iff]
+    constructor
+    · intro h
+      rcases h with ⟨w, len, neq, h⟩
+      use w.1
+      apply And.intro len
+      apply And.intro w.2.1
+      apply And.intro w.2
+      use neq
+    · intro h
+      rcases h with ⟨l, len, _, walk, neq, h⟩
+      use ⟨l, walk⟩
+      simp only [len, true_and]
+      use neq
+
+  instance (G : Graph A) (a b: A) : Decidable (canReach G a b) :=
+    decidable_of_bool (canReach_computable G a b) (Iff.symm (canReach_iff_canReach_computable_eq_true G a b))
+
   lemma canReach_refl (G : Graph A) (a : A) (mem: a ∈ G.vertices) : G.canReach a a := by
     unfold canReach
     exists Walk.singleton G a mem
@@ -950,16 +990,15 @@ namespace Graph
         · exact reach
         · apply canReach_pred; apply pred
 
-  -- TODO: it should be possible to make this computable
-  noncomputable def verticesThatReach (G: Graph A) (b : A) : Finset A := G.vertices.toFinset.filter_nc (fun a => G.canReach a b)
+  def verticesThatReach (G: Graph A) (b : A) : Finset A := G.vertices.toFinset.filter (fun a => G.canReach a b)
 
   lemma verticesThatReachContainSelf (G: Graph A) (a : A) (mem: a ∈ G.vertices) : a ∈ G.verticesThatReach a := by
     unfold verticesThatReach
-    rw [Finset.mem_filter_nc]
+    rw [Finset.mem_filter]
     constructor
-    · apply canReach_refl
-      apply mem
     · simp only [List.mem_toFinset]
+      apply mem
+    · apply canReach_refl
       apply mem
 
   lemma verticesThatReachPredSubsetReachSelf (G : Graph A) (c : A) : ∀ b, b ∈ G.predecessors c -> G.verticesThatReach b ⊆ G.verticesThatReach c := by
@@ -967,12 +1006,12 @@ namespace Graph
     rw [Finset.subset_iff]
     intro a
     unfold verticesThatReach
-    rw [Finset.mem_filter_nc]
-    intro ⟨reach, mem⟩
-    rw [Finset.mem_filter_nc]
+    rw [Finset.mem_filter]
+    intro ⟨mem, reach⟩
+    rw [Finset.mem_filter]
     constructor
-    · apply G.canReachWhenCanReachPred a c b b_pred reach
     · exact mem
+    · apply G.canReachWhenCanReachPred a c b b_pred reach
 
   lemma cannotReachPredIfAcyclic (G : Graph A) (acyclic : G.isAcyclic) (b : A) : ∀ a, a ∈ G.predecessors b -> ¬ G.canReach b a := by
     intro a a_pred contra
@@ -1014,8 +1053,8 @@ namespace Graph
     intro a a_pred contra
     apply G.cannotReachPredIfAcyclic acyclic b a a_pred
     unfold verticesThatReach at contra
-    rw [Finset.mem_filter_nc] at contra
-    exact contra.left
+    rw [Finset.mem_filter] at contra
+    exact contra.right
 
   lemma verticesThatReachPredStrictSubsetReachSelfIfAcyclic (G : Graph A) (acyclic : G.isAcyclic) (c : A) : ∀ b, b ∈ G.predecessors c -> G.verticesThatReach b ⊂ G.verticesThatReach c := by
     intro b b_pred
