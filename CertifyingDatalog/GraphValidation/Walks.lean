@@ -1,4 +1,5 @@
 import CertifyingDatalog.GraphValidation.Basic
+import Mathlib.Data.Finset.Image
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 
@@ -411,7 +412,7 @@ section generateAll
       generateAll l m ∪ sorry
 
   theorem generateAll_iff (l l': List A) (n : ℕ):
-    l' ∈ generateAll l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
+      l' ∈ generateAll l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
     sorry
 
 end generateAll
