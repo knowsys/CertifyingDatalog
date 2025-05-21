@@ -1,8 +1,47 @@
 import CertifyingDatalog.GraphValidation.Basic
+import CertifyingDatalog.Basic
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 
 def List.isWalk (l : List A) (G: Graph A) : Prop := (∀ (a:A), a ∈ l → a ∈ G.vertices) ∧ ∀ i > 0, ∀ (g: i < l.length), l[i.pred]'(Nat.pred_lt_of_lt' i l.length g) ∈ G.predecessors l[i]
+
+def List.isWalk_computable (l : List A) (G: Graph A) : Bool :=  l ⊆ G.vertices ∧
+  (List.range l.length).attach.all fun ⟨x, h⟩ =>
+    if 0 < x
+    then
+      l[x.pred]'(by simp at h; exact Nat.pred_lt_of_lt' x l.length h) ∈ G.predecessors (l[x]'(by simp at h; exact h))
+    else true
+
+theorem List.isWalk_iff_isWalk_computable_eq_true (l : List A) (G: Graph A) :
+    l.isWalk G ↔ l.isWalk_computable G = true := by
+  simp only [isWalk, gt_iff_lt, Nat.pred_eq_sub_one, isWalk_computable, Bool.if_true_right,
+    all_eq_true, mem_attach, Bool.or_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true,
+    decide_eq_false_iff_not, not_lt, Nat.le_zero_eq, decide_eq_true_eq, forall_const,
+    Subtype.forall, mem_range, Bool.decide_and, Bool.and_eq_true]
+  rw [List.subset_def]
+  constructor
+  · intro h
+    constructor
+    · apply h.1
+    · have := h.2
+      intro i hi
+      by_cases h' : 0 < i
+      · right
+        apply this i h' hi
+      · omega
+  · intro h
+    constructor
+    · intro a ha
+      apply h.1 ha
+    · intro i hi1 hi2
+      have := h.2
+      specialize this i hi2
+      have not_zero : ¬ i = 0 := by omega
+      simp only [not_zero, false_or] at this
+      exact this
+
+instance (G : Graph A) (l : List A) : Decidable (List.isWalk l G) :=
+  decidable_of_bool (List.isWalk_computable l G) (Iff.symm (List.isWalk_iff_isWalk_computable_eq_true l G))
 
 def Walk (G : Graph A) := {l : List A // l.isWalk G}
 
@@ -394,12 +433,163 @@ namespace Walk
       have applied_takeUntil_getLast_is_target := w.tail.takeUntil_getLast_is_target (w.val.head neq) h
       rw [List.getLast_eq_getElem] at applied_takeUntil_getLast_is_target
       rw [applied_takeUntil_getLast_is_target]
+
+    theorem drop_until_isWalk_of_isWalk {G : Graph A} {w : Walk G} {a : A} :
+      (List.drop_until w.1 a).isWalk G := by
+    suffices ∀ (l : List A), l.isWalk G → (List.drop_until l a).isWalk G from this w.1 w.2
+    intro l h
+    induction l with
+    | nil => simp [List.drop_until, h]
+    | cons hd tl ih =>
+      simp [List.drop_until]
+      split
+      · exact h
+      · apply ih
+        simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+          Nat.pred_eq_sub_one] at h ⊢
+        rcases h with ⟨h1, h2⟩
+        apply And.intro h1.right
+        intro i hi1 hi2
+        have hi1': 0 < i +1 := by omega
+        have hi2' : i + 1 < tl.length +1 := by omega
+        specialize h2 (i+1) hi1' hi2'
+        cases i with
+        | zero => simp at hi1
+        | succ j =>
+          simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at h2 ⊢
+          exact h2
+
+    def removeCycles {G : Graph A} (w : Walk G) : Walk G := ⟨List.removeCycles w.1, by
+        suffices ∀ (l : List A), l.isWalk G → (List.removeCycles l).isWalk G from this w.1 w.2
+        intro l hl
+        induction' h:l.length using Nat.strong_induction_on generalizing l
+        rename_i n ih
+        cases n with
+        | zero =>
+          simp only [List.length_eq_zero] at h
+          rw [h] at hl
+          simp [h, List.removeCycles, hl]
+        | succ k =>
+          have := List.exists_of_length_succ _ h
+          rcases this with ⟨hd, tl, h'⟩
+          simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
+          simp only [List.removeCycles]
+          have htl : tl.isWalk G := by
+            simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+              Nat.pred_eq_sub_one] at hl ⊢
+            rcases hl with ⟨hl1, hl2⟩
+            apply And.intro hl1.right
+            intro i hi1 hi2
+            cases i with
+            | zero => simp at hi1
+            | succ j =>
+              simp only [Nat.add_one_sub_one]
+              specialize hl2 (j+2) (by omega) (by omega)
+              simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at hl2
+              exact hl2
+          split
+          · rename_i mem
+            have : (List.drop_until tl hd).length < k + 1 := by
+              rw [← h]
+              rw [Nat.lt_succ_iff]
+              apply List.drop_until_length
+            specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
+            have walk : (List.drop_until tl hd).isWalk G := by
+              apply drop_until_isWalk_of_isWalk (w:= ⟨tl, htl⟩)
+            apply ih walk rfl
+          · simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+            Nat.pred_eq_sub_one] at hl ⊢
+            specialize ih k (by omega) tl htl h
+            simp only [List.isWalk, gt_iff_lt, Nat.pred_eq_sub_one] at ih
+            apply And.intro (And.intro hl.1.1 ih.1)
+            rcases ih with ⟨_, ih⟩
+            intro i hi1 hi2
+            cases i with
+            | zero => simp at hi1
+            | succ j =>
+              cases j with
+              | zero =>
+                simp only [Nat.zero_add, List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero]
+                rcases hl with ⟨_, hl⟩
+                specialize hl 1 (by simp)
+                simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
+                have htl' : tl ≠ [] := by
+                  rw [@List.length_pos_iff_ne_nil] at hi2
+                  rw [List.removeCycles_not_empty_iff] at hi2
+                  exact hi2
+                have : 0 < tl.length := by
+                  rw [@List.length_pos_iff_ne_nil]
+                  apply htl'
+                specialize hl (by omega)
+                simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
+                have head_tl := List.removeCycles_head_eq_head (l := tl) htl'
+                simp only [List.head_eq_getElem_zero] at head_tl
+                simp [head_tl, hl]
+              | succ m =>
+                simp only [List.getElem_cons_succ, Nat.add_one_sub_one]
+                specialize ih (m + 1) (by omega) (by omega)
+                simp only [Nat.add_one_sub_one] at ih
+                exact ih
+    ⟩
+
 end Walk
 
 namespace Graph
   def isAcyclic (G: Graph A) := ∀ (w: Walk G), ¬ w.isCycle
 
   def canReach (G : Graph A) (a b : A) : Prop := ∃ (w : Walk G) (neq : w.val ≠ []), (w.val.head neq) = a ∧ (w.val.getLast neq) = b
+
+  theorem canReach_iff_canReach_with_at_most_vertices_length
+ (G : Graph A) (a b : A) :
+      canReach G a b ↔ ∃ (w : Walk G) (neq : w.val ≠ []),
+        w.1.length ≤ G.vertices.length ∧ (w.val.head neq) = a ∧ (w.val.getLast neq) = b := by
+    simp only [canReach, ne_eq, exists_and_left]
+    constructor
+    · intro h
+      rcases h with ⟨w, neq, h⟩
+      use w.removeCycles
+      have h' := w.removeCycles.2
+      constructor
+      · apply List.length_le_length_of_nodup_subset
+        · simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt] at h'
+          simp only [List.subset_def]
+          apply h'.1
+        · apply List.nodup_removeCycles
+      · have := List.removeCycles_not_empty_iff (l := w.1)
+        use (this.mpr neq)
+        simp only [Walk.removeCycles]
+        rw [List.removeCycles_head_eq_head neq, List.removeCycles_getLast_eq_getLast neq]
+        exact h
+    · intro h
+      rcases h with ⟨w, _, neq, h⟩
+      use w
+      use neq
+
+  def canReach_computable (G : Graph A) (a b : A) : Bool :=
+    (G.vertices.allSubsetListsOfLengthAtMost G.vertices.length).filter (fun x =>
+      if h: x ≠ []
+      then List.isWalk x G ∧ x.head h = a ∧ x.getLast h = b
+      else false) ≠ ∅
+
+  theorem canReach_iff_canReach_computable_eq_true (G : Graph A) (a b : A) :
+      canReach G a b ↔ canReach_computable G a b := by
+    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, Finset.eq_empty_iff_forall_not_mem, List.allSubsetListsOfLengthAtMost_iff]
+    constructor
+    · intro h
+      rcases h with ⟨w, len, neq, h⟩
+      use w.1
+      apply And.intro len
+      apply And.intro w.2.1
+      apply And.intro w.2
+      use neq
+    · intro h
+      rcases h with ⟨l, len, _, walk, neq, h⟩
+      use ⟨l, walk⟩
+      simp only [len, true_and]
+      use neq
+
+  instance (G : Graph A) (a b: A) : Decidable (canReach G a b) :=
+    decidable_of_bool (canReach_computable G a b) (Iff.symm (canReach_iff_canReach_computable_eq_true G a b))
 
   lemma canReach_refl (G : Graph A) (a : A) (mem: a ∈ G.vertices) : G.canReach a a := by
     unfold canReach
@@ -525,16 +715,15 @@ namespace Graph
         · exact reach
         · apply canReach_pred; apply pred
 
-  -- TODO: it should be possible to make this computable
-  noncomputable def verticesThatReach (G: Graph A) (b : A) : Finset A := G.vertices.toFinset.filter_nc (fun a => G.canReach a b)
+  def verticesThatReach (G: Graph A) (b : A) : Finset A := G.vertices.toFinset.filter (fun a => G.canReach a b)
 
   lemma verticesThatReachContainSelf (G: Graph A) (a : A) (mem: a ∈ G.vertices) : a ∈ G.verticesThatReach a := by
     unfold verticesThatReach
-    rw [Finset.mem_filter_nc]
+    rw [Finset.mem_filter]
     constructor
-    · apply canReach_refl
-      apply mem
     · simp only [List.mem_toFinset]
+      apply mem
+    · apply canReach_refl
       apply mem
 
   lemma verticesThatReachPredSubsetReachSelf (G : Graph A) (c : A) : ∀ b, b ∈ G.predecessors c -> G.verticesThatReach b ⊆ G.verticesThatReach c := by
@@ -542,12 +731,12 @@ namespace Graph
     rw [Finset.subset_iff]
     intro a
     unfold verticesThatReach
-    rw [Finset.mem_filter_nc]
-    intro ⟨reach, mem⟩
-    rw [Finset.mem_filter_nc]
+    rw [Finset.mem_filter]
+    intro ⟨mem, reach⟩
+    rw [Finset.mem_filter]
     constructor
-    · apply G.canReachWhenCanReachPred a c b b_pred reach
     · exact mem
+    · apply G.canReachWhenCanReachPred a c b b_pred reach
 
   lemma cannotReachPredIfAcyclic (G : Graph A) (acyclic : G.isAcyclic) (b : A) : ∀ a, a ∈ G.predecessors b -> ¬ G.canReach b a := by
     intro a a_pred contra
@@ -589,8 +778,8 @@ namespace Graph
     intro a a_pred contra
     apply G.cannotReachPredIfAcyclic acyclic b a a_pred
     unfold verticesThatReach at contra
-    rw [Finset.mem_filter_nc] at contra
-    exact contra.left
+    rw [Finset.mem_filter] at contra
+    exact contra.right
 
   lemma verticesThatReachPredStrictSubsetReachSelfIfAcyclic (G : Graph A) (acyclic : G.isAcyclic) (c : A) : ∀ b, b ∈ G.predecessors c -> G.verticesThatReach b ⊂ G.verticesThatReach c := by
     intro b b_pred
