@@ -459,8 +459,8 @@ namespace Walk
           simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at h2 ⊢
           exact h2
 
-    def dedup {G : Graph A} (w : Walk G) : Walk G := ⟨List.walk_dedup w.1, by
-        suffices ∀ (l : List A), l.isWalk G → (List.walk_dedup l).isWalk G from this w.1 w.2
+    def removeCycles {G : Graph A} (w : Walk G) : Walk G := ⟨List.removeCycles w.1, by
+        suffices ∀ (l : List A), l.isWalk G → (List.removeCycles l).isWalk G from this w.1 w.2
         intro l hl
         induction' h:l.length using Nat.strong_induction_on generalizing l
         rename_i n ih
@@ -468,12 +468,12 @@ namespace Walk
         | zero =>
           simp only [List.length_eq_zero] at h
           rw [h] at hl
-          simp [h, List.walk_dedup, hl]
+          simp [h, List.removeCycles, hl]
         | succ k =>
           have := List.exists_of_length_succ _ h
           rcases this with ⟨hd, tl, h'⟩
           simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
-          simp only [List.walk_dedup]
+          simp only [List.removeCycles]
           have htl : tl.isWalk G := by
             simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
               Nat.pred_eq_sub_one] at hl ⊢
@@ -515,14 +515,14 @@ namespace Walk
                 simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
                 have htl' : tl ≠ [] := by
                   rw [@List.length_pos_iff_ne_nil] at hi2
-                  rw [List.walk_dedup_not_empty_iff] at hi2
+                  rw [List.removeCycles_not_empty_iff] at hi2
                   exact hi2
                 have : 0 < tl.length := by
                   rw [@List.length_pos_iff_ne_nil]
                   apply htl'
                 specialize hl (by omega)
                 simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
-                have head_tl := List.walk_dedup_head_eq_head (l := tl) htl'
+                have head_tl := List.removeCycles_head_eq_head (l := tl) htl'
                 simp only [List.head_eq_getElem_zero] at head_tl
                 simp [head_tl, hl]
               | succ m =>
@@ -547,18 +547,18 @@ namespace Graph
     constructor
     · intro h
       rcases h with ⟨w, neq, h⟩
-      use w.dedup
-      have h' := w.dedup.2
+      use w.removeCycles
+      have h' := w.removeCycles.2
       constructor
       · apply List.length_le_length_of_nodup_subset
         · simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt] at h'
           simp only [List.subset_def]
           apply h'.1
-        · apply List.nodup_walk_dedup
-      · have := List.walk_dedup_not_empty_iff (l := w.1)
+        · apply List.nodup_removeCycles
+      · have := List.removeCycles_not_empty_iff (l := w.1)
         use (this.mpr neq)
-        simp only [Walk.dedup]
-        rw [List.walk_dedup_head_eq_head neq, List.walk_dedup_getLast_eq_getLast neq]
+        simp only [Walk.removeCycles]
+        rw [List.removeCycles_head_eq_head neq, List.removeCycles_getLast_eq_getLast neq]
         exact h
     · intro h
       rcases h with ⟨w, _, neq, h⟩
@@ -566,14 +566,14 @@ namespace Graph
       use neq
 
   def canReach_computable (G : Graph A) (a b : A) : Bool :=
-    (allListAtLengthAtMostAndSubset G.vertices G.vertices.length).filter (fun x =>
+    (G.vertices.allSubsetListsOfLengthAtMost G.vertices.length).filter (fun x =>
       if h: x ≠ []
       then List.isWalk x G ∧ x.head h = a ∧ x.getLast h = b
       else false) ≠ ∅
 
   theorem canReach_iff_canReach_computable_eq_true (G : Graph A) (a b : A) :
       canReach G a b ↔ canReach_computable G a b := by
-    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, Finset.eq_empty_iff_forall_not_mem, allListAtLengthAtMostAndSubset_iff]
+    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, Finset.eq_empty_iff_forall_not_mem, List.allSubsetListsOfLengthAtMost_iff]
     constructor
     · intro h
       rcases h with ⟨w, len, neq, h⟩

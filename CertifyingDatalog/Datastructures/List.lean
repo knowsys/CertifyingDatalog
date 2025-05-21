@@ -494,13 +494,13 @@ section dedup
         simp at h
         exact h.2
 
-  def List.walk_dedup (l : List A) : List A :=
+  def List.removeCycles (l : List A) : List A :=
     match l with
     | [] => []
     | (hd :: tl) =>
       if hd ∈ tl
-      then List.walk_dedup (List.drop_until tl hd)
-      else hd :: (List.walk_dedup tl)
+      then List.removeCycles (List.drop_until tl hd)
+      else hd :: (List.removeCycles tl)
   termination_by l.length
   decreasing_by
     · simp only [List.length_cons, gt_iff_lt]
@@ -508,19 +508,19 @@ section dedup
       omega
     · simp
 
-  theorem List.walk_dedup_not_mem_preserved {l : List A} {a : A} (h : ¬ a ∈ l) :
-      ¬ a ∈ List.walk_dedup l := by
+  theorem List.removeCycles_not_mem_preserved {l : List A} {a : A} (h : ¬ a ∈ l) :
+      ¬ a ∈ List.removeCycles l := by
     induction' h':l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
       simp only [List.length_eq_zero] at h'
-      simp [h', walk_dedup]
+      simp [h', removeCycles]
     | succ m =>
       have := List.exists_of_length_succ _ h'
       rcases this with ⟨hd, tl, hl'⟩
       rw [hl'] at h ⊢
-      simp only [walk_dedup]
+      simp only [removeCycles]
       simp only [List.mem_cons, not_or] at h
       simp only [hl', List.length_cons, Nat.add_right_cancel_iff] at h'
       rw [← h'] at ih
@@ -538,18 +538,18 @@ section dedup
         · specialize ih h.2
           apply ih h'
 
-  theorem List.walk_dedup_not_empty_iff {l : List A} : List.walk_dedup l ≠ [] ↔ l ≠ [] := by
+  theorem List.removeCycles_not_empty_iff {l : List A} : List.removeCycles l ≠ [] ↔ l ≠ [] := by
     induction' h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
       simp only [List.length_eq_zero] at h
-      simp [h, walk_dedup]
+      simp [h, removeCycles]
     | succ m =>
       have := List.exists_of_length_succ _ h
       rcases this with ⟨hd, tl, h'⟩
       simp only [h', ne_eq, reduceCtorEq, not_false_eq_true, iff_true]
-      simp only [walk_dedup]
+      simp only [removeCycles]
       split
       · rename_i mem
         specialize ih (drop_until tl hd).length
@@ -562,8 +562,8 @@ section dedup
           apply drop_until_not_eq_nil_of_mem mem
       · simp
 
-  theorem List.walk_dedup_head_eq_head {l : List A} (hl : l ≠ []) :
-      List.head (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.head hl := by
+  theorem List.removeCycles_head_eq_head {l : List A} (hl : l ≠ []) :
+      List.head (List.removeCycles l) (by simp [List.removeCycles_not_empty_iff, hl]) = l.head hl := by
     induction' h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
@@ -573,7 +573,7 @@ section dedup
     | succ m =>
       have := List.exists_of_length_succ _ h
       rcases this with ⟨hd, tl, h'⟩
-      simp only [h', walk_dedup, List.head_cons]
+      simp only [h', removeCycles, List.head_cons]
       simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
       split
       · rename_i mem
@@ -586,8 +586,8 @@ section dedup
           rw [ih, drop_until_head_of_mem mem]
       · simp
 
-  theorem List.walk_dedup_getLast_eq_getLast {l : List A} (hl : l ≠ []) :
-      List.getLast (List.walk_dedup l) (by simp [List.walk_dedup_not_empty_iff, hl]) = l.getLast hl := by
+  theorem List.removeCycles_getLast_eq_getLast {l : List A} (hl : l ≠ []) :
+      List.getLast (List.removeCycles l) (by simp [List.removeCycles_not_empty_iff, hl]) = l.getLast hl := by
     induction' h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
@@ -597,7 +597,7 @@ section dedup
     | succ m =>
       have := List.exists_of_length_succ _ h
       rcases this with ⟨hd, tl, h'⟩
-      simp only [h', walk_dedup, List.head_cons]
+      simp only [h', removeCycles, List.head_cons]
       simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
       split
       · rename_i mem
@@ -612,26 +612,26 @@ section dedup
           | nil => simp at mem
           | cons hd' tl' => simp
       · by_cases htl : tl = []
-        · simp [htl, walk_dedup]
+        · simp [htl, removeCycles]
         · rw [List.getLast_cons]
           specialize ih m (by omega)
           · exact tl
           · specialize ih htl h
             rw [ih, List.getLast_cons]
 
-  theorem List.nodup_walk_dedup (l : List A) : List.Nodup (List.walk_dedup l) := by
+  theorem List.nodup_removeCycles (l : List A) : List.Nodup (List.removeCycles l) := by
     induction' h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
       simp at h
       rw [h]
-      simp [walk_dedup]
+      simp [removeCycles]
     | succ m =>
       have := List.exists_of_length_succ _ h
       rcases this with ⟨hd, tl, h'⟩
       simp [h'] at h ⊢
-      simp [walk_dedup]
+      simp [removeCycles]
       split
       · rename_i mem
         have := List.drop_until_length_lt_length_add_one_of_mem mem
@@ -639,7 +639,7 @@ section dedup
         exact ih (drop_until tl hd).length this (drop_until tl hd) rfl
       · simp
         constructor
-        · apply walk_dedup_not_mem_preserved
+        · apply removeCycles_not_mem_preserved
           assumption
         · exact ih m (by simp) tl h
 
@@ -676,27 +676,27 @@ section dedup
 
 end dedup
 
-section allListAtLengthAtMostAndSubset
+section allSubsetListsOfLengthAtMost
   variable {A : Type u} [DecidableEq A]
 
   --suggested by Eric Wieser on zulip
-  def allListAtLengthAtMostAndSubset (l : List A) (n : ℕ) : List (List A) :=
+  def List.allSubsetListsOfLengthAtMost (l : List A) (n : ℕ) : List (List A) :=
   match n with
   | 0 => [[]]
   | n + 1 =>
-    let last := allListAtLengthAtMostAndSubset l n
+    let last := allSubsetListsOfLengthAtMost l n
     [] :: l.flatMap fun x => last.map fun ls => x :: ls
 
-  theorem allListAtLengthAtMostAndSubset_iff (l l': List A) (n : ℕ):
-      l' ∈ allListAtLengthAtMostAndSubset l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
+  theorem List.allSubsetListsOfLengthAtMost_iff (l l': List A) (n : ℕ):
+      l' ∈ allSubsetListsOfLengthAtMost l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
     induction n generalizing l' with
     | zero =>
-      simp only [allListAtLengthAtMostAndSubset, List.mem_cons, List.not_mem_nil, or_false, Nat.le_zero_eq,
+      simp only [allSubsetListsOfLengthAtMost, List.mem_cons, List.not_mem_nil, or_false, Nat.le_zero_eq,
         List.length_eq_zero, iff_self_and]
       intro h x hx
       simp [h] at hx
     | succ m ih =>
-      simp only [allListAtLengthAtMostAndSubset, List.mem_cons, List.mem_flatMap, List.mem_map, Nat.le_succ_iff,
+      simp only [allSubsetListsOfLengthAtMost, List.mem_cons, List.mem_flatMap, List.mem_map, Nat.le_succ_iff,
         Nat.succ_eq_add_one]
       constructor
       · intro h
@@ -726,4 +726,4 @@ section allListAtLengthAtMostAndSubset
           · intro x hx
             apply h2 x (List.mem_of_mem_tail hx)
 
-end allListAtLengthAtMostAndSubset
+end allSubsetListsOfLengthAtMost
