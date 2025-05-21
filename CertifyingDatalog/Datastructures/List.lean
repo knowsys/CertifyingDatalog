@@ -676,27 +676,27 @@ section dedup
 
 end dedup
 
-section generateAll
+section allListAtLengthAtMostAndSubset
   variable {A : Type u} [DecidableEq A]
 
   --suggested by Eric Wieser on zulip
-  def generateAll (l : List A) (n : ℕ) : List (List A) :=
+  def allListAtLengthAtMostAndSubset (l : List A) (n : ℕ) : List (List A) :=
   match n with
   | 0 => [[]]
   | n + 1 =>
-    let last := generateAll l n
+    let last := allListAtLengthAtMostAndSubset l n
     [] :: l.flatMap fun x => last.map fun ls => x :: ls
 
-  theorem generateAll_iff (l l': List A) (n : ℕ):
-      l' ∈ generateAll l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
+  theorem allListAtLengthAtMostAndSubset_iff (l l': List A) (n : ℕ):
+      l' ∈ allListAtLengthAtMostAndSubset l n ↔ l'.length ≤ n ∧ ∀ x ∈ l', x ∈ l := by
     induction n generalizing l' with
     | zero =>
-      simp only [generateAll, List.mem_cons, List.not_mem_nil, or_false, Nat.le_zero_eq,
+      simp only [allListAtLengthAtMostAndSubset, List.mem_cons, List.not_mem_nil, or_false, Nat.le_zero_eq,
         List.length_eq_zero, iff_self_and]
       intro h x hx
       simp [h] at hx
     | succ m ih =>
-      simp only [generateAll, List.mem_cons, List.mem_flatMap, List.mem_map, Nat.le_succ_iff,
+      simp only [allListAtLengthAtMostAndSubset, List.mem_cons, List.mem_flatMap, List.mem_map, Nat.le_succ_iff,
         Nat.succ_eq_add_one]
       constructor
       · intro h
@@ -726,4 +726,4 @@ section generateAll
           · intro x hx
             apply h2 x (List.mem_of_mem_tail hx)
 
-end generateAll
+end allListAtLengthAtMostAndSubset

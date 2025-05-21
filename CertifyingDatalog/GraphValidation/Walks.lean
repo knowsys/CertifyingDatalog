@@ -434,9 +434,10 @@ namespace Walk
       rw [List.getLast_eq_getElem] at applied_takeUntil_getLast_is_target
       rw [applied_takeUntil_getLast_is_target]
 
-    omit [Hashable A] in
-    theorem _root_.List.drop_until_isWalk_of_isWalk [Hashable A] {G : Graph A} {l : List A} {a : A} (h : l.isWalk G) :
-      (List.drop_until l a).isWalk G := by
+    theorem drop_until_isWalk_of_isWalk {G : Graph A} {w : Walk G} {a : A} :
+      (List.drop_until w.1 a).isWalk G := by
+    suffices ∀ (l : List A), l.isWalk G → (List.drop_until l a).isWalk G from this w.1 w.2
+    intro l h
     induction l with
     | nil => simp [List.drop_until, h]
     | cons hd tl ih =>
@@ -458,80 +459,78 @@ namespace Walk
           simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at h2 ⊢
           exact h2
 
-    omit [Hashable A] in
-    theorem _root_.List.walk_dedup_isWalk [Hashable A] {G : Graph A} (w : Walk G) : List.isWalk (List.walk_dedup w.1) G := by
-    suffices ∀ (l : List A), l.isWalk G → (List.walk_dedup l).isWalk G from this w.1 w.2
-    intro l hl
-    induction' h:l.length using Nat.strong_induction_on generalizing l
-    rename_i n ih
-    cases n with
-    | zero =>
-      simp only [List.length_eq_zero] at h
-      rw [h] at hl
-      simp [h, List.walk_dedup, hl]
-    | succ k =>
-      have := List.exists_of_length_succ _ h
-      rcases this with ⟨hd, tl, h'⟩
-      simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
-      simp only [List.walk_dedup]
-      have htl : tl.isWalk G := by
-        simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-          Nat.pred_eq_sub_one] at hl ⊢
-        rcases hl with ⟨hl1, hl2⟩
-        apply And.intro hl1.right
-        intro i hi1 hi2
-        cases i with
-        | zero => simp at hi1
-        | succ j =>
-          simp only [Nat.add_one_sub_one]
-          specialize hl2 (j+2) (by omega) (by omega)
-          simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at hl2
-          exact hl2
-      split
-      · rename_i mem
-        have : (List.drop_until tl hd).length < k + 1 := by
-          rw [← h]
-          rw [Nat.lt_succ_iff]
-          apply List.drop_until_length
-        specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
-        have walk : (List.drop_until tl hd).isWalk G := by
-          apply List.drop_until_isWalk_of_isWalk htl
-        apply ih walk rfl
-      · simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-        Nat.pred_eq_sub_one] at hl ⊢
-        specialize ih k (by omega) tl htl h
-        simp only [List.isWalk, gt_iff_lt, Nat.pred_eq_sub_one] at ih
-        apply And.intro (And.intro hl.1.1 ih.1)
-        rcases ih with ⟨_, ih⟩
-        intro i hi1 hi2
-        cases i with
-        | zero => simp at hi1
-        | succ j =>
-          cases j with
-          | zero =>
-            simp only [Nat.zero_add, List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero]
-            rcases hl with ⟨_, hl⟩
-            specialize hl 1 (by simp)
-            simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
-            have htl' : tl ≠ [] := by
-              rw [@List.length_pos_iff_ne_nil] at hi2
-              rw [List.walk_dedup_not_empty_iff] at hi2
-              exact hi2
-            have : 0 < tl.length := by
-              rw [@List.length_pos_iff_ne_nil]
-              apply htl'
-            specialize hl (by omega)
-            simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
-            have head_tl := List.walk_dedup_head_eq_head (l := tl) htl'
-            simp only [List.head_eq_getElem_zero] at head_tl
-            simp [head_tl, hl]
-          | succ m =>
-            simp only [List.getElem_cons_succ, Nat.add_one_sub_one]
-            specialize ih (m + 1) (by omega) (by omega)
-            simp only [Nat.add_one_sub_one] at ih
-            exact ih
-
-    def dedup {G : Graph A} (w : Walk G) : Walk G := ⟨List.walk_dedup w.1, List.walk_dedup_isWalk w⟩
+    def dedup {G : Graph A} (w : Walk G) : Walk G := ⟨List.walk_dedup w.1, by
+        suffices ∀ (l : List A), l.isWalk G → (List.walk_dedup l).isWalk G from this w.1 w.2
+        intro l hl
+        induction' h:l.length using Nat.strong_induction_on generalizing l
+        rename_i n ih
+        cases n with
+        | zero =>
+          simp only [List.length_eq_zero] at h
+          rw [h] at hl
+          simp [h, List.walk_dedup, hl]
+        | succ k =>
+          have := List.exists_of_length_succ _ h
+          rcases this with ⟨hd, tl, h'⟩
+          simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
+          simp only [List.walk_dedup]
+          have htl : tl.isWalk G := by
+            simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+              Nat.pred_eq_sub_one] at hl ⊢
+            rcases hl with ⟨hl1, hl2⟩
+            apply And.intro hl1.right
+            intro i hi1 hi2
+            cases i with
+            | zero => simp at hi1
+            | succ j =>
+              simp only [Nat.add_one_sub_one]
+              specialize hl2 (j+2) (by omega) (by omega)
+              simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at hl2
+              exact hl2
+          split
+          · rename_i mem
+            have : (List.drop_until tl hd).length < k + 1 := by
+              rw [← h]
+              rw [Nat.lt_succ_iff]
+              apply List.drop_until_length
+            specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
+            have walk : (List.drop_until tl hd).isWalk G := by
+              apply drop_until_isWalk_of_isWalk (w:= ⟨tl, htl⟩)
+            apply ih walk rfl
+          · simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+            Nat.pred_eq_sub_one] at hl ⊢
+            specialize ih k (by omega) tl htl h
+            simp only [List.isWalk, gt_iff_lt, Nat.pred_eq_sub_one] at ih
+            apply And.intro (And.intro hl.1.1 ih.1)
+            rcases ih with ⟨_, ih⟩
+            intro i hi1 hi2
+            cases i with
+            | zero => simp at hi1
+            | succ j =>
+              cases j with
+              | zero =>
+                simp only [Nat.zero_add, List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero]
+                rcases hl with ⟨_, hl⟩
+                specialize hl 1 (by simp)
+                simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
+                have htl' : tl ≠ [] := by
+                  rw [@List.length_pos_iff_ne_nil] at hi2
+                  rw [List.walk_dedup_not_empty_iff] at hi2
+                  exact hi2
+                have : 0 < tl.length := by
+                  rw [@List.length_pos_iff_ne_nil]
+                  apply htl'
+                specialize hl (by omega)
+                simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
+                have head_tl := List.walk_dedup_head_eq_head (l := tl) htl'
+                simp only [List.head_eq_getElem_zero] at head_tl
+                simp [head_tl, hl]
+              | succ m =>
+                simp only [List.getElem_cons_succ, Nat.add_one_sub_one]
+                specialize ih (m + 1) (by omega) (by omega)
+                simp only [Nat.add_one_sub_one] at ih
+                exact ih
+    ⟩
 
 end Walk
 
@@ -540,7 +539,8 @@ namespace Graph
 
   def canReach (G : Graph A) (a b : A) : Prop := ∃ (w : Walk G) (neq : w.val ≠ []), (w.val.head neq) = a ∧ (w.val.getLast neq) = b
 
-  theorem canReach_iff_canReach_with_at_most_vertice_length (G : Graph A) (a b : A) :
+  theorem canReach_iff_canReach_with_at_most_vertices_length
+ (G : Graph A) (a b : A) :
       canReach G a b ↔ ∃ (w : Walk G) (neq : w.val ≠ []),
         w.1.length ≤ G.vertices.length ∧ (w.val.head neq) = a ∧ (w.val.getLast neq) = b := by
     simp only [canReach, ne_eq, exists_and_left]
@@ -548,7 +548,7 @@ namespace Graph
     · intro h
       rcases h with ⟨w, neq, h⟩
       use w.dedup
-      have h' := List.walk_dedup_isWalk w
+      have h' := w.dedup.2
       constructor
       · apply List.length_le_length_of_nodup_subset
         · simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt] at h'
@@ -566,14 +566,14 @@ namespace Graph
       use neq
 
   def canReach_computable (G : Graph A) (a b : A) : Bool :=
-    (generateAll G.vertices G.vertices.length).filter (fun x =>
+    (allListAtLengthAtMostAndSubset G.vertices G.vertices.length).filter (fun x =>
       if h: x ≠ []
       then List.isWalk x G ∧ x.head h = a ∧ x.getLast h = b
       else false) ≠ ∅
 
   theorem canReach_iff_canReach_computable_eq_true (G : Graph A) (a b : A) :
       canReach G a b ↔ canReach_computable G a b := by
-    simp [canReach_iff_canReach_with_at_most_vertice_length, canReach_computable, Finset.eq_empty_iff_forall_not_mem, generateAll_iff]
+    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, Finset.eq_empty_iff_forall_not_mem, allListAtLengthAtMostAndSubset_iff]
     constructor
     · intro h
       rcases h with ⟨w, len, neq, h⟩
