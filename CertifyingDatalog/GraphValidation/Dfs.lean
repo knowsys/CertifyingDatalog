@@ -602,7 +602,7 @@ section Dfs
     def verify_via_dfs (G : Graph A) (cond : NodeCondition A) : Except String Unit :=
       (G.vertices.attach.foldl_except
         (fun acc ⟨a, h⟩ => G.verify_via_dfs_step a cond ⟨Walk.singleton G a h, by unfold Walk.singleton; simp⟩ acc)
-        (Except.ok HashSet.empty)).map (fun _ => ())
+        (Except.ok HashSet.emptyWithCapacity)).map (fun _ => ())
 
     lemma dfs_semantics (G : Graph A) (cond : NodeCondition A) : G.verify_via_dfs cond = Except.ok () ↔ G.isAcyclic ∧ ∀ a ∈ G.vertices, cond.true a := by
       let f :=
@@ -620,7 +620,7 @@ section Dfs
         have foldl_exists := List.foldl_expect_some_error_of_error
           G.vertices.attach
           f
-          HashSet.empty
+          HashSet.emptyWithCapacity
           err
           heq
         rcases foldl_exists with ⟨i, res, foldl_eq, foldl_cond⟩
@@ -641,7 +641,7 @@ section Dfs
         · have foldl_preserves := List.foldl_except_preserves_prop
             (G.vertices.attach.take i)
             f
-            (Except.ok HashSet.empty)
+            (Except.ok HashSet.emptyWithCapacity)
             (fun set => ∀ node, set.contains node -> (¬ G.reachableFromCycle node ∧ G.cond_ok_on_all_canReach node cond))
           apply foldl_preserves
           · simp only [Subtype.forall, f]
@@ -689,7 +689,7 @@ section Dfs
           have foldl_ok := List.foldl_except_all_ok_of_ok
             G.vertices.attach
             f
-            HashSet.empty
+            HashSet.emptyWithCapacity
 
           rw [heq] at foldl_ok
           rename_i set
@@ -709,7 +709,7 @@ section Dfs
           have foldl_preserves := List.foldl_except_preserves_prop
             (G.vertices.attach.take i)
             f
-            (Except.ok HashSet.empty)
+            (Except.ok HashSet.emptyWithCapacity)
             (fun set => ∀ node, set.contains node -> (¬ G.reachableFromCycle node ∧ G.cond_ok_on_all_canReach node cond))
           apply foldl_preserves
           · simp only [Subtype.forall, a', walkFromA, i, f]

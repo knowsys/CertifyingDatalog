@@ -74,7 +74,7 @@ namespace Walk
     match eq : w.val.idxOf b with
     | .zero => w.val.get ⟨w.val.length - 2, by
       rw [Nat.sub_lt_iff_lt_add']
-      simp only [Nat.lt_add_right_iff_pos, Nat.zero_lt_succ]
+      simp only [Nat.lt_add_left_iff_pos, Nat.zero_lt_succ]
       unfold isCycle at cyc; apply Decidable.by_contra
       intro contra
       simp only [not_le] at contra

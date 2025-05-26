@@ -142,7 +142,7 @@ namespace PreGraph
         rw [Std.HashMap.getD_insert]
         simp [precond]
 
-    apply aux Std.HashMap.empty vs
+    apply aux Std.HashMap.emptyWithCapacity vs
     simp
 
   theorem from_vertices_is_complete (vs : List A) : (PreGraph.from_vertices vs).complete := by
