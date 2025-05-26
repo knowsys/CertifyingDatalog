@@ -74,7 +74,7 @@ namespace Walk
     match eq : w.val.idxOf b with
     | .zero => w.val.get ⟨w.val.length - 2, by
       rw [Nat.sub_lt_iff_lt_add']
-      simp only [Nat.lt_add_right_iff_pos, Nat.zero_lt_succ]
+      simp only [Nat.lt_add_left_iff_pos, Nat.zero_lt_succ]
       unfold isCycle at cyc; apply Decidable.by_contra
       intro contra
       simp only [not_le] at contra
@@ -269,7 +269,7 @@ namespace Walk
     have this2 : 0 < w.tail.val.length := by
       apply Decidable.by_contra
       intro contra
-      simp only [not_lt, Nat.le_zero_eq, List.length_eq_zero] at contra
+      simp only [not_lt, Nat.le_zero_eq, List.length_eq_zero_iff] at contra
       unfold tail at contra
       simp only at contra
       rw [contra] at neq
@@ -409,7 +409,7 @@ namespace Walk
     split
     case isTrue contra =>
       have : 0 < (w.tail.takeUntil (w.val.head neq)).val.length := by
-        rw [List.length_pos]
+        rw [List.length_pos_iff]
         apply takeUnil_ne_of_ne
         intro contra; rw [contra] at h; simp at h
       have : ¬ (w.tail.takeUntil (w.val.head neq)).val.length + 1 < 2 := by
@@ -466,7 +466,7 @@ namespace Walk
         rename_i n ih
         cases n with
         | zero =>
-          simp only [List.length_eq_zero] at h
+          simp only [List.length_eq_zero_iff] at h
           rw [h] at hl
           simp [h, List.removeCycles, hl]
         | succ k =>
@@ -841,7 +841,7 @@ namespace Graph
           | cons c cs =>
             have : cs = [] := by
               rw [eq] at contra
-              simp only [List.length_cons, Nat.add_one_sub_one, List.length_eq_zero] at contra
+              simp only [List.length_cons, Nat.add_one_sub_one, List.length_eq_zero_iff] at contra
               exact contra
             rw [this] at eq
             simp only [eq, List.getLast_singleton] at w_b

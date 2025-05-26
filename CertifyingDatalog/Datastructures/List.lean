@@ -514,7 +514,7 @@ section dedup
     rename_i n ih
     cases n with
     | zero =>
-      simp only [List.length_eq_zero] at h'
+      simp only [List.length_eq_zero_iff] at h'
       simp [h', removeCycles]
     | succ m =>
       have := List.exists_of_length_succ _ h'
@@ -543,7 +543,7 @@ section dedup
     rename_i n ih
     cases n with
     | zero =>
-      simp only [List.length_eq_zero] at h
+      simp only [List.length_eq_zero_iff] at h
       simp [h, removeCycles]
     | succ m =>
       have := List.exists_of_length_succ _ h
@@ -568,7 +568,7 @@ section dedup
     rename_i n ih
     cases n with
     | zero =>
-      simp only [List.length_eq_zero] at h
+      simp only [List.length_eq_zero_iff] at h
       contradiction
     | succ m =>
       have := List.exists_of_length_succ _ h
@@ -592,7 +592,7 @@ section dedup
     rename_i n ih
     cases n with
     | zero =>
-      simp only [List.length_eq_zero] at h
+      simp only [List.length_eq_zero_iff] at h
       contradiction
     | succ m =>
       have := List.exists_of_length_succ _ h
@@ -692,7 +692,7 @@ section allSubsetListsOfLengthAtMost
     induction n generalizing l' with
     | zero =>
       simp only [allSubsetListsOfLengthAtMost, List.mem_cons, List.not_mem_nil, or_false, Nat.le_zero_eq,
-        List.length_eq_zero, iff_self_and]
+        List.length_eq_zero_iff, iff_self_and]
       intro h x hx
       simp [h] at hx
     | succ m ih =>

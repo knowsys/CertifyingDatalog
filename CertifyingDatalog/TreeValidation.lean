@@ -8,7 +8,7 @@ def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.con
 
 variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]
 
-def SymbolSequenceMap.empty : SymbolSequenceMap τ := Std.HashMap.empty
+def SymbolSequenceMap.empty : SymbolSequenceMap τ := Std.HashMap.emptyWithCapacity
 
 def SymbolSequenceMap.find (m : SymbolSequenceMap τ) (l : List (τ.relationSymbols)) : List (Rule τ) := m.getD l []
 
@@ -107,7 +107,7 @@ namespace Program
     intro r'
     unfold toSymbolSequenceMap
     rw [toSymbolSequenceMap_mem]
-    simp only [SymbolSequenceMap.find, SymbolSequenceMap.empty, Std.HashMap.getD_empty,
+    simp only [SymbolSequenceMap.find, SymbolSequenceMap.empty, Std.HashMap.getD_emptyWithCapacity,
       List.not_mem_nil, false_or]
     rw [And.comm]
 end Program

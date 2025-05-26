@@ -185,7 +185,7 @@ namespace Substitution
       rcases a_mem with ⟨a_pos, pos_prop⟩
       rcases a_pos with ⟨a_pos, a_pos_proof⟩
       have a_pos_proof': a_pos < List.length r'.body := by
-        rw [← List.length_map r'.body GroundAtom.toAtom, ← right, List.length_map r.body]
+        rw [← List.length_map GroundAtom.toAtom, ← right, List.length_map]
         apply a_pos_proof
       use List.get r'.body (Fin.mk a_pos a_pos_proof')
       rw [← pos_prop]
