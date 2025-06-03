@@ -48,7 +48,7 @@ section TermMatching
 
     lemma matchTermSubset [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : s ⊆ ((s.matchTerm t c).get h) := by
       simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
-        Option.bnot_isSome] at h ⊢
+        Option.not_isSome] at h ⊢
       cases t with
       | constant c' =>
         simp only [Option.get_ite]
@@ -67,7 +67,7 @@ section TermMatching
 
     lemma matchTermYieldsSubs [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : ((s.matchTerm t c).get h).applyTerm t = c := by
       simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
-        Option.bnot_isSome] at h ⊢
+        Option.not_isSome] at h ⊢
       cases t with
       | constant c' =>
         simp only [Option.get_ite]
@@ -84,7 +84,7 @@ section TermMatching
     lemma matchTermIsMinimal [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyTerm t = c -> ((s.matchTerm t c).get h) ⊆ s' := by
       intro s' ⟨subset, apply_t⟩
       simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
-        Option.bnot_isSome] at h ⊢
+        Option.not_isSome] at h ⊢
       cases t with
       | constant c' =>
         simp only [Option.get_ite]
@@ -126,14 +126,14 @@ section TermMatching
     lemma matchTermNoneThenNoSubs [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ}{c: τ.constants} (h : (s.matchTerm t c) = none) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyTerm t ≠ c := by
       intro s' subset apply_t
       simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
-        Option.bnot_isSome] at h
+        Option.not_isSome] at h
       cases t with
       | constant c' =>
         unfold applyTerm at apply_t
         simp only [Term.constant.injEq] at apply_t
         simp [apply_t] at h
       | variableDL v =>
-        simp only [Option.filter_eq_none, reduceCtorEq, Option.mem_def, Option.some.injEq,
+        simp only [Option.filter_eq_none_iff, reduceCtorEq, Option.mem_def, Option.some.injEq,
           Bool.or_eq_true, Option.isNone_iff_eq_none, decide_eq_true_eq, not_or,
           Option.ne_none_iff_exists, forall_eq', extend, ↓reduceIte, false_or] at h
         rcases h with ⟨hl, hr⟩
@@ -445,7 +445,7 @@ section RuleMatching
       | some s =>
         have body_eq_len : r.body.length = gr.body.length := by
           unfold matchRule at h
-          simp only [eq, Option.some_bind, Option.isSome_iff_exists, Option.filter_eq_some,
+          simp only [eq, Option.some_bind, Option.isSome_iff_exists, Option.filter_eq_some_iff,
             Option.mem_def, decide_eq_true_eq, exists_and_right] at h
           apply And.right h
         unfold applyRule
@@ -502,7 +502,7 @@ section RuleMatching
           have : (r.body.map s.applyAtom).length = (gr.body.map GroundAtom.toAtom).length := by rw [contra.right]
           rw [List.length_map, List.length_map] at this
           exact this
-        simp only [body_eq_len, decide_true, eq, Option.some_bind, Option.filter_eq_none,
+        simp only [body_eq_len, decide_true, eq, Option.some_bind, Option.filter_eq_none_iff,
           Option.mem_def, not_true_eq_false, imp_false, Option.forall_ne, or_self] at h
         let atom_list := r.body.zip gr.body
         have h_atom_list : atom_list = r.body.zip gr.body := by simp [atom_list]

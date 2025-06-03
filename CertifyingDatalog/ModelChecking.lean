@@ -288,7 +288,7 @@ namespace CheckableModel
           | constant c => simp
           | variableDL v =>
             have : v ∈ hd.vars := by
-              simp only [Atom.vars, List.mem_foldl_union, Finset.not_mem_empty, false_or]
+              simp only [Atom.vars, List.mem_foldl_union, Finset.notMem_empty, false_or]
               exists Term.variableDL v
               simp [Term.vars, t_mem]
             simp [subs, this]
