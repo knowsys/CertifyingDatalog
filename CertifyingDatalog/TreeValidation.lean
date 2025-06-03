@@ -142,7 +142,8 @@ by
     specialize symbolSequenceMatch r
     cases (Decidable.em (r.symbolSequence = gr.toRule.symbolSequence)) with
     | inl eq =>
-      simp only [rP, eq, and_self, forall_const] at symbolSequenceMatch
+      simp only [rP, eq, and_self, Option.isSome_eq_false_iff, Option.isNone_iff_eq_none,
+        forall_const] at symbolSequenceMatch
       apply Substitution.matchRuleNoneThenNoSubs
       apply symbolSequenceMatch
     | inr neq =>

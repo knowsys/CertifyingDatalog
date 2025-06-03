@@ -122,7 +122,7 @@ namespace Substitution
       · unfold domain
         rw [Set.mem_setOf]
         apply p
-      · simp only [Bool.not_eq_true, Option.not_isSome, Option.isNone_iff_eq_none] at p
+      · simp only [Bool.not_eq_true, Option.isSome_eq_false_iff, Option.isNone_iff_eq_none] at p
         simp [p] at c_prop
 
   lemma applyAtom_isGround_impl_varsSubsetDomain [DecidableEq τ.vars] {a: Atom τ} {s: Substitution τ} (subs_ground: ∃ (a': GroundAtom τ), s.applyAtom a = a'): ↑ a.vars ⊆ s.domain :=
@@ -308,7 +308,7 @@ namespace Substitution
       unfold applyTerm
       unfold Term.vars
       rw [Finset.ext_iff]
-      simp only [Finset.not_mem_empty, false_iff]
+      simp only [Finset.notMem_empty, false_iff]
       simp [Finset.mem_filter_nc]
     | variableDL v =>
       unfold applyTerm
@@ -317,7 +317,7 @@ namespace Substitution
       simp only
       cases eq : s v with
       | some c =>
-        simp only [Finset.not_mem_empty, false_iff]
+        simp only [Finset.notMem_empty, false_iff]
         intro v'
         simp only [Finset.mem_filter_nc, Finset.mem_singleton, not_and]
         unfold domain
@@ -332,15 +332,14 @@ namespace Substitution
         simp only [Finset.mem_filter_nc, Finset.mem_singleton, iff_and_self]
         intro h'
         unfold domain
-        simp only [Set.mem_setOf_eq, Bool.not_eq_true, Option.not_isSome, Option.isNone_iff_eq_none]
-        rw [h', eq]
+        simp [h', eq]
 
   lemma applyAtom_remainingVarsNotInDomain [DecidableEq τ.vars] {a: Atom τ} {s: Substitution τ}: (s.applyAtom a).vars = a.vars.filter_nc (fun x => ¬ x ∈ s.domain)  := by
     apply Finset.ext
     intro v
     unfold Atom.vars
     rw [List.mem_foldl_union, Finset.mem_filter_nc, List.mem_foldl_union]
-    simp only [Finset.not_mem_empty, false_or]
+    simp only [Finset.notMem_empty, false_or]
     unfold applyAtom
     simp only [List.mem_map, exists_exists_and_eq_and]
     simp_rw [applyTerm_remainingVarsNotInDomain, Finset.mem_filter_nc]

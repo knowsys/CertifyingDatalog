@@ -573,7 +573,7 @@ namespace Graph
 
   theorem canReach_iff_canReach_computable_eq_true (G : Graph A) (a b : A) :
       canReach G a b ↔ canReach_computable G a b := by
-    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, Finset.eq_empty_iff_forall_not_mem, List.allSubsetListsOfLengthAtMost_iff]
+    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, Finset.eq_empty_iff_forall_notMem, List.allSubsetListsOfLengthAtMost_iff]
     constructor
     · intro h
       rcases h with ⟨w, len, neq, h⟩
