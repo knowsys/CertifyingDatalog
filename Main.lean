@@ -174,13 +174,17 @@ def parseTreeProblemFromJson (fileName: String): IO (Except String TreeVerificat
 
 def main_trees (argsParsed: ArgsParsed): IO Unit := do
   match ← parseTreeProblemFromJson argsParsed.programFileName with
-  | Except.error e => IO.println e
+  | Except.error e =>
+    IO.println e
+    IO.Process.exit 1
   | Except.ok problem =>
     if argsParsed.complete = true
     then
       IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
-      | Except.error msg => IO.println msg
+      | Except.error msg =>
+        IO.println msg
+        IO.Process.exit 1
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
@@ -213,13 +217,17 @@ def parseDagProblemFromJson (fileName: String): IO (Except String GraphVerificat
 
 def main_dag (argsParsed: ArgsParsed): IO Unit := do
   match ← parseDagProblemFromJson argsParsed.programFileName with
-  | Except.error e => IO.println e
+  | Except.error e =>
+    IO.println e
+    IO.Process.exit 1
   | Except.ok problem =>
     if argsParsed.complete = true
     then
       IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
-      | Except.error msg => IO.println msg
+      | Except.error msg =>
+        IO.println msg
+        IO.Process.exit 1
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
@@ -252,13 +260,17 @@ def parseOrderedDagProblemFromJson (fileName: String): IO (Except String Ordered
 
 def main_ordered_dag (argsParsed: ArgsParsed): IO Unit := do
   match ← parseOrderedDagProblemFromJson argsParsed.programFileName with
-  | Except.error e => IO.println e
+  | Except.error e =>
+    IO.println e
+    IO.Process.exit 1
   | Except.ok problem =>
     if argsParsed.complete = true
     then
       IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
-      | Except.error msg => IO.println msg
+      | Except.error msg =>
+        IO.println msg
+        IO.Process.exit 1
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
@@ -278,7 +290,9 @@ def main_ordered_dag (argsParsed: ArgsParsed): IO Unit := do
 
 def main(args: List String): IO Unit := do
   match parseArgs args with
-  | Except.error e => IO.println e
+  | Except.error e =>
+    IO.println e
+    IO.Process.exit 1
   | Except.ok argsParsed =>
     if argsParsed.help = true
     then printHelp
