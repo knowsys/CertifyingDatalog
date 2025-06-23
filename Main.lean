@@ -186,12 +186,16 @@ def main_trees (argsParsed: ArgsParsed): IO Unit := do
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
         match checkTreeListModelhood problem safe' with
-        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
+        | Except.error msg =>
+          IO.println ("Invalid result due to: " ++ msg )
+          IO.Process.exit 1
         | Except.ok _ => IO.println "Valid result"
     else
       IO.println "Checking Proof Validity..."
       match checkTreeListValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
+      | Except.error msg =>
+        IO.println ("Invalid result due to: " ++ msg )
+        IO.Process.exit 1
       | Except.ok _ => IO.println "Valid result"
 
 def parseDagProblemFromJson (fileName: String): IO (Except String GraphVerificationProblem) := do
@@ -221,12 +225,16 @@ def main_dag (argsParsed: ArgsParsed): IO Unit := do
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
         match checkDagModelhood problem safe' with
-        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
+        | Except.error msg =>
+          IO.println ("Invalid result due to: " ++ msg )
+          IO.Process.exit 1
         | Except.ok _ => IO.println "Valid result"
     else
       IO.println "Checking Proof Validity..."
       match checkDagValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
+      | Except.error msg =>
+        IO.println ("Invalid result due to: " ++ msg )
+        IO.Process.exit 1
       | Except.ok _ => IO.println "Valid result"
 
 def parseOrderedDagProblemFromJson (fileName: String): IO (Except String OrderedGraphVerificationProblem) := do
@@ -256,12 +264,16 @@ def main_ordered_dag (argsParsed: ArgsParsed): IO Unit := do
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
         match checkOrderedGraphModelhood problem safe' with
-        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
+        | Except.error msg =>
+          IO.println ("Invalid result due to: " ++ msg )
+          IO.Process.exit 1
         | Except.ok _ => IO.println "Valid result"
     else
       IO.println "Checking Proof Validity..."
       match checkOrderedGraphValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
+      | Except.error msg =>
+        IO.println ("Invalid result due to: " ++ msg )
+        IO.Process.exit 1
       | Except.ok _ => IO.println "Valid result"
 
 def main(args: List String): IO Unit := do
