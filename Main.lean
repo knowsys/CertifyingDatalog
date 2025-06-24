@@ -172,27 +172,28 @@ def parseTreeProblemFromJson (fileName: String): IO (Except String TreeVerificat
                 pure (TreeVerificationProblem.fromProblemInput parsedProblem)
   else pure (Except.error "File does not exist")
 
-def main_trees (argsParsed: ArgsParsed): IO Unit := do
+def main_trees (argsParsed: ArgsParsed): IO (Except String Unit) := do
   match ← parseTreeProblemFromJson argsParsed.programFileName with
-  | Except.error e => IO.println e
+  | Except.error e => pure (Except.error e)
   | Except.ok problem =>
     if argsParsed.complete = true
     then
       IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
-      | Except.error msg => IO.println msg
+      | Except.error msg => pure (Except.error msg)
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
         match checkTreeListModelhood problem safe' with
-        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
-        | Except.ok _ => IO.println "Valid result"
+        | Except.error msg =>
+          pure (Except.error ("Invalid result due to: " ++ msg ))
+        | Except.ok _ => pure (Except.ok ())
     else
       IO.println "Checking Proof Validity..."
       match checkTreeListValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
-      | Except.ok _ => IO.println "Valid result"
+      | Except.error msg => pure (Except.error ("Invalid result due to: " ++ msg ))
+      | Except.ok _ => pure (Except.ok ())
 
 def parseDagProblemFromJson (fileName: String): IO (Except String GraphVerificationProblem) := do
   let filePath := System.FilePath.mk fileName
@@ -207,27 +208,28 @@ def parseDagProblemFromJson (fileName: String): IO (Except String GraphVerificat
                 pure (GraphVerificationProblem.fromProblemInput parsedProblem)
   else pure (Except.error "File does not exist")
 
-def main_dag (argsParsed: ArgsParsed): IO Unit := do
+def main_dag (argsParsed: ArgsParsed): IO (Except String Unit) := do
   match ← parseDagProblemFromJson argsParsed.programFileName with
-  | Except.error e => IO.println e
+  | Except.error e => pure (Except.error e)
   | Except.ok problem =>
     if argsParsed.complete = true
     then
       IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
-      | Except.error msg => IO.println msg
+      | Except.error msg => pure (Except.error msg)
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
         match checkDagModelhood problem safe' with
-        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
-        | Except.ok _ => IO.println "Valid result"
+        | Except.error msg => pure (Except.error ("Invalid result due to: " ++ msg))
+        | Except.ok _ => pure (Except.ok ())
     else
       IO.println "Checking Proof Validity..."
       match checkDagValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
-      | Except.ok _ => IO.println "Valid result"
+      | Except.error msg =>
+        pure (Except.error ("Invalid result due to: " ++ msg))
+      | Except.ok _ => pure (Except.ok ())
 
 def parseOrderedDagProblemFromJson (fileName: String): IO (Except String OrderedGraphVerificationProblem) := do
   let filePath := System.FilePath.mk fileName
@@ -242,36 +244,46 @@ def parseOrderedDagProblemFromJson (fileName: String): IO (Except String Ordered
                 pure (OrderedGraphVerificationProblem.fromProblemInput parsedProblem)
   else pure (Except.error "File does not exist")
 
-def main_ordered_dag (argsParsed: ArgsParsed): IO Unit := do
+def main_ordered_dag (argsParsed: ArgsParsed): IO (Except String Unit) := do
   match ← parseOrderedDagProblemFromJson argsParsed.programFileName with
-  | Except.error e => IO.println e
+  | Except.error e => pure (Except.error e)
   | Except.ok problem =>
     if argsParsed.complete = true
     then
       IO.println "Checking Modelhood..."
       match safe: problem.program.checkSafety with
-      | Except.error msg => IO.println msg
+      | Except.error msg => pure (Except.error msg)
       | Except.ok _ =>
         have safe': ∀ (r: Rule problem.helper.toSignature), r ∈ problem.program → r.isSafe := by
           rw [Program.checkSafety_iff_isSafe] at safe
           apply safe
         match checkOrderedGraphModelhood problem safe' with
-        | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
-        | Except.ok _ => IO.println "Valid result"
+        | Except.error msg =>
+          pure (Except.error ("Invalid result due to: " ++ msg))
+        | Except.ok _ => pure (Except.ok ())
     else
       IO.println "Checking Proof Validity..."
       match checkOrderedGraphValidityWithUnivDatabase problem with
-      | Except.error msg => IO.println ("Invalid result due to: " ++ msg )
-      | Except.ok _ => IO.println "Valid result"
+      | Except.error msg => pure (Except.error ("Invalid result due to: " ++ msg))
+      | Except.ok _ => pure (Except.ok ())
 
 def main(args: List String): IO Unit := do
   match parseArgs args with
-  | Except.error e => IO.println e
+  | Except.error e =>
+    IO.println e
+    IO.Process.exit 1
   | Except.ok argsParsed =>
     if argsParsed.help = true
     then printHelp
     else
-      match argsParsed.format with
-      | InputFormat.trees => main_trees argsParsed
-      | InputFormat.graph => main_dag argsParsed
-      | InputFormat.orderedGraph => main_ordered_dag argsParsed
+      let result :=
+        match argsParsed.format with
+        | InputFormat.trees => main_trees argsParsed
+        | InputFormat.graph => main_dag argsParsed
+        | InputFormat.orderedGraph => main_ordered_dag argsParsed
+
+      match ← result with
+      | Except.error e =>
+        IO.println e
+        IO.Process.exit 1
+      | Except.ok _ => IO.println "Valid result"
