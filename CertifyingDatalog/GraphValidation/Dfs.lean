@@ -573,7 +573,7 @@ section Dfs
                       (Except.ok verifiedNodes)
                       (fun set => ∀ node, set.contains node -> (¬ G.reachableFromCycle node ∧ G.cond_ok_on_all_canReach node cond))
                     apply foldl_preserves
-                    · simp only [Option.pure_def, Option.bind_eq_bind, Option.some_bind,
+                    · simp only [Option.pure_def, Option.bind_eq_bind, Option.bind_some,
                       Subtype.forall, pred]
                       intro init_step res_step pred pred_is_pred prop_init_step _ eq
                       apply dfs_step_result_valid
@@ -586,7 +586,7 @@ section Dfs
                     · rw [foldl_eq]
                   · simp only [Except.isOk, Except.toBool, pred] at this
                     simp only [List.get_eq_getElem, Option.pure_def, Option.bind_eq_bind,
-                      Option.some_bind, List.getElem_attach, pred] at foldl_cond
+                      Option.bind_some, List.getElem_attach, pred] at foldl_cond
                     split at this
                     case h_1 heq =>
                       simp [walkFromPred, pred] at heq; rw [heq] at foldl_cond; simp at foldl_cond

@@ -445,7 +445,7 @@ section RuleMatching
       | some s =>
         have body_eq_len : r.body.length = gr.body.length := by
           unfold matchRule at h
-          simp only [eq, Option.some_bind, Option.isSome_iff_exists, Option.filter_eq_some_iff,
+          simp only [eq, Option.bind_some, Option.isSome_iff_exists, Option.filter_eq_some_iff,
             Option.mem_def, decide_eq_true_eq, exists_and_right] at h
           apply And.right h
         unfold applyRule
@@ -460,8 +460,8 @@ section RuleMatching
             have : s = (empty.matchAtom r.head gr.head).get this := by simp [eq]
             rw [this]
             apply matchAtomYieldsSubs
-        · simp only [matchRule, body_eq_len, decide_true, eq, Option.some_bind, Option.filter_true]
-          simp only [matchRule, body_eq_len, decide_true, eq, Option.some_bind,
+        · simp only [matchRule, body_eq_len, decide_true, eq, Option.bind_some, Option.filter_true]
+          simp only [matchRule, body_eq_len, decide_true, eq, Option.bind_some,
             Option.filter_true] at h
           let atom_list := r.body.zip gr.body
           have match_a_list := s.matchAtomListYieldsSubs h
@@ -476,7 +476,7 @@ section RuleMatching
           apply List.ext_get
           · simp [fst, snd]
           · intro n h₁ h₂
-            simp only [Option.some_bind, List.get_eq_getElem, List.getElem_map]
+            simp only [Option.bind_some, List.get_eq_getElem, List.getElem_map]
             have := List.getElem_of_eq match_a_list (i := n)
             simp only [List.map_map, List.length_map, List.length_zip, lt_inf_iff, List.getElem_map,
               List.getElem_zip, Function.comp_apply] at this
@@ -502,7 +502,7 @@ section RuleMatching
           have : (r.body.map s.applyAtom).length = (gr.body.map GroundAtom.toAtom).length := by rw [contra.right]
           rw [List.length_map, List.length_map] at this
           exact this
-        simp only [body_eq_len, decide_true, eq, Option.some_bind, Option.filter_eq_none_iff,
+        simp only [body_eq_len, decide_true, eq, Option.bind_some, Option.filter_eq_none_iff,
           Option.mem_def, not_true_eq_false, imp_false, Option.forall_ne, or_self] at h
         let atom_list := r.body.zip gr.body
         have h_atom_list : atom_list = r.body.zip gr.body := by simp [atom_list]
