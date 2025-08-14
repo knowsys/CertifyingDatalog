@@ -426,7 +426,7 @@ namespace Walk
         intro contra; rw [contra] at h; simp at h
       have get_cons := @List.getElem_cons_succ _ (w.val.head neq) (w.tail.takeUntil (w.val.head neq)).val ((w.tail.takeUntil (w.val.head neq)).val.length - 1) (by rw [this]; simp)
       simp only [this] at get_cons
-      simp only [eq_mp_eq_cast, id_eq, eq_mpr_eq_cast, List.length_cons, Fin.zero_eta,
+      simp only [List.length_cons, Fin.zero_eta,
         List.get_eq_getElem, Fin.val_zero, List.getElem_cons_zero, Nat.pred_eq_sub_one,
         Nat.add_one_sub_one]
       rw [get_cons]
@@ -573,7 +573,7 @@ namespace Graph
 
   theorem canReach_iff_canReach_computable_eq_true (G : Graph A) (a b : A) :
       canReach G a b ↔ canReach_computable G a b := by
-    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, Finset.eq_empty_iff_forall_notMem, List.allSubsetListsOfLengthAtMost_iff]
+    simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, List.allSubsetListsOfLengthAtMost_iff]
     constructor
     · intro h
       rcases h with ⟨w, len, neq, h⟩
@@ -763,7 +763,7 @@ namespace Graph
         have contra : ¬ List.length (head :: tail) + 1 < 2 := by simp
         exact contra h
       case isFalse h =>
-        simp only [id_eq, eq_mpr_eq_cast, List.get_eq_getElem, Nat.pred_eq_sub_one]
+        simp only [List.get_eq_getElem, Nat.pred_eq_sub_one]
         unfold Walk.appendSuccessor
         rw [List.getElem_append_left]
         · rw [List.getElem_append_right]

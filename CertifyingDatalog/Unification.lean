@@ -54,7 +54,8 @@ section TermMatching
         simp only [Option.get_ite]
         apply Substitution.subset_refl
       | variableDL v =>
-        simp [Option.isSome_iff_exists] at h
+        simp only [Option.isSome_filter, Option.any_some, Bool.or_eq_true,
+          Option.isNone_iff_eq_none, decide_eq_true_eq] at h
         cases h with
         | inl h =>
           simp only [h, Option.isNone_none, Bool.true_or, Option.filter_true, Option.get_some]
@@ -102,7 +103,7 @@ section TermMatching
             simp only [applyTerm] at apply_t
             split at apply_t
             · rename_i o c' hc'
-              simp only [v_v', hc', Option.some.injEq]
+              simp only [hc', Option.some.injEq]
               simp only [Term.constant.injEq] at apply_t
               exact apply_t.symm
             · simp at apply_t
@@ -133,9 +134,9 @@ section TermMatching
         simp only [Term.constant.injEq] at apply_t
         simp [apply_t] at h
       | variableDL v =>
-        simp only [Option.filter_eq_none_iff, reduceCtorEq, Option.mem_def, Option.some.injEq,
+        simp only [Option.filter_eq_none_iff, Option.some.injEq,
           Bool.or_eq_true, Option.isNone_iff_eq_none, decide_eq_true_eq, not_or,
-          Option.ne_none_iff_exists, forall_eq', extend, ↓reduceIte, false_or] at h
+          Option.ne_none_iff_exists, forall_eq', extend, ↓reduceIte] at h
         rcases h with ⟨hl, hr⟩
         rcases hl with ⟨c', hc'⟩
         simp only [← hc', Option.some.injEq] at hr
@@ -205,14 +206,13 @@ section AtomMatching
         intro s' ⟨subset, apply_t⟩
         rw [List.map_map] at apply_t
         unfold List.map at apply_t
-        simp only [Function.comp_apply, List.pure_def, List.bind_eq_flatMap, List.flatMap_cons,
-          List.singleton_append, List.cons.injEq] at apply_t
+        simp only [Function.comp_apply, List.cons.injEq] at apply_t
         cases eq : s.matchTerm pair.fst pair.snd with
         | none => simp [matchTermList, eq] at h
         | some s'' =>
           simp only [matchTermList, eq]
           simp only [matchTermList, eq] at h
-          simp only [List.map_map, List.pure_def, List.bind_eq_flatMap, and_imp] at ih
+          simp only [List.map_map, and_imp] at ih
           apply ih h s' _ apply_t.right
 
           have isSome : (s.matchTerm pair.fst pair.snd).isSome := by simp [eq]
@@ -230,15 +230,14 @@ section AtomMatching
         intro s' subset apply_t
         rw [List.map_map] at apply_t
         unfold List.map at apply_t
-        simp only [Function.comp_apply, List.pure_def, List.bind_eq_flatMap, List.flatMap_cons,
-          List.singleton_append, List.cons.injEq] at apply_t
+        simp only [Function.comp_apply,  List.cons.injEq] at apply_t
         cases eq : s.matchTerm pair.fst pair.snd with
         | none =>
           apply matchTermNoneThenNoSubs eq s' subset
           apply apply_t.left
         | some s'' =>
           simp only [matchTermList, eq] at h
-          simp only [List.map_map, List.pure_def, List.bind_eq_flatMap] at ih
+          simp only [List.map_map] at ih
           apply ih h s' _ apply_t.right
 
           have isSome : (s.matchTerm pair.fst pair.snd).isSome := by simp [eq]
@@ -391,8 +390,7 @@ section RuleMatching
           have : s.matchAtomList (pair::l) = ((s.matchAtom pair.fst pair.snd).get this).matchAtomList l := by
             conv => left; unfold matchAtomList
             simp [eq]
-          simp only [List.map_cons, List.map_map, List.pure_def, List.bind_eq_flatMap,
-            List.flatMap_cons, List.singleton_append, List.cons.injEq]
+          simp only [List.map_cons, List.map_map, List.cons.injEq]
           constructor
           · unfold matchAtomList at h
             cases eq : s.matchAtom pair.fst pair.snd with
@@ -402,7 +400,7 @@ section RuleMatching
               simp_rw [this]
               apply matchAtomListSubset
           · simp_rw [this]
-            simp only [List.map_map, List.pure_def, List.bind_eq_flatMap] at ih
+            simp only [List.map_map] at ih
             apply ih
 
     lemma matchAtomListNoneThenNoSubs {s: Substitution τ} {l: List ((Atom τ) × (GroundAtom τ))} (h : (s.matchAtomList l) = none) : ∀ s' : Substitution τ, s ⊆ s' -> ¬ (l.map Prod.fst).map s'.applyAtom = l.map (fun x => GroundAtom.toAtom (Prod.snd x)) := by
@@ -446,7 +444,7 @@ section RuleMatching
         have body_eq_len : r.body.length = gr.body.length := by
           unfold matchRule at h
           simp only [eq, Option.bind_some, Option.isSome_iff_exists, Option.filter_eq_some_iff,
-            Option.mem_def, decide_eq_true_eq, exists_and_right] at h
+            decide_eq_true_eq, exists_and_right] at h
           apply And.right h
         unfold applyRule
         unfold GroundRule.toRule
@@ -454,7 +452,7 @@ section RuleMatching
         constructor
         · apply s.subset_applyAtom_eq
           · unfold matchRule
-            simp [eq, body_eq_len, ↓reduceIte, Option.filter_true]
+            simp [eq, body_eq_len, Option.filter_true]
             apply matchAtomListSubset
           · have : (empty.matchAtom r.head gr.head).isSome := by simp [eq]
             have : s = (empty.matchAtom r.head gr.head).get this := by simp [eq]
@@ -476,7 +474,7 @@ section RuleMatching
           apply List.ext_get
           · simp [fst, snd]
           · intro n h₁ h₂
-            simp only [Option.bind_some, List.get_eq_getElem, List.getElem_map]
+            simp only [List.get_eq_getElem, List.getElem_map]
             have := List.getElem_of_eq match_a_list (i := n)
             simp only [List.map_map, List.length_map, List.length_zip, lt_inf_iff, List.getElem_map,
               List.getElem_zip, Function.comp_apply] at this
@@ -503,7 +501,7 @@ section RuleMatching
           rw [List.length_map, List.length_map] at this
           exact this
         simp only [body_eq_len, decide_true, eq, Option.bind_some, Option.filter_eq_none_iff,
-          Option.mem_def, not_true_eq_false, imp_false, Option.forall_ne, or_self] at h
+          not_true_eq_false, imp_false, Option.forall_ne] at h
         let atom_list := r.body.zip gr.body
         have h_atom_list : atom_list = r.body.zip gr.body := by simp [atom_list]
         apply s'.matchAtomListNoneThenNoSubs h
@@ -528,10 +526,9 @@ section RuleMatching
             simp only [List.get_eq_getElem, List.map_map, List.getElem_map, List.getElem_zip,
               Function.comp_apply]
             have := List.getElem_of_eq contra.right (i := n)
-            simp only [List.map_map, List.length_map, List.length_zip, lt_inf_iff, List.getElem_map,
-              List.getElem_zip, Function.comp_apply] at this
+            simp only [List.length_map, List.getElem_map] at this
             apply this
-            simp only [List.map_map, List.length_map, List.length_zip, lt_inf_iff, atom_list] at h₁
+            simp only [List.map_map, List.length_map, List.length_zip, lt_inf_iff] at h₁
             rw [fst, h_atom_list]
             simp [h₁]
   end Substitution

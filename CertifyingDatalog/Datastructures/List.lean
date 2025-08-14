@@ -265,7 +265,7 @@ namespace List
           use 0
           simp [ahd]
           rw [← Ne.eq_def, ← Fin.val_ne_iff]
-          simp [Fin.ext, hi]
+          simp [hi]
         | inr h =>
           cases h with
           | inl ad =>
@@ -597,7 +597,7 @@ section dedup
     | succ m =>
       have := List.exists_of_length_succ _ h
       rcases this with ⟨hd, tl, h'⟩
-      simp only [h', removeCycles, List.head_cons]
+      simp only [h', removeCycles]
       simp only [h', List.length_cons, Nat.add_right_cancel_iff] at h
       split
       · rename_i mem
@@ -706,7 +706,7 @@ section allSubsetListsOfLengthAtMost
         | inr h =>
           rcases h with ⟨hd, hhd, tl, htl, h⟩
           rw [ih] at htl
-          simp only [← h, List.length_cons, add_left_inj, List.mem_cons, forall_eq_or_imp]
+          simp only [← h, List.length_cons, List.mem_cons, forall_eq_or_imp]
           constructor
           · omega
           · simp [hhd]

@@ -321,7 +321,8 @@ namespace Substitution
         intro v'
         simp only [Finset.mem_filter_nc, Finset.mem_singleton, not_and]
         unfold domain
-        simp only [Set.mem_setOf_eq, Bool.not_eq_true, Option.not_isSome, Option.isNone_iff_eq_none]
+        simp only [Set.mem_setOf_eq, Bool.not_eq_true, Option.isSome_eq_false_iff,
+          Option.isNone_iff_eq_none]
         intro h' p
         rw [p] at h'
         rw [eq] at h'

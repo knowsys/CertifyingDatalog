@@ -94,7 +94,7 @@ namespace PartialGroundRule
     unfold Interpretation.satisfiesRule
     intro h
     unfold isActive at notActive
-    simp only [not_forall, Classical.not_imp] at notActive
+    simp only [not_forall] at notActive
     have apply_eq := @ g.applyPartialGroundRule_eq_apply_only_ungrounded τ pgr
     unfold Grounding.applyPartialGroundRule at apply_eq
     rw [apply_eq] at h
@@ -293,7 +293,7 @@ namespace CheckableModel
               simp [Term.vars, t_mem]
             simp [subs, this]
         have subs_domain : subs.domain = hd.vars := by
-          simp [Substitution.domain, Set.ext_iff, subs]
+          simp [Substitution.domain, subs]
         have g_after_subs : ∀ a, g.applyAtom' (subs.applyAtom a) = g.applyAtom' a := by
           simp only [Grounding.applyAtom', Substitution.applyAtom, List.map_map,
             GroundAtom.mk.injEq, List.map_inj_left, Function.comp_apply, Grounding.applyTerm',
@@ -316,7 +316,7 @@ namespace CheckableModel
               rw [← g_eq_subs_on_hd] at s'_apply_also_ground
               intro v v_in_dom
               rw [subs_domain] at v_in_dom
-              simp only [Finset.mem_coe, subs] at v_in_dom
+              simp only [Finset.mem_coe] at v_in_dom
               unfold Substitution.applyAtom at s'_apply_also_ground
               simp only [Atom.mk.injEq, List.map_inj_left, true_and, subs] at s'_apply_also_ground
               specialize s'_apply_also_ground (Term.variableDL v) (by
@@ -330,7 +330,7 @@ namespace CheckableModel
                 rw [v_in_t]
                 exact t_mem
               )
-              simp only [Substitution.applyTerm, v_in_dom, ↓reduceIte, subs] at s'_apply_also_ground
+              simp only [Substitution.applyTerm, v_in_dom, ↓reduceIte] at s'_apply_also_ground
               simp only [v_in_dom, ↓reduceIte, subs]
               cases eq : s' v with
               | none => simp [eq] at s'_apply_also_ground
@@ -340,7 +340,7 @@ namespace CheckableModel
         specialize subs_works subs subs_in_substitutionsForAtom
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
         rw [checkPGRIsOkIffRuleIsSatisfied] at subs_works
-        · simp only [← List.toSet_mem, subs]
+        · simp only [← List.toSet_mem]
           simp only [PartialGroundRule.isSatisfied, Interpretation.satisfiesRule,
             Grounding.applyPartialGroundRule_eq_apply_only_ungrounded', List.map_map,
             List.append_assoc, List.singleton_append, ← List.toSet_mem, subs] at subs_works
@@ -357,10 +357,10 @@ namespace CheckableModel
           intro ga ga_mem
           cases ga_mem with
           | inl ga_mem =>
-            simp only [PartialGroundRule.isActive, subs] at active
+            simp only [PartialGroundRule.isActive] at active
             apply active ga ga_mem
           | inr ga_mem =>
-            simp only [ga_mem, ← List.toSet_mem, subs]
+            simp only [ga_mem, ← List.toSet_mem]
             apply substitutionsForAtom_application_in_model subs_in_substitutionsForAtom
       · intro grounding_works
         intro subs subs_mem
@@ -408,7 +408,7 @@ namespace CheckableModel
         | inr ga_mem =>
           right
           rcases ga_mem with ⟨a, a_mem, ground_a⟩
-          simp only [heq, List.mem_cons, grounding] at a_mem
+          simp only [heq, List.mem_cons] at a_mem
           cases a_mem with
           | inl a_mem =>
             rw [a_mem] at ground_a
