@@ -135,8 +135,8 @@ by
     use (Substitution.matchRule r gr).get s
     apply Substitution.matchRuleYieldsSubs
   · rename_i symbolSequenceMatch
-    simp only [List.any_eq_true, not_exists, not_and, Bool.not_eq_true, Option.not_isSome,
-      Option.isNone_iff_eq_none, reduceCtorEq, false_iff, ne_eq] at *
+    simp only [List.any_eq_true, not_exists, not_and, Bool.not_eq_true,
+      reduceCtorEq, false_iff, ne_eq] at *
     simp_rw [Program.toSymbolSequenceMap_semantics] at symbolSequenceMatch
     intro r rP
     specialize symbolSequenceMatch r

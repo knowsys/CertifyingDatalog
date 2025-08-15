@@ -33,7 +33,7 @@ namespace PreGraph
     induction vs generalizing pg with
     | nil => simp [add_vertices]
     | cons u us ih =>
-      simp only [add_vertices, List.foldl_cons, Bool.not_eq_true, List.mem_cons]
+      simp only [add_vertices, List.foldl_cons, List.mem_cons]
       intro v
       unfold add_vertices at ih
       rw [ih]
@@ -49,9 +49,9 @@ namespace PreGraph
             cases Decidable.em (v ∈ pg) with
             | inl v_in_pg => apply Or.inl; exact v_in_pg
             | inr v_not_in_pg =>
-              simp only [Bool.or_eq_true, beq_iff_eq] at hl
+              simp only [beq_iff_eq] at hl
               cases hl with
-              | inl hl => apply Or.inr; constructor; simp only [Bool.not_eq_true] at v_not_in_pg; exact v_not_in_pg; apply Or.inl; apply Eq.symm; exact hl
+              | inl hl => apply Or.inr; constructor; simp only at v_not_in_pg; exact v_not_in_pg; apply Or.inl; apply Eq.symm; exact hl
               | inr _ => contradiction
         | inr hr =>
           unfold add_vertex at hr
@@ -150,11 +150,11 @@ namespace PreGraph
       intro v
       apply from_vertices_no_vertex_has_predecessors
     intro a ha
-    simp [List.all_eq_true, decide_eq_true_eq, predecessors, this a]
+    simp [predecessors, this a]
 
   theorem mem_add_vertex_with_predecessors_iff_mem_or_in_new_vertices (pg : PreGraph A) (v : A) (vs : List A) : ∀ a, a ∈ (pg.add_vertex_with_predecessors v vs) ↔ (a ∈ pg ∧ a = v) ∨ (a ∈ pg ∧ a ≠ v) ∨ ((¬ a ∈ pg) ∧ a = v) ∨ ((¬ a ∈ pg) ∧ a ≠ v ∧ a ∈ vs) := by
     unfold add_vertex_with_predecessors
-    simp only [ne_eq, Bool.not_eq_true]
+    simp only [ne_eq]
     intro a
     rw [mem_add_vertices_iff_mem_or_in_list]
     constructor
@@ -178,7 +178,7 @@ namespace PreGraph
             | inr a_neq_v => apply Or.inr; apply Or.inl; constructor; exact hlr; exact a_neq_v
         case isFalse hr' =>
           rw [Std.HashMap.mem_insert] at hl
-          simp only [Bool.or_eq_true, beq_iff_eq] at hl
+          simp only [beq_iff_eq] at hl
           cases hl with
           | inl hll =>
             apply Or.inr
@@ -197,7 +197,7 @@ namespace PreGraph
         split at hrl
         case isTrue hl' =>
           rw [Std.HashMap.mem_insert] at hrl
-          simp only [Bool.or_eq_true, beq_iff_eq, not_or, Bool.not_eq_true] at hrl
+          simp only [beq_iff_eq, not_or] at hrl
           cases Decidable.em (a = v) with
           | inl a_eq_v =>
             rw [a_eq_v] at hrl
@@ -220,7 +220,7 @@ namespace PreGraph
               · apply hrr
         case isFalse hr' =>
           rw [Std.HashMap.mem_insert] at hrl
-          simp only [Bool.or_eq_true, beq_iff_eq, not_or, Bool.not_eq_true] at hrl
+          simp only [beq_iff_eq, not_or] at hrl
           cases Decidable.em (a = v) with
           | inl a_eq_v =>
             rw [a_eq_v] at hrl
@@ -246,11 +246,11 @@ namespace PreGraph
         apply Or.inl
         split
         · rw [Std.HashMap.mem_insert]
-          simp only [Bool.or_eq_true, beq_iff_eq]
+          simp only [beq_iff_eq]
           apply Or.inl
           rw [hll.right]
         · rw [Std.HashMap.mem_insert]
-          simp only [Bool.or_eq_true, beq_iff_eq]
+          simp only [beq_iff_eq]
           apply Or.inl
           rw [hll.right]
       | inr hlr => cases hlr with
@@ -258,11 +258,11 @@ namespace PreGraph
           apply Or.inl
           split
           · rw [Std.HashMap.mem_insert]
-            simp only [Bool.or_eq_true, beq_iff_eq]
+            simp only [beq_iff_eq]
             apply Or.inr
             simp [hll.left]
           · rw [Std.HashMap.mem_insert]
-            simp only [Bool.or_eq_true, beq_iff_eq]
+            simp only [beq_iff_eq]
             apply Or.inr
             simp [hll.left]
         | inr hlr => cases hlr with
@@ -270,12 +270,12 @@ namespace PreGraph
             apply Or.inl
             split
             · rw [Std.HashMap.mem_insert]
-              simp only [Bool.or_eq_true, beq_iff_eq]
+              simp only [beq_iff_eq]
               apply Or.inr
               rw [hll.right]
               assumption
             · rw [Std.HashMap.mem_insert]
-              simp only [Bool.or_eq_true, beq_iff_eq]
+              simp only [beq_iff_eq]
               apply Or.inl
               rw [hll.right]
           | inr hlr =>
@@ -293,7 +293,7 @@ namespace PreGraph
             · constructor
               · intro contra
                 rw [Std.HashMap.mem_insert] at contra
-                simp only [Bool.or_eq_true, beq_iff_eq] at contra
+                simp only [beq_iff_eq] at contra
                 cases contra with
                 | inl contra => apply hlr.right.left; rw [contra]
                 | inr contra => have contra' := hlr.left; contradiction
@@ -332,7 +332,7 @@ namespace PreGraph
   theorem add_vertex_with_predecessors_getD_semantics_4 (pg : PreGraph A) (v a : A) (vs : List A) (h : (¬ a ∈ pg) ∧ a ≠ v) : (pg.add_vertex_with_predecessors v vs).getD a [] = [] := by
     unfold add_vertex_with_predecessors
     simp only
-    simp only [Bool.not_eq_true, ne_eq] at h
+    simp only [ne_eq] at h
     rw [add_vertices_getD_semantics]
     split
     · rw [Std.HashMap.getD_insert]

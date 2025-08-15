@@ -266,7 +266,7 @@ namespace KnowledgeBase
       unfold Interpretation.satisfiesRule
       intro h
       unfold modelTheoreticSemantics
-      simp [Set.mem_setOf]
+      simp only [Set.mem_setOf_eq]
       by_contra h'
       push_neg at h'
       rcases h' with ⟨i, m, n_head⟩

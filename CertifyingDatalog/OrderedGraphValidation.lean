@@ -49,7 +49,7 @@ namespace OrderedProofGraph
   lemma checkAtIndexOkIffLocallyValid {G : OrderedProofGraph τ} {kb : KnowledgeBase τ} {i : Fin G.val.size} :
     G.checkAtIndex kb.prog.toSymbolSequenceMap kb.db i = Except.ok () ↔ G.locallyValid kb i := by
       unfold checkAtIndex
-      simp only [Array.length_toList, Fin.getElem_fin, List.isEmpty_iff]
+      simp only [Fin.getElem_fin, List.isEmpty_iff]
       split
       case isTrue h =>
         split
@@ -70,7 +70,7 @@ namespace OrderedProofGraph
       case isFalse h =>
         rw [checkRuleMatchOkIffExistsRule]
         unfold locallyValid
-        simp only [exists_and_left, Array.length_toList, Fin.getElem_fin,
+        simp only [exists_and_left, Fin.getElem_fin,
           iff_or_self, and_imp]
         intro contra
         contradiction
@@ -87,15 +87,14 @@ namespace OrderedProofGraph
     unfold checkValidityStep
     split
     case isFalse h =>
-      simp only [Array.length_toList, Fin.getElem_fin, true_iff]
+      simp only [Fin.getElem_fin, true_iff]
       intro i n_leq_i
       have : n < G.val.size := by apply Nat.lt_of_le_of_lt; exact n_leq_i; exact i.isLt
       contradiction
     case isTrue h =>
       split
       case h_1 heq =>
-        simp only [reduceCtorEq, Array.length_toList, Fin.getElem_fin, false_iff, not_forall,
-          Classical.not_imp]
+        simp only [reduceCtorEq, Fin.getElem_fin, false_iff, not_forall]
         exists ⟨n, h⟩
         constructor
         · rw [← checkAtIndexOkIffLocallyValid]
@@ -153,7 +152,7 @@ namespace OrderedProofGraph
     cases valid root with
     | inl h =>
       apply Or.inr
-      simp only [Array.length_toList, Fin.getElem_fin, List.map_eq_nil_iff, List.attach_eq_nil_iff]
+      simp only [Fin.getElem_fin, List.map_eq_nil_iff, List.attach_eq_nil_iff]
       exact h
     | inr h =>
       apply Or.inl
@@ -168,9 +167,9 @@ namespace OrderedProofGraph
         intro a _
         simp only [Tree.root]
         unfold toProofTreeSkeleton
-        simp only [Array.length_toList, Fin.getElem_fin]
+        simp only [Fin.getElem_fin]
       · rw [List.forall_iff_forall_mem]
-        simp only [Array.length_toList, Fin.getElem_fin, List.mem_attach, forall_const,
+        simp only [Fin.getElem_fin, List.mem_attach, forall_const,
           Subtype.forall, List.mem_map, true_and, Subtype.exists, forall_exists_index]
         intro t j j_mem next_tree
         rw [← next_tree]
@@ -193,6 +192,6 @@ namespace OrderedProofGraph
     unfold toProofTreeSkeleton
     unfold ProofTree.root
     unfold Tree.root
-    simp only [Array.length_toList, Fin.getElem_fin]
+    simp only [Fin.getElem_fin]
     exact h
 end OrderedProofGraph
