@@ -70,8 +70,7 @@ namespace Substitution
   lemma subset_trans (s1 s2 s3: Substitution τ) (subs_l: s1 ⊆ s2) (subs_r: s2 ⊆ s3): s1 ⊆ s3 := by
     unfold_projs at *
     unfold subset at *
-    intro v
-    intro h
+    intro v h
     specialize subs_l v h
     rw [subs_l]
     apply subs_r

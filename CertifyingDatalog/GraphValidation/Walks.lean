@@ -462,74 +462,74 @@ namespace Walk
     def removeCycles {G : Graph A} (w : Walk G) : Walk G := ⟨List.removeCycles w.1, by
         suffices ∀ (l : List A), l.isWalk G → (List.removeCycles l).isWalk G from this w.1 w.2
         intro l hl
-        induction' h:l.length using Nat.strong_induction_on generalizing l
-        rename_i n ih
-        cases n with
-        | zero =>
-          simp only [List.length_eq_zero_iff] at h
-          rw [h] at hl
-          simp [h, List.removeCycles, hl]
-        | succ k =>
-          have := List.exists_of_length_succ _ h
-          rcases this with ⟨hd, tl, h'⟩
-          simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
-          simp only [List.removeCycles]
-          have htl : tl.isWalk G := by
-            simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+        induction h:l.length using Nat.strong_induction_on generalizing l with
+        | h n ih =>
+          cases n with
+          | zero =>
+            simp only [List.length_eq_zero_iff] at h
+            rw [h] at hl
+            simp [h, List.removeCycles, hl]
+          | succ k =>
+            have := List.exists_of_length_succ _ h
+            rcases this with ⟨hd, tl, h'⟩
+            simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl h ⊢
+            simp only [List.removeCycles]
+            have htl : tl.isWalk G := by
+              simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+                Nat.pred_eq_sub_one] at hl ⊢
+              rcases hl with ⟨hl1, hl2⟩
+              apply And.intro hl1.right
+              intro i hi1 hi2
+              cases i with
+              | zero => simp at hi1
+              | succ j =>
+                simp only [Nat.add_one_sub_one]
+                specialize hl2 (j+2) (by omega) (by omega)
+                simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at hl2
+                exact hl2
+            split
+            · rename_i mem
+              have : (List.drop_until tl hd).length < k + 1 := by
+                rw [← h]
+                rw [Nat.lt_succ_iff]
+                apply List.drop_until_length
+              specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
+              have walk : (List.drop_until tl hd).isWalk G := by
+                apply drop_until_isWalk_of_isWalk (w:= ⟨tl, htl⟩)
+              apply ih walk rfl
+            · simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
               Nat.pred_eq_sub_one] at hl ⊢
-            rcases hl with ⟨hl1, hl2⟩
-            apply And.intro hl1.right
-            intro i hi1 hi2
-            cases i with
-            | zero => simp at hi1
-            | succ j =>
-              simp only [Nat.add_one_sub_one]
-              specialize hl2 (j+2) (by omega) (by omega)
-              simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at hl2
-              exact hl2
-          split
-          · rename_i mem
-            have : (List.drop_until tl hd).length < k + 1 := by
-              rw [← h]
-              rw [Nat.lt_succ_iff]
-              apply List.drop_until_length
-            specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
-            have walk : (List.drop_until tl hd).isWalk G := by
-              apply drop_until_isWalk_of_isWalk (w:= ⟨tl, htl⟩)
-            apply ih walk rfl
-          · simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-            Nat.pred_eq_sub_one] at hl ⊢
-            specialize ih k (by omega) tl htl h
-            simp only [List.isWalk, gt_iff_lt, Nat.pred_eq_sub_one] at ih
-            apply And.intro (And.intro hl.1.1 ih.1)
-            rcases ih with ⟨_, ih⟩
-            intro i hi1 hi2
-            cases i with
-            | zero => simp at hi1
-            | succ j =>
-              cases j with
-              | zero =>
-                simp only [Nat.zero_add, List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero]
-                rcases hl with ⟨_, hl⟩
-                specialize hl 1 (by simp)
-                simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
-                have htl' : tl ≠ [] := by
-                  rw [@List.length_pos_iff_ne_nil] at hi2
-                  rw [List.removeCycles_not_empty_iff] at hi2
-                  exact hi2
-                have : 0 < tl.length := by
-                  rw [@List.length_pos_iff_ne_nil]
-                  apply htl'
-                specialize hl (by omega)
-                simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
-                have head_tl := List.removeCycles_head_eq_head (l := tl) htl'
-                simp only [List.head_eq_getElem_zero] at head_tl
-                simp [head_tl, hl]
-              | succ m =>
-                simp only [List.getElem_cons_succ, Nat.add_one_sub_one]
-                specialize ih (m + 1) (by omega) (by omega)
-                simp only [Nat.add_one_sub_one] at ih
-                exact ih
+              specialize ih k (by omega) tl htl h
+              simp only [List.isWalk, gt_iff_lt, Nat.pred_eq_sub_one] at ih
+              apply And.intro (And.intro hl.1.1 ih.1)
+              rcases ih with ⟨_, ih⟩
+              intro i hi1 hi2
+              cases i with
+              | zero => simp at hi1
+              | succ j =>
+                cases j with
+                | zero =>
+                  simp only [Nat.zero_add, List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero]
+                  rcases hl with ⟨_, hl⟩
+                  specialize hl 1 (by simp)
+                  simp only [Nat.zero_add, Nat.lt_add_left_iff_pos] at hi2
+                  have htl' : tl ≠ [] := by
+                    rw [@List.length_pos_iff_ne_nil] at hi2
+                    rw [List.removeCycles_not_empty_iff] at hi2
+                    exact hi2
+                  have : 0 < tl.length := by
+                    rw [@List.length_pos_iff_ne_nil]
+                    apply htl'
+                  specialize hl (by omega)
+                  simp only [List.getElem_cons_succ, Nat.sub_self, List.getElem_cons_zero] at hl
+                  have head_tl := List.removeCycles_head_eq_head (l := tl) htl'
+                  simp only [List.head_eq_getElem_zero] at head_tl
+                  simp [head_tl, hl]
+                | succ m =>
+                  simp only [List.getElem_cons_succ, Nat.add_one_sub_one]
+                  specialize ih (m + 1) (by omega) (by omega)
+                  simp only [Nat.add_one_sub_one] at ih
+                  exact ih
     ⟩
 
 end Walk

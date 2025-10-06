@@ -510,7 +510,7 @@ section dedup
 
   theorem List.removeCycles_not_mem_preserved {l : List A} {a : A} (h : ¬ a ∈ l) :
       ¬ a ∈ List.removeCycles l := by
-    induction' h':l.length using Nat.strong_induction_on generalizing l
+    induction h':l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
@@ -539,7 +539,7 @@ section dedup
           apply ih h'
 
   theorem List.removeCycles_not_empty_iff {l : List A} : List.removeCycles l ≠ [] ↔ l ≠ [] := by
-    induction' h:l.length using Nat.strong_induction_on generalizing l
+    induction h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
@@ -564,7 +564,7 @@ section dedup
 
   theorem List.removeCycles_head_eq_head {l : List A} (hl : l ≠ []) :
       List.head (List.removeCycles l) (by simp [List.removeCycles_not_empty_iff, hl]) = l.head hl := by
-    induction' h:l.length using Nat.strong_induction_on generalizing l
+    induction h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
@@ -588,7 +588,7 @@ section dedup
 
   theorem List.removeCycles_getLast_eq_getLast {l : List A} (hl : l ≠ []) :
       List.getLast (List.removeCycles l) (by simp [List.removeCycles_not_empty_iff, hl]) = l.getLast hl := by
-    induction' h:l.length using Nat.strong_induction_on generalizing l
+    induction h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
@@ -620,7 +620,7 @@ section dedup
             rw [ih, List.getLast_cons]
 
   theorem List.nodup_removeCycles (l : List A) : List.Nodup (List.removeCycles l) := by
-    induction' h:l.length using Nat.strong_induction_on generalizing l
+    induction h:l.length using Nat.strong_induction_on generalizing l
     rename_i n ih
     cases n with
     | zero =>
@@ -720,7 +720,7 @@ section allSubsetListsOfLengthAtMost
           apply And.intro (h2 (l'.head h') (by simp))
           use l'.tail
           rw [ih]
-          simp only [List.length_tail, Nat.sub_le_iff_le_add, List.head_cons_tail, and_true]
+          simp only [List.length_tail, Nat.sub_le_iff_le_add, List.cons_head_tail, and_true]
           constructor
           · omega
           · intro x hx

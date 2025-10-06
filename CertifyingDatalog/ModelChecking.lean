@@ -362,8 +362,7 @@ namespace CheckableModel
           | inr ga_mem =>
             simp only [ga_mem, ← List.toSet_mem]
             apply substitutionsForAtom_application_in_model subs_in_substitutionsForAtom
-      · intro grounding_works
-        intro subs subs_mem
+      · intro grounding_works subs subs_mem
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
         rw [m.checkPGRIsOkIffRuleIsSatisfied _ (by
           simp only [PartialGroundRule.isActive, List.mem_append, List.mem_singleton, ←
