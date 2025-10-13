@@ -81,50 +81,51 @@ namespace KnowledgeBase
     intro t ga mem
     unfold proofTheoreticSemantics
     simp only [Set.mem_setOf_eq]
-    induction' h': t.height using Nat.strongRecOn with n ih generalizing t
-    cases eq : t.tree with
-    | node a' l =>
-      unfold ProofTree.elem at mem
-      unfold Tree.elem at mem
-      simp only [eq, List.any_eq_true, List.mem_attach, true_and, Subtype.exists, exists_prop,
-        Bool.decide_or, Bool.or_eq_true, decide_eq_true_eq] at mem
-      cases mem with
-      | inl mem =>
-        use t
-        unfold ProofTree.root
-        unfold Tree.root
-        simp only [eq]
-        apply Eq.symm
-        exact mem
-      | inr mem =>
-        rcases mem with ⟨t', t'_t, a_t'⟩
-        specialize ih t'.height
-        have height_t': t'.height < n := by
-          rw [← h']
-          apply Tree.heightOfMemberIsSmaller
-          unfold Tree.member
+    induction h': t.height using Nat.strongRecOn generalizing t with
+    | ind n ih =>
+      cases eq : t.tree with
+      | node a' l =>
+        unfold ProofTree.elem at mem
+        unfold Tree.elem at mem
+        simp only [eq, List.any_eq_true, List.mem_attach, true_and, Subtype.exists, exists_prop,
+          Bool.decide_or, Bool.or_eq_true, decide_eq_true_eq] at mem
+        cases mem with
+        | inl mem =>
+          use t
+          unfold ProofTree.root
+          unfold Tree.root
           simp only [eq]
-          apply t'_t
-        have valid_t': ProofTreeSkeleton.isValid t' kb := by
-          have valid := t.isValid
-          unfold ProofTreeSkeleton.isValid at valid
-          simp only [eq, exists_and_left, exists_and_right] at valid
-          cases valid with
-          | inl valid =>
-            rcases valid with ⟨_,_,_,all⟩
-            rw [List.forall_iff_forall_mem] at all
-            simp only [List.mem_attach, forall_const, Subtype.forall] at all
-            apply all
+          apply Eq.symm
+          exact mem
+        | inr mem =>
+          rcases mem with ⟨t', t'_t, a_t'⟩
+          specialize ih t'.height
+          have height_t': t'.height < n := by
+            rw [← h']
+            apply Tree.heightOfMemberIsSmaller
+            unfold Tree.member
+            simp only [eq]
             apply t'_t
-          | inr valid =>
-            exfalso
-            rcases valid with ⟨left,_⟩
-            rw [left] at t'_t
-            simp at t'_t
-        specialize ih height_t' ⟨t', valid_t'⟩
-        apply ih
-        · apply a_t'
-        · rfl
+          have valid_t': ProofTreeSkeleton.isValid t' kb := by
+            have valid := t.isValid
+            unfold ProofTreeSkeleton.isValid at valid
+            simp only [eq, exists_and_left, exists_and_right] at valid
+            cases valid with
+            | inl valid =>
+              rcases valid with ⟨_,_,_,all⟩
+              rw [List.forall_iff_forall_mem] at all
+              simp only [List.mem_attach, forall_const, Subtype.forall] at all
+              apply all
+              apply t'_t
+            | inr valid =>
+              exfalso
+              rcases valid with ⟨left,_⟩
+              rw [left] at t'_t
+              simp at t'_t
+          specialize ih height_t' ⟨t', valid_t'⟩
+          apply ih
+          · apply a_t'
+          · rfl
 
   lemma proofTreeForRule [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
     (kb: KnowledgeBase τ) (r: GroundRule τ) (rGP: r ∈ kb.prog.groundProgram) (subs: r.bodySet.toSet ⊆ kb.proofTheoreticSemantics) : ∃ t : ProofTree kb, t.root = r.head := by
@@ -191,61 +192,63 @@ namespace KnowledgeBase
     rcases pt with ⟨t, root_t⟩
     unfold Interpretation.models at m
     rcases m with ⟨ruleModel,dbModel⟩
-    induction' h': t.height using Nat.strongRecOn with n ih  generalizing a t
-    cases' eq : t.tree with a' l
-    have valid_t := t.isValid
-    unfold ProofTreeSkeleton.isValid at valid_t
-    simp only [eq, exists_and_left, exists_and_right] at valid_t
-    cases valid_t with
-    | inl ruleCase =>
-      rcases ruleCase with ⟨r,rP,ex_g,all⟩
-      rcases ex_g with ⟨g,r_ground⟩
-      have r_true: i.satisfiesRule (g.applyRule' r) := by
-        apply ruleModel
-        unfold Program.groundProgram
-        rw [Set.mem_setOf]
-        use r
-        use g
-      unfold Interpretation.satisfiesRule at r_true
-      have head_a: (g.applyRule' r).head = a := by
-        unfold ProofTree.root at root_t
-        unfold Tree.root at root_t
-        simp [eq] at root_t
-        rw [← root_t, r_ground]
-      rw [head_a] at r_true
-      apply r_true
-      rw [Set.subset_def]
-      intros x x_body
-      simp only [Finset.mem_coe] at x_body
-      rw [r_ground, ← GroundRule.in_bodySet_iff_in_body] at x_body
-      simp only [List.mem_map] at x_body
-      rcases x_body with ⟨t_x, t_x_l, t_x_root⟩
-      rw [List.forall_iff_forall_mem] at all
-      simp only [List.mem_attach, forall_const, Subtype.forall] at all
-      apply ih (m := t_x.height) (t := {
-        tree := t_x
-        isValid := by
-          apply all
-          apply t_x_l
-        })
-      · unfold ProofTree.root
-        simp only
-        apply t_x_root
-      · unfold ProofTree.height
-        simp
-      · rw [← h']
-        apply Tree.heightOfMemberIsSmaller
-        unfold Tree.member
-        simp only [eq]
-        apply t_x_l
-    | inr dbCase =>
-      rcases dbCase with ⟨_, contains⟩
-      apply dbModel
-      unfold ProofTree.root at root_t
-      unfold Tree.root at root_t
-      simp only [eq] at root_t
-      rw [root_t] at contains
-      apply contains
+    induction h': t.height using Nat.strongRecOn generalizing a t with
+    | ind n ih =>
+      cases eq : t.tree with
+      | node a' l =>
+        have valid_t := t.isValid
+        unfold ProofTreeSkeleton.isValid at valid_t
+        simp only [eq, exists_and_left, exists_and_right] at valid_t
+        cases valid_t with
+        | inl ruleCase =>
+          rcases ruleCase with ⟨r,rP,ex_g,all⟩
+          rcases ex_g with ⟨g,r_ground⟩
+          have r_true: i.satisfiesRule (g.applyRule' r) := by
+            apply ruleModel
+            unfold Program.groundProgram
+            rw [Set.mem_setOf]
+            use r
+            use g
+          unfold Interpretation.satisfiesRule at r_true
+          have head_a: (g.applyRule' r).head = a := by
+            unfold ProofTree.root at root_t
+            unfold Tree.root at root_t
+            simp [eq] at root_t
+            rw [← root_t, r_ground]
+          rw [head_a] at r_true
+          apply r_true
+          rw [Set.subset_def]
+          intros x x_body
+          simp only [Finset.mem_coe] at x_body
+          rw [r_ground, ← GroundRule.in_bodySet_iff_in_body] at x_body
+          simp only [List.mem_map] at x_body
+          rcases x_body with ⟨t_x, t_x_l, t_x_root⟩
+          rw [List.forall_iff_forall_mem] at all
+          simp only [List.mem_attach, forall_const, Subtype.forall] at all
+          apply ih (m := t_x.height) (t := {
+            tree := t_x
+            isValid := by
+              apply all
+              apply t_x_l
+            })
+          · unfold ProofTree.root
+            simp only
+            apply t_x_root
+          · unfold ProofTree.height
+            simp
+          · rw [← h']
+            apply Tree.heightOfMemberIsSmaller
+            unfold Tree.member
+            simp only [eq]
+            apply t_x_l
+        | inr dbCase =>
+          rcases dbCase with ⟨_, contains⟩
+          apply dbModel
+          unfold ProofTree.root at root_t
+          unfold Tree.root at root_t
+          simp only [eq] at root_t
+          rw [root_t] at contains
+          apply contains
 
   def modelTheoreticSemantics [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (kb: KnowledgeBase τ) : Interpretation τ := {a: GroundAtom τ | ∀ (i: Interpretation τ), i.models kb → a ∈ i}
 

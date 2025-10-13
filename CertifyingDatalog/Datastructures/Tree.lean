@@ -46,63 +46,18 @@ namespace Tree
       | some max =>
         simp only [Option.getD_some]
         rw [Nat.lt_one_add_iff]
-        rw [List.max?_eq_some_iff'] at eq
+        rw [List.max?_eq_some_iff] at eq
         apply eq.right
         apply List.mem_map_of_mem
         exact mem
 
   lemma elem_iff_memElements  [DecidableEq A] (t: Tree A) (a : A) : t.elem a = true ↔ a ∈ t.elements :=
   by
-    induction' h' : t.height using Nat.strongRecOn with n ih generalizing t
-    cases t with
-    | node a' l =>
-      unfold elements
-      rw [List.foldl_append_mem]
-      unfold Tree.elem
-      simp only [List.any_eq_true, List.mem_attach, true_and, Subtype.exists, exists_prop,
-        Bool.decide_or, Bool.or_eq_true, decide_eq_true_eq, List.mem_singleton]
-      constructor
-      · intro h
-        cases h with
-        | inl h =>
-          left
-          apply h
-        | inr h =>
-          rcases h with ⟨t', t_l, a_t⟩
-          specialize ih t'.height
-          have height_t': t'.height < n := by
-            rw [← h']
-            apply Tree.heightOfMemberIsSmaller
-            unfold Tree.member
-            simp
-            apply t_l
-          specialize ih height_t' t'
-          right
-          use t'
-          constructor
-          apply t_l
-          rw [← ih rfl]
-          apply a_t
-
-      · intro h
-        cases h with
-        | inl h =>
-          left
-          apply h
-        | inr h =>
-          rcases h with ⟨t', t_l, a_t⟩
-          specialize ih t'.height
-          have height_t': t'.height < n := by
-            rw [← h']
-            apply Tree.heightOfMemberIsSmaller
-            unfold Tree.member
-            simp only
-            apply t_l
-          specialize ih height_t' t'
-          right
-          use t'
-          constructor
-          · apply t_l
-          · rw [ih rfl]
-            apply a_t
+    fun_induction elem with
+    | case1 a' l ih =>
+      simp only [List.any_subtype, List.unattach_attach, List.any_eq_true, Bool.decide_or,
+        Bool.or_eq_true, decide_eq_true_eq, elements, List.foldl_subtype,
+        List.foldl_append_eq_append, List.cons_append, List.nil_append, List.mem_cons,
+        List.mem_flatten, List.mem_map, exists_exists_and_eq_and]
+      grind
 end Tree
