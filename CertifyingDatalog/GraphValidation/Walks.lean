@@ -152,8 +152,8 @@ namespace Walk
           cases eq : walk.val.head? with
           | none => simp [eq] at is_pred
           | some head =>
-            simp [eq] at is_pred
-            rw [List.head?_eq_head] at eq
+            simp only [eq] at is_pred
+            rw [List.head?_eq_head (by grind)] at eq
             injection eq with eq
             rw [List.getElem_zero]
             rw [eq]
@@ -654,7 +654,7 @@ namespace Graph
     rcases a_reaches_b with ⟨w, neq, get_a, get_b⟩
     exists w.appendSuccessor c (by
       unfold Walk.successors
-      rw [List.getLast?_eq_getLast]
+      rw [List.getLast?_eq_getLast neq]
       simp only [List.mem_filter, decide_eq_true_eq]
       constructor
       · apply mem_of_has_pred
@@ -747,7 +747,7 @@ namespace Graph
     | cons head tail =>
       apply acyclic (w.appendSuccessor b (by
         unfold Walk.successors
-        rw [List.getLast?_eq_getLast]
+        rw [List.getLast?_eq_getLast neq]
         simp only [List.mem_filter, decide_eq_true_eq]
         constructor
         · apply mem_of_has_pred

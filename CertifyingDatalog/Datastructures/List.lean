@@ -1,6 +1,4 @@
-import Mathlib.Data.Set.Basic
-import Mathlib.Data.Finset.Basic
-import Mathlib.Algebra.Group.Defs
+import Mathlib.Data.Finset.Lattice.Lemmas
 
 namespace List
   def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := l.toFinset.toSet
@@ -618,6 +616,7 @@ section dedup
           · exact tl
           · specialize ih htl h
             rw [ih, List.getLast_cons]
+          · simp [removeCycles_not_empty_iff, htl]
 
   theorem List.nodup_removeCycles (l : List A) : List.Nodup (List.removeCycles l) := by
     induction h:l.length using Nat.strong_induction_on generalizing l
