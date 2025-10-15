@@ -288,7 +288,7 @@ namespace InputOrderedGraph
               cases Decidable.em (i < graph.val.size) with
               | inl i_lt_g =>
                 simp only [Fin.getElem_fin]
-                rw [Array.getElem_push_lt]
+                rw [Array.getElem_push_lt i_lt_g]
                 apply graph.prop ⟨i, i_lt_g⟩
               | inr i_not_lt_g =>
                 have : i = graph.val.size := by cases Nat.le_iff_lt_or_eq.mp (Nat.le_of_lt_succ i_lt); contradiction; assumption
@@ -298,7 +298,7 @@ namespace InputOrderedGraph
             ⟩
           )
         else
-          Except.error "The Graph is not properly ordered. Predecessors of nodes must occur before predecessors. You may try the regular graph input instead."
+          Except.error "The Graph is not properly ordered. Predecessors of nodes must occur before the node. You may try the regular graph input instead."
     ) (Except.ok ⟨#[], by intro i; have isLt := i.isLt; simp at isLt⟩)
 end InputOrderedGraph
 
