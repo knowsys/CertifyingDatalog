@@ -1,7 +1,7 @@
 import Mathlib.Data.Finset.Lattice.Lemmas
 
 namespace List
-  def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := l.toFinset.toSet
+  def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := SetLike.coe l.toFinset
 
   lemma toSet_mem {A: Type u} [DecidableEq A] {a:A} {l: List A}: a ∈ l ↔ a ∈ l.toSet := by simp [toSet]
 
