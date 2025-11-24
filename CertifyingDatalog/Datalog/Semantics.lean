@@ -18,7 +18,7 @@ variable {τ : Signature}
 
 namespace Interpretation
   def satisfiesRule [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
-    (i: Interpretation τ) (r: GroundRule τ) : Prop := r.bodySet.toSet ⊆ i → r.head ∈ i
+    (i: Interpretation τ) (r: GroundRule τ) : Prop := SetLike.coe r.bodySet ⊆ i → r.head ∈ i
 
   def models [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
     (i: Interpretation τ) (kb: KnowledgeBase τ) : Prop :=
@@ -128,8 +128,8 @@ namespace KnowledgeBase
           · rfl
 
   lemma proofTreeForRule [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
-    (kb: KnowledgeBase τ) (r: GroundRule τ) (rGP: r ∈ kb.prog.groundProgram) (subs: r.bodySet.toSet ⊆ kb.proofTheoreticSemantics) : ∃ t : ProofTree kb, t.root = r.head := by
-    have h: r.body.toFinset.toSet ⊆ kb.proofTheoreticSemantics → ∃ (l: List (ProofTree kb)), List.map ProofTree.root l = r.body := by
+    (kb: KnowledgeBase τ) (r: GroundRule τ) (rGP: r ∈ kb.prog.groundProgram) (subs: SetLike.coe r.bodySet ⊆ kb.proofTheoreticSemantics) : ∃ t : ProofTree kb, t.root = r.head := by
+    have h: SetLike.coe r.body.toFinset ⊆ kb.proofTheoreticSemantics → ∃ (l: List (ProofTree kb)), List.map ProofTree.root l = r.body := by
       induction r.body with
       | nil => simp
       | cons r rs ih =>
