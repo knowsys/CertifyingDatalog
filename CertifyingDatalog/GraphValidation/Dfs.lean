@@ -522,7 +522,7 @@ section Dfs
                 simp only [cycle]
                 unfold Walk.prependPredecessor
                 rw [List.head?_cons]
-                rw [← List.head?_eq_head]
+                rw [← List.head?_eq_some_head]
                 exact walkFromPred.property
               · apply canReach_pred
                 exact is_pred

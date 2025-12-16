@@ -277,7 +277,7 @@ namespace List
             rw [← Ne.eq_def, ← Fin.val_ne_iff]
             simp
             rw [hi]
-            rw [← Ne.eq_def, Nat.succ_ne_succ]
+            rw [← Ne.eq_def, Nat.succ_ne_succ_iff]
             rw [← Ne.eq_def, ← Fin.val_ne_iff] at j_i
             simp at j_i
             rw [Ne.eq_def]
@@ -309,7 +309,7 @@ namespace List
             use Fin.mk n isLt_n
             simp
             constructor
-            rw [← Ne.eq_def, ← Nat.succ_ne_succ, Nat.succ_eq_add_one, ← hj, Nat.succ_eq_add_one, ← hi]
+            rw [← Ne.eq_def, ← Nat.succ_ne_succ_iff, Nat.succ_eq_add_one, ← hj, Nat.succ_eq_add_one, ← hi]
             rw [Fin.val_ne_iff]
             apply j_i
             rw [get_j]
@@ -501,7 +501,7 @@ section dedup
       else hd :: (List.removeCycles tl)
   termination_by l.length
   decreasing_by
-    · simp only [List.length_cons, gt_iff_lt]
+    · simp only [length_cons]
       have := @ List.drop_until_length _ _ tl hd
       omega
     · simp
