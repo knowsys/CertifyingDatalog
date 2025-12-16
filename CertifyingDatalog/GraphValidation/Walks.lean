@@ -153,7 +153,7 @@ namespace Walk
           | none => simp [eq] at is_pred
           | some head =>
             simp only [eq] at is_pred
-            rw [List.head?_eq_head (by grind)] at eq
+            rw [List.head?_eq_some_head (by grind)] at eq
             injection eq with eq
             rw [List.getElem_zero]
             rw [eq]
@@ -263,7 +263,7 @@ namespace Walk
 
   lemma head_in_tail_predecessors {G : Graph A} (w : Walk G) (neq : w.val.tail ≠ []) : w.val.head (by intro contra; rw [contra] at neq; simp at neq) ∈ w.tail.predecessors := by
     unfold predecessors
-    rw [@List.head?_eq_head _ w.tail.val neq]
+    rw [@List.head?_eq_some_head _ w.tail.val neq]
     simp only
     have : 0 < w.val.length := by apply Decidable.by_contra; intro contra; simp at contra; rw [contra] at neq; simp at neq
     have this2 : 0 < w.tail.val.length := by
@@ -315,8 +315,8 @@ namespace Walk
 
   lemma takeUntil_predecessors_same {G : Graph A} (w : Walk G) (ne : w.val ≠ []) (a : A) : (w.takeUntil a).predecessors = w.predecessors := by
     unfold predecessors
-    rw [List.head?_eq_head ne]
-    rw [List.head?_eq_head (by apply takeUnil_ne_of_ne _ ne)]
+    rw [List.head?_eq_some_head ne]
+    rw [List.head?_eq_some_head (by apply takeUnil_ne_of_ne _ ne)]
     simp only
     rw [takeUntil_head_same]
 
@@ -654,7 +654,7 @@ namespace Graph
     rcases a_reaches_b with ⟨w, neq, get_a, get_b⟩
     exists w.appendSuccessor c (by
       unfold Walk.successors
-      rw [List.getLast?_eq_getLast neq]
+      rw [List.getLast?_eq_some_getLast neq]
       simp only [List.mem_filter, decide_eq_true_eq]
       constructor
       · apply mem_of_has_pred
@@ -747,7 +747,7 @@ namespace Graph
     | cons head tail =>
       apply acyclic (w.appendSuccessor b (by
         unfold Walk.successors
-        rw [List.getLast?_eq_getLast neq]
+        rw [List.getLast?_eq_some_getLast neq]
         simp only [List.mem_filter, decide_eq_true_eq]
         constructor
         · apply mem_of_has_pred

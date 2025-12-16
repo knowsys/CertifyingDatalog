@@ -31,7 +31,7 @@ def tokenizeHelper (s: List Char) (currToken: Option String) (tokens: List Strin
               | Option.none => tokenizeHelper tl hd.toString tokens
               | Option.some token => tokenizeHelper tl (token.push hd) tokens
 
-def tokenize (s: String): List String := tokenizeHelper s.data Option.none List.nil
+def tokenize (s: String): List String := tokenizeHelper s.toList Option.none List.nil
 
 inductive InputTerm
 | constant: String → InputTerm
