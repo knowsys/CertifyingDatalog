@@ -676,7 +676,7 @@ section dedup
 end dedup
 
 section allSubsetListsOfLengthAtMost
-  variable {A : Type u} [DecidableEq A]
+  variable {A : Type u}
 
   --suggested by Eric Wieser on zulip
   def List.allSubsetListsOfLengthAtMost (l : List A) (n : ℕ) : List (List A) :=
