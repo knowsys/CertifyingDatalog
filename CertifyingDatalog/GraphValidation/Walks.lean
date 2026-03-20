@@ -46,6 +46,13 @@ instance (G : Graph A) (l : List A) : Decidable (List.isWalk l G) :=
 def Walk (G : Graph A) := {l : List A // l.isWalk G}
 
 namespace Walk
+
+  instance {G : Graph A} : Membership A (Walk G) where
+    mem := fun x y => y ∈ x.1
+
+  theorem mem_walk_iff {G : Graph A} {a : A} {w : Walk G} :
+    a ∈ w ↔ a ∈ w.1 := by rfl
+
   def singleton (G : Graph A) (a:A) (mem: a ∈ G.vertices) : Walk G := ⟨[a], by
     unfold List.isWalk
     constructor
@@ -56,6 +63,11 @@ namespace Walk
       intro i i_gt_0 i_0
       simp [i_0] at i_gt_0
   ⟩
+
+  @[simp]
+  theorem mem_singleton {G : Graph A} {a y : A} {h : a ∈ G.vertices} :
+    y ∈ Walk.singleton G a h ↔ y = a := by
+  simp [singleton, mem_walk_iff]
 
   def isCycle {G: Graph A} (w : Walk G): Prop :=
     if h: w.val.length < 2
@@ -113,115 +125,75 @@ namespace Walk
     | .none => []
     | .some head => G.predecessors head
 
+theorem mem_of_mem_predecessors {G : Graph A} {w : Walk G} {a : A} :
+    a ∈ predecessors w → a ∈ G.vertices := by
+  simp only [predecessors]
+  split
+  · simp
+  · rename_i hd h
+    apply G.complete
+    have wprop := w.2
+    rw [List.head?_eq_some_iff] at h
+    rcases h with ⟨tl, h⟩
+    rw [h] at wprop
+    simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+      Nat.pred_eq_sub_one] at wprop
+    apply wprop.1.1
+
   def successors {G: Graph A} (walk: Walk G) : List A := match walk.val.getLast? with
     | .none => []
     | .some last => G.vertices.filter (fun v => last ∈ G.predecessors v)
 
+theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
+    a ∈ successors w → a ∈ G.vertices := by
+  simp [successors]
+  split
+  · simp
+  · grind
+
+  theorem walk_append {G : Graph A} {w w' : Walk G} (h : w.1 ≠ [])
+    (h' : w.1.getLast h ∈ w'.predecessors) : (w.1 ++ w'.1).isWalk G := by
+  have walk1 := w.2
+  have walk2 := w'.2
+  simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt, List.mem_append, List.length_append] at *
+  constructor
+  · grind
+  · intro i hi hi'
+    simp only [List.getElem_append]
+    split
+    · split
+      · apply walk1.2 _ hi
+      · omega
+    · split
+      · simp only [predecessors, List.getLast_eq_getElem] at h'
+        split at h'
+        · simp at h'
+        · rename_i head h
+          have : head = w'.1[0] := by
+            simp [List.head?_eq_getElem?] at h
+            grind
+          simpa [show i = w.1.length by omega, ← this]
+      · grind
+
   def prependPredecessor {G: Graph A} (walk: Walk G) (pred : A) (is_pred : pred ∈ walk.predecessors) : Walk G := ⟨pred::walk.val, by
-    have walk_prop := walk.prop
-    unfold List.isWalk
-    unfold List.isWalk at walk_prop
-    rcases walk_prop with ⟨subs,connected⟩
-    constructor
-    · intro b
-      simp only [Nat.pred_eq_sub_one, List.mem_cons]
-      intro h
-      cases h with
-      | inl h =>
-        rw [h]
-        unfold predecessors at is_pred
-        cases eq : walk.val.head? with
-        | none => simp [eq] at is_pred
-        | some head =>
-          simp only [eq] at is_pred
-          apply Graph.mem_of_is_pred _ _ _ is_pred
-      | inr h =>
-        apply subs
-        simp only [Nat.pred_eq_sub_one]
-        apply h
-    · intro i i_zero i_len
-      cases i with
-      | zero =>
-        simp at i_zero
-      | succ j =>
-        rw [List.getElem_cons_succ]
-        cases j with
-        | zero =>
-          simp only [Nat.pred_eq_sub_one, Nat.zero_add, Nat.sub_self, List.getElem_cons_zero]
-          unfold predecessors at is_pred
-          cases eq : walk.val.head? with
-          | none => simp [eq] at is_pred
-          | some head =>
-            simp only [eq] at is_pred
-            rw [List.head?_eq_some_head (by grind)] at eq
-            injection eq with eq
-            rw [List.getElem_zero]
-            rw [eq]
-            apply is_pred
-        | succ k =>
-          simp only [Nat.pred_eq_sub_one, Nat.add_one_sub_one, List.getElem_cons_succ]
-          specialize connected (Nat.succ k)
-          simp only [Nat.succ_eq_add_one, gt_iff_lt, Nat.zero_lt_succ, Nat.pred_eq_sub_one,
-            Nat.add_one_sub_one, forall_const] at connected
-          simp only [Nat.pred_eq_sub_one, List.length_cons, Nat.add_lt_add_iff_right] at i_len
-          specialize connected i_len
-          apply connected
+    rw [← List.singleton_append]
+    have h₁ : (Walk.singleton G pred (mem_of_mem_predecessors is_pred )).1 ≠ [] := by simp [singleton]
+    have := walk_append h₁ is_pred
+    apply this
   ⟩
 
   def appendSuccessor {G: Graph A} (walk: Walk G) (succ : A) (is_succ : succ ∈ walk.successors) : Walk G := ⟨walk.val++[succ], by
-    unfold List.isWalk
-    constructor
-    · intro a a_elem
-      simp only [Nat.pred_eq_sub_one, List.mem_append, List.mem_singleton] at a_elem
-      cases a_elem with
-      | inl h => apply walk.prop.left; exact h
-      | inr h =>
-        unfold successors at is_succ
-        cases eq : walk.val.getLast? with
-        | none => simp [eq] at is_succ
-        | some last =>
-          simp only [eq, List.mem_filter, decide_eq_true_eq] at is_succ
-          rw [h]
-          apply is_succ.left
-    · intro i i_zero i_len
-      have prop := walk.prop.right
-      cases Nat.lt_or_eq_of_le (Nat.le_pred_of_lt i_len) with
-      | inl i_lt =>
-        simp
-        rw [List.getElem_append]
-        rw [List.getElem_append]
-        simp only [Nat.pred_eq_sub_one, List.length_append, List.length_singleton,
-          Nat.add_one_sub_one] at i_lt
-        simp only [i_lt, ↓reduceDIte, List.getElem_singleton]
-        have i_pred_lt: i -1 < walk.1.length := by
-          rw [← Nat.pred_eq_sub_one]
-          apply Nat.lt_trans (Nat.pred_lt_of_lt i_zero) i_lt
-        simp only [i_pred_lt, ↓reduceDIte]
-        apply prop
-        apply i_zero
-      | inr i_eq =>
-        unfold successors at is_succ
-        cases eq : walk.val.getLast? with
-        | none => simp [eq] at is_succ
-        | some last =>
-          simp only [Nat.pred_eq_sub_one, List.length_append, List.length_singleton,
-            Nat.add_one_sub_one] at i_eq
-          simp only [eq, List.mem_filter, decide_eq_true_eq] at is_succ
-          have ⟨_, last_pred_of_succ⟩ := is_succ
-          simp only [Nat.pred_eq_sub_one]
-          rw [List.getElem_append]
-          rw [List.getElem_append]
-          simp only [i_eq, lt_self_iff_false, ↓reduceDIte, Nat.sub_self, List.getElem_cons_zero,
-            Nat.sub_le, Nat.sub_eq_zero_of_le]
-          have h: walk.1.length - 1 < walk.1.length := by
-            rw [← i_eq,←  Nat.pred_eq_sub_one]
-            apply Nat.pred_lt (Ne.symm (Nat.ne_of_lt i_zero))
-          simp only [h, ↓reduceDIte]
-          rw [List.getLast?_eq_getElem?] at eq
-          rw [LawfulGetElem.getElem?_def] at eq
-          simp only [h, ↓reduceDIte, Option.some.injEq] at eq
-          rw [eq]
-          apply last_pred_of_succ
+    by_cases h : walk.1 = []
+    · simp [successors, h] at is_succ
+    · have : (walk.1 ++ (Walk.singleton G succ (mem_of_mem_successors is_succ)).1).isWalk G := by
+        apply walk_append h
+        simp [successors] at is_succ
+        split at is_succ
+        · simp at is_succ
+        · simp only [List.mem_filter, decide_eq_true_eq] at is_succ
+          simp only [predecessors, singleton, List.head?_cons]
+          grind
+      apply this
   ⟩
 
   lemma isSubsetOfVertices {G: Graph A} (walk: Walk G): ∀ a, a ∈ walk.val -> a ∈ G.vertices := by
@@ -332,71 +304,16 @@ namespace Walk
       exact mem
     )]
 
-  def concat {G: Graph A} (w1 w2: Walk G) (w1_neq : w1.val ≠ []) (w2_neq : w2.val ≠ []) (h : w1.val.getLast w1_neq = w2.val.head w2_neq) : Walk G := ⟨w1.val++w2.val.tail, by
-    have ⟨subs1, conn1⟩ := w1.prop
-    have ⟨subs2, conn2⟩ := w2.prop
-    unfold List.isWalk
-    constructor
-    · intro a a_in_append
-      simp only [Nat.pred_eq_sub_one, List.mem_append] at a_in_append
-      cases a_in_append
-      · apply subs1; assumption
-      · apply subs2; rename_i h'; apply List.mem_of_mem_tail h'
-    · intro i i_gt_0 i_lt_len
-      rw [List.getElem_append]
-      rw [List.getElem_append]
-      split
-      · split
-        · apply conn1 _ i_gt_0
-        · rename_i h h'
-          simp only [Nat.pred_eq_sub_one, not_lt] at h'
-          have w1_lt_w1: w1.1.length < w1.1.length := by
-            have i_pred_lt_i: i.pred < i := by
-              apply Nat.pred_lt (Nat.ne_of_gt i_gt_0)
-            apply Nat.lt_of_le_of_lt h'
-            rw [← Nat.pred_eq_sub_one]
-            apply Nat.lt_trans i_pred_lt_i h
-          simp at w1_lt_w1
-      · split
-        · rename_i h h'
-          simp only [Nat.pred_eq_sub_one, not_lt] at h
-          apply Nat.eq_or_lt_of_le at h
-          cases h with
-          | inl h =>
-            rename_i w1_w2_conn _
-            rw [List.getLast_eq_getElem] at w1_w2_conn
-            simp only [Nat.pred_eq_sub_one, ← h]
-            rw [w1_w2_conn]
-            simp only [Nat.sub_self, List.getElem_tail, Nat.zero_add]
-            rw [List.head_eq_getElem]
-            specialize conn2 1
-            apply conn2
-            simp
-          | inr h =>
-            rw [Nat.lt_iff_le_pred i_gt_0] at h
-            simp only [Nat.pred_eq_sub_one] at h'
-            have := Nat.lt_of_lt_of_le h' h
-            simp at this
-        · simp only [Nat.pred_sub]
-          rename_i h h'
-          simp only [Nat.pred_eq_sub_one, not_lt] at h
-          apply Nat.eq_or_lt_of_le at h
-          cases h with
-          | inl h =>
-            rw [h] at h'
-            simp only [Nat.pred_eq_sub_one, not_lt] at h'
-            rw [← Nat.pred_eq_sub_one] at h'
-            rw [Nat.le_pred_iff_lt i_gt_0] at h'
-            simp at h'
-          | inr h =>
-            simp only [Nat.pred_eq_sub_one, List.getElem_tail]
-            have idx: i - w1.1.length - 1 + 1 = (i - w1.1.length +1).pred := by
-              refine Nat.sub_add_cancel ?_
-              exact Nat.le_sub_of_add_le' h
-            simp_rw [idx]
-            apply conn2
-            simp
-  ⟩
+  def concat {G: Graph A} (w1 w2: Walk G) (w1_neq : w1.val ≠ []) (w2_neq : w2.val ≠ []) (h : w1.val.getLast w1_neq = w2.val.head w2_neq) : Walk G := ⟨w1.val++w2.tail.1, by
+    by_cases h' : w2.tail.1 = []
+    · simpa [h'] using w1.2
+    · apply walk_append w1_neq
+      rw [h]
+      simp [List.head_eq_getElem, predecessors, List.head?_eq_some_head h']
+      simp [Walk.tail]
+      apply w2.2.2
+      omega
+⟩
 
   lemma isCycle_of_head_in_tail {G : Graph A} (w : Walk G) (neq : w.val ≠ []) (h : w.val.head neq ∈ (w.tail).val) : ((w.tail.takeUntil (w.val.head neq)).prependPredecessor (w.val.head neq) (by
       rw [takeUntil_predecessors_same]
@@ -636,14 +553,14 @@ namespace Graph
         unfold Walk.concat
         simp only [this]
         unfold Walk.singleton
-        simp only [List.tail_cons, List.append_nil]
+        simp only [Walk.tail, List.tail_cons, List.append_nil]
         rw [w_last_b]
         rw [← w_head_b]
         simp only [this]
         unfold Walk.singleton
         simp
       | inr neq =>
-        unfold Walk.concat
+        unfold Walk.concat Walk.tail
         rw [List.getLast_append_of_right_ne_nil w_a_b.val w_b_c.val.tail neq]
         rw [List.tail_getLast]
         exact w_last_c
@@ -791,7 +708,7 @@ namespace Graph
       apply G.selfNotInVerticesThatReachPred acyclic c b b_pred
       apply contra
       apply verticesThatReachContainSelf
-      apply mem_of_has_pred _ _ _ b_pred
+      apply mem_of_has_pred b_pred
 
   def reachableFromCycle (G: Graph A) (b : A) := ∃ (w : Walk G), w.isCycle ∧ ∃ (a: A), a ∈ w.val ∧ G.canReach a b
 
