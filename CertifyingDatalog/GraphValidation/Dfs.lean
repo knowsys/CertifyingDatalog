@@ -680,7 +680,7 @@ section Dfs
               apply False.elim
               apply a_not_in_G
               rcases h with ⟨b, elem, _⟩
-              apply mem_of_has_pred _ _ _ elem
+              apply mem_of_has_pred elem
         | inl a_in_G =>
           let i : Fin G.vertices.length := ⟨G.vertices.idxOf a, by rw [List.idxOf_lt_length_iff]; apply a_in_G⟩
           let a' := G.vertices.attach.get ⟨i, by rw [List.length_attach]; exact i.isLt⟩
