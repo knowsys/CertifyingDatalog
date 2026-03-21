@@ -1,4 +1,5 @@
 import Mathlib.Data.Finset.Card
+import Batteries.Lean.Except
 import CertifyingDatalog.GraphValidation.Basic
 import CertifyingDatalog.GraphValidation.Walks
 
@@ -229,6 +230,36 @@ section Dfs
   def NodeCondition.true (a : A) (cond : NodeCondition A) : Prop := cond a = Except.ok ()
 
   namespace Graph
+    structure DFS_State (A : Type u) [DecidableEq A] [Hashable A] where
+      (G : Graph A)
+      (currNode : A)
+      (cond : NodeCondition A)
+      (stack : Walk G)
+      (nonempty : stack.1 ≠ [])
+      (is_front : stack.1.head nonempty = currNode)
+
+    def initalize_DFS_State (a : A) (G : Graph A) (cond : NodeCondition A) (h : a ∈ G.vertices) : DFS_State A where
+      G := G
+      currNode := a
+      cond := cond
+      stack := Walk.singleton G a h
+      nonempty := by simp [Walk.singleton]
+      is_front := by simp [Walk.singleton]
+
+    def extend_DFS_State (state : DFS_State A) (a : A) (h : a ∈ state.G.predecessors state.currNode) : DFS_State A where
+      G := state.G
+      currNode := a
+      cond := state.cond
+      stack := state.stack.prependPredecessor a (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
+      nonempty := Walk.nonempty_prependPredecessor (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
+      is_front := by simp [Walk.prependPredecessor]
+
+    def isContained (state : DFS_State A) (node : A) : Bool :=
+      node ∈ state.stack
+
+    lemma isContained_iff {state : DFS_State A} {node : A} : isContained state node ↔ node ∈ state.stack := by
+      simp [isContained]
+
     def cond_ok_on_all_canReach (G : Graph A) (b : A) (cond : NodeCondition A) : Prop := ∀ a, G.canReach a b -> cond.true a
 
     lemma cond_ok_on_all_canReach_iff (G : Graph A) (a : A) (mem : a ∈ G.vertices) (cond : NodeCondition A) : G.cond_ok_on_all_canReach a cond ↔ (∀ b, b ∈ G.predecessors a -> G.cond_ok_on_all_canReach b cond) ∧ cond.true a := by
@@ -266,16 +297,14 @@ section Dfs
         apply h a
         apply canReach_refl; apply mem
 
-    lemma verify_via_dfs_step_termination_aux {a b : A} (G : Graph A) (walkFromA : {w : Walk G // w.val.head? = some a}) (b_pred : b ∈ G.predecessors a) (b_not_in_walk : b ∉ walkFromA.val.val) :
-      (G.vertices.toFinset \ (⟨walkFromA.val.prependPredecessor b (by unfold Walk.predecessors; simp [walkFromA.prop]; exact b_pred), by (unfold Walk.prependPredecessor; simp)⟩ : {w : Walk G // w.val.head? = some b}).val.val.toFinset).card < (G.vertices.toFinset \ walkFromA.val.val.toFinset).card := by
+    lemma verify_via_dfs_step_termination_aux {b : A} {state : DFS_State A} (b_pred : b ∈ state.G.predecessors state.currNode) (b_not_in_walk : b ∉ state.stack) :
+      (state.G.vertices.toFinset \ (extend_DFS_State state b b_pred).stack.1.toFinset).card < (state.G.vertices.toFinset \ state.stack.1.toFinset).card := by
         apply Finset.card_lt_card
         rw [Finset.ssubset_iff]
         simp only [Finset.mem_sdiff, List.mem_toFinset, not_and, Decidable.not_not]
         exists b
         constructor
-        · intro _
-          unfold Walk.prependPredecessor
-          simp
+        · simp [extend_DFS_State, Walk.prependPredecessor]
         · rw [Finset.insert_subset_iff]
           constructor
           · simp only [Finset.mem_sdiff, List.mem_toFinset]
@@ -287,85 +316,102 @@ section Dfs
             · rw [Finset.subset_iff]
               intro node mem_walk_a
               simp only [List.mem_toFinset] at mem_walk_a
-              unfold Walk.prependPredecessor
-              simp only [List.toFinset_cons, Finset.mem_insert, List.mem_toFinset]
-              apply Or.inr; exact mem_walk_a
+              simp [extend_DFS_State, Walk.prependPredecessor, mem_walk_a]
 
-    def verify_via_dfs_step (a : A) (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) : Except String (HashSet A) :=
-      if verifiedNodes.contains a then Except.ok verifiedNodes
-      else (cond a).bind (fun _ =>
-          if pred_not_mem_walk : (G.predecessors a).any (fun pred => pred ∈ walkFromA.val.val)
+    def verify_via_dfs_step (state : DFS_State A) (verifiedNodes : HashSet A) : Except String (HashSet A) :=
+      if verifiedNodes.contains state.currNode then Except.ok verifiedNodes
+      else (state.cond state.currNode).bind (fun _ =>
+          if _pred_not_mem_walk : (state.G.predecessors state.currNode).any (isContained state)
           then Except.error "Cycle detected"
           else
             let verifiedAfterRecursion :=
-              (G.predecessors a).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
-                let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact mem), by (unfold Walk.prependPredecessor; simp)⟩
-                have _termination := G.verify_via_dfs_step_termination_aux walkFromA mem (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact mem)
-
-                G.verify_via_dfs_step
-                  pred cond walkFromPred verified
+              (state.G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
+                verify_via_dfs_step (extend_DFS_State state pred mem) verified
               ) (Except.ok verifiedNodes)
 
-            verifiedAfterRecursion.map (fun verified => verified.insert a))
-    termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
+            verifiedAfterRecursion.map (fun verified => verified.insert state.currNode))
+    termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.1)
+    decreasing_by
+      apply verify_via_dfs_step_termination_aux
+      simp only [List.any_eq_true, isContained, decide_eq_true_eq, not_exists,
+        not_and] at _pred_not_mem_walk
+      apply _pred_not_mem_walk _ mem
 
-    lemma dfs_step_result_contains_a {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) :
-      verify_via_dfs_step a G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedAfter.contains a := by
-      intro h
+    lemma verify_via_dfs_step_eq_ok_iff_mem {state : DFS_State A} {verifiedNodes : HashSet A} {s : HashSet A} (mem : verifiedNodes.contains state.currNode)
+        (h : verify_via_dfs_step state verifiedNodes = Except.ok s) :
+        s = verifiedNodes := by
       unfold verify_via_dfs_step at h
-      simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at h
+      simp only [mem, ↓reduceIte, Except.ok.injEq] at h
+      rw [h]
+
+    lemma verify_via_dfs_step_eq_ok_iff_not_mem {state : DFS_State A} {verifiedNodes : HashSet A} {s : HashSet A} (mem : ¬verifiedNodes.contains state.currNode = true)
+        (h : verify_via_dfs_step state verifiedNodes = Except.ok s) :
+        ∃ (s' : HashSet A), (state.G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
+                verify_via_dfs_step (extend_DFS_State state pred mem) verified
+              ) (Except.ok verifiedNodes) = Except.ok s'
+        ∧ s = s'.insert state.currNode
+        ∧ ∀ (a : A), a ∈ state.G.predecessors state.currNode → a ∉ state.stack := by
+      unfold verify_via_dfs_step at h
+      simp only [mem, Bool.false_eq_true, ↓reduceIte, Except.bind, List.any_eq_true,
+        dite_eq_ite] at h
       split at h
-      · injection h with h; rw [← h]; assumption
-      · simp only [Except.bind] at h
-        split at h
+      · simp at h
+      · split at h
+        · simp at h
+        · unfold Except.map at h
+          split at h
+          · simp at h
+          · grind [isContained_iff]
+
+    lemma dfs_step_result_contains_currNode {state : DFS_State A} {verifiedNodes : HashSet A} {verifiedAfter : HashSet A}
+    (h : verify_via_dfs_step state verifiedNodes = Except.ok verifiedAfter) :
+        verifiedAfter.contains state.currNode := by
+      by_cases mem : verifiedNodes.contains state.currNode
+      · simp [verify_via_dfs_step_eq_ok_iff_mem mem h, mem]
+      · obtain ⟨s, _, h', _⟩ := verify_via_dfs_step_eq_ok_iff_not_mem mem h
+        simp [h']
+
+    lemma dfs_step_extends_verified {state : DFS_State A} {verifiedNodes : HashSet A} {verifiedAfter : HashSet A}
+    (h : verify_via_dfs_step state verifiedNodes = Except.ok verifiedAfter) :
+      verifiedNodes ⊆ verifiedAfter := by
+    by_cases mem : verifiedNodes.contains state.currNode
+    · simp [verify_via_dfs_step_eq_ok_iff_mem mem h, HashSet.subset_refl]
+    · obtain ⟨s, h₁, h₂, _⟩ := verify_via_dfs_step_eq_ok_iff_not_mem mem h
+      simp [h₂]
+    unfold verify_via_dfs_step at h
+    simp [isContained_iff] at h
+    split at h
+    · injection h with h; rw [h]; apply HashSet.subset_refl
+    · simp only [Except.bind] at h
+      split at h
+      · contradiction
+      · split at h
         · contradiction
-        · split at h
-          · contradiction
-          · unfold Except.map at h
+        · case isFalse pred_not_mem_walk =>
+            unfold Except.map at h
             split at h
             · contradiction
-            · simp only [Except.ok.injEq] at h
+            · case h_2 eq =>
+              injection h with h
               rw [← h]
-              rw [HashSet.contains_insert]
-              simp
-
-    lemma dfs_step_extends_verified {a : A} (G : Graph A) (cond : NodeCondition A) (walkFromA : {w : Walk G // w.val.head? = some a}) (verifiedNodes : HashSet A) (verifiedAfter : HashSet A) :
-      verify_via_dfs_step a G cond walkFromA verifiedNodes = Except.ok verifiedAfter -> verifiedNodes ⊆ verifiedAfter := by
-      intro h
-      unfold verify_via_dfs_step at h
-      simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at h
-      split at h
-      · injection h with h; rw [h]; apply HashSet.subset_refl
-      · simp only [Except.bind] at h
-        split at h
-        · contradiction
-        · split at h
-          · contradiction
-          · case isFalse pred_not_mem_walk =>
-              unfold Except.map at h
-              split at h
-              · contradiction
-              · case h_2 eq =>
-                injection h with h
-                rw [← h]
-                simp only
-                apply HashSet.subset_trans
-                · apply List.foldl_except_is_superset_of_f_is_superset (G.predecessors a).attach (fun b pred =>
-                    let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                  verify_via_dfs_step pred.1 G cond walkFromPred b
-                  ) verifiedNodes
-                  · intro set res pred _ eq
-                    have _termination := G.verify_via_dfs_step_termination_aux walkFromA pred.prop (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred.prop)
-                    apply dfs_step_extends_verified
-                    exact eq
-                  · exact eq
-                · rw [HashSet.subset_iff]
-                  intro c c_contained
-                  rw [HashSet.contains_insert]
-                  simp only [Bool.or_eq_true, beq_iff_eq]
-                  apply Or.inr
-                  exact c_contained
-    termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
+              simp only
+              apply HashSet.subset_trans
+              · apply List.foldl_except_is_superset_of_f_is_superset (G.predecessors a).attach (fun b pred =>
+                  let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
+                verify_via_dfs_step pred.1 G cond walkFromPred b
+                ) verifiedNodes
+                · intro set res pred _ eq
+                  have _termination := G.verify_via_dfs_step_termination_aux walkFromA pred.prop (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred.prop)
+                  apply dfs_step_extends_verified
+                  exact eq
+                · exact eq
+              · rw [HashSet.subset_iff]
+                intro c c_contained
+                rw [HashSet.contains_insert]
+                simp only [Bool.or_eq_true, beq_iff_eq]
+                apply Or.inr
+                exact c_contained
+  termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
     lemma dfs_step_result_valid
       {a : A}

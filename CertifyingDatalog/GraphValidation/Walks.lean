@@ -50,6 +50,9 @@ namespace Walk
   instance {G : Graph A} : Membership A (Walk G) where
     mem := fun x y => y ∈ x.1
 
+  instance {G : Graph A} (a : A) (w : Walk G): Decidable (a ∈ w) :=
+    by unfold_projs; apply List.instDecidableMemOfLawfulBEq
+
   theorem mem_walk_iff {G : Graph A} {a : A} {w : Walk G} :
     a ∈ w ↔ a ∈ w.1 := by rfl
 
@@ -124,20 +127,24 @@ namespace Walk
     | .none => []
     | .some head => G.predecessors head
 
-theorem mem_of_mem_predecessors {G : Graph A} {w : Walk G} {a : A} :
+  lemma mem_of_mem_predecessors {G : Graph A} {w : Walk G} {a : A} :
     a ∈ predecessors w → a ∈ G.vertices := by
-  simp only [predecessors]
-  split
-  · simp
-  · rename_i hd h
-    apply G.complete
-    have wprop := w.2
-    rw [List.head?_eq_some_iff] at h
-    rcases h with ⟨tl, h⟩
-    rw [h] at wprop
-    simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-      Nat.pred_eq_sub_one] at wprop
-    apply wprop.1.1
+    simp only [predecessors]
+    split
+    · simp
+    · rename_i hd h
+      apply G.complete
+      have wprop := w.2
+      rw [List.head?_eq_some_iff] at h
+      rcases h with ⟨tl, h⟩
+      rw [h] at wprop
+      simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+        Nat.pred_eq_sub_one] at wprop
+      apply wprop.1.1
+
+  lemma mem_predecessors_of_nonempty {G : Graph A} {w : Walk G} {a b: A} (h : w.1 ≠ []) (h' : w.1.head h = b) :
+      a ∈ G.predecessors (b) → a ∈ predecessors w := by
+    simp [predecessors, List.head?_eq_some_head, h, h']
 
   def successors {G: Graph A} (walk: Walk G) : List A := match walk.val.getLast? with
     | .none => []
@@ -180,6 +187,14 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     have := walk_append h₁ is_pred
     apply this
   ⟩
+
+  lemma nonempty_prependPredecessor {G: Graph A} {walk: Walk G} {pred : A} (is_pred : pred ∈ walk.predecessors) :
+      (prependPredecessor walk pred is_pred).1 ≠ [] := by
+    simp [prependPredecessor]
+
+  lemma head_prependPredecessors {G: Graph A} {walk: Walk G} {pred : A} (is_pred : pred ∈ walk.predecessors) :
+      (prependPredecessor walk pred is_pred).1.head (nonempty_prependPredecessor is_pred) = pred := by
+    simp [prependPredecessor]
 
   def appendSuccessor {G: Graph A} (walk: Walk G) (succ : A) (is_succ : succ ∈ walk.successors) : Walk G := ⟨walk.val++[succ], by
     by_cases h : walk.1 = []
