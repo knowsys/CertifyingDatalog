@@ -226,6 +226,8 @@ section Dfs
       (currNode : A)
       (cond : NodeCondition A)
       (stack : Walk G)
+      (fastStack : HashSet A)
+      (stacks_eq : ∀ (a : A), a ∈ stack ↔ a ∈ fastStack)
       (nonempty : stack.1 ≠ [])
       (is_front : stack.1.head nonempty = currNode)
 
@@ -234,6 +236,8 @@ section Dfs
       currNode := a
       cond := cond
       stack := Walk.singleton G a h
+      fastStack := HashSet.emptyWithCapacity.insert a
+      stacks_eq := by simp; grind
       nonempty := by simp [Walk.singleton]
       is_front := by simp [Walk.singleton]
 
@@ -242,6 +246,8 @@ section Dfs
       currNode := a
       cond := state.cond
       stack := state.stack.prependPredecessor a (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
+      fastStack := state.fastStack.insert a
+      stacks_eq := by simp [Walk.prependPredecessor, Walk.mem_walk_iff, ←state.stacks_eq]; grind
       nonempty := Walk.nonempty_prependPredecessor (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
       is_front := by simp [Walk.prependPredecessor]
 
@@ -253,10 +259,10 @@ section Dfs
       grind
 
     def isContained (state : DFS_State A) (node : A) : Bool :=
-      node ∈ state.stack
+      node ∈ state.fastStack
 
     lemma isContained_iff {state : DFS_State A} {node : A} : isContained state node ↔ node ∈ state.stack := by
-      simp [isContained]
+      simp [isContained, state.stacks_eq]
 
     def cond_ok_on_all_canReach (G : Graph A) (b : A) (cond : NodeCondition A) : Prop := ∀ a, G.canReach a b -> cond.true a
 
@@ -331,7 +337,7 @@ section Dfs
     termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.1)
     decreasing_by
       apply verify_via_dfs_step_termination_aux
-      simp only [List.any_eq_true, isContained, decide_eq_true_eq, not_exists,
+      simp only [List.any_eq_true, isContained_iff, not_exists,
         not_and] at _pred_not_mem_walk
       apply _pred_not_mem_walk _ mem
 
