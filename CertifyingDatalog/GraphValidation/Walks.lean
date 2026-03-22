@@ -484,7 +484,7 @@ namespace Graph
     exists Walk.singleton G a mem
     simp [Walk.singleton]
 
-  lemma canReach_pred (G : Graph A) (a b : A) (a_pred: a ∈ G.predecessors b) : G.canReach a b := by
+  lemma canReach_pred {G : Graph A} {a b : A} (a_pred: a ∈ G.predecessors b) : G.canReach a b := by
     unfold canReach
     exists ((Walk.singleton G b (by apply mem_of_has_pred; apply a_pred)).prependPredecessor a (by
       unfold Walk.singleton
@@ -494,9 +494,9 @@ namespace Graph
     ))
     exists (by simp [Walk.singleton, Walk.prependPredecessor])
 
-  lemma canReach_trans (G : Graph A) (a b c : A) : G.canReach a b ∧ G.canReach b c -> G.canReach a c := by
+  lemma canReach_trans {G : Graph A} {a b c : A} : G.canReach a b → G.canReach b c -> G.canReach a c := by
     unfold canReach
-    intro ⟨walk_a_b, walk_b_c⟩
+    intro walk_a_b walk_b_c
     rcases walk_a_b with ⟨w_a_b, w_a_b_neq, w_head_a, w_last_b⟩
     rcases walk_b_c with ⟨w_b_c, w_b_c_neq, w_head_b, w_last_c⟩
     exists (w_a_b.concat w_b_c w_a_b_neq w_b_c_neq (by rw [w_head_b]; rw [w_last_b]))
@@ -588,10 +588,9 @@ namespace Graph
       | inl h => rw [h.right]; apply canReach_refl; apply h.left
       | inr h =>
         rcases h with ⟨b, pred, reach⟩
-        apply canReach_trans
-        constructor
-        · exact reach
-        · apply canReach_pred; apply pred
+        apply canReach_trans reach
+        apply canReach_pred
+        apply pred
 
   def verticesThatReach (G: Graph A) (b : A) : Finset A := G.vertices.toFinset.filter (fun a => G.canReach a b)
 
@@ -693,7 +692,7 @@ namespace Graph
             simp only [h', Nat.add_one_sub_one] at w_b
             simp only [w_b, Nat.pred_eq_sub_one, Nat.add_one_sub_one] at this
             apply this
-          · simp [reachableFromCycle, canReach]
+          · simp only [reachableFromCycle, canReach, ne_eq, ↓existsAndEq, true_and]
             use cyc, cyc_isCycle, w.take (w.1.length - 1), (by simp [Walk.take, w_neq, h'])
             simp [Walk.take, h', List.take_head _ w_neq, List.head_eq_getElem_zero, List.getLast_eq_getElem, w_a]
 
@@ -722,4 +721,25 @@ namespace Graph
           constructor
           · exact this
           · apply canReach_refl; apply w.prop.left; exact this
+
+  theorem reachableFromCycle_of_predecessesor_in_walk {G : Graph A}
+      {w : Walk G} (hw : w.1 ≠ []) {a b : A} (ha : w.1.head hw = a)
+      (hab : b ∈ G.predecessors a) (hb : b ∈ w) :
+      G.reachableFromCycle b := by
+    have bmem : b ∈ w.predecessors := by
+      simp [Walk.predecessors, List.head?_eq_some_head, hw, ha, hab]
+    let w' := w.prependPredecessor b bmem
+    have hw' : w'.1 ≠ [] := by simp[w', Walk.prependPredecessor]
+    have hb' : b ∈ (w'.tail.takeUntil (w'.1.head hw')).predecessors := by
+      have := Walk.takeUnil_ne_of_ne w hw b
+      simpa [w', Walk.prependPredecessor, Walk.tail, Walk.predecessors, this,
+        List.head?_eq_some_head, Walk.takeUntil_head_same, hw, ha]
+    have := Walk.isCycle_of_head_in_tail w' hw' (by simp [w', Walk.prependPredecessor, Walk.tail, ←Walk.mem_walk_iff, hb])
+    let cyc := (w'.tail.takeUntil (w'.1.head hw')).prependPredecessor b hb'
+    simp only [reachableFromCycle]
+    use cyc, this, b
+    refine ⟨by simp [cyc, Walk.prependPredecessor], ?_⟩
+    simp only [canReach, ne_eq]
+    use (Walk.singleton G b (by apply w.2.1; rwa [← Walk.mem_walk_iff])), (by simp [Walk.singleton])
+    simp [Walk.singleton]
 end Graph
