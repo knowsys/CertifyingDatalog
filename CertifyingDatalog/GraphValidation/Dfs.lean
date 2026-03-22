@@ -19,62 +19,32 @@ section FoldlExcept
       | nil => unfold foldl_except; simp
       | cons _ _ => simp [foldl_except]
 
-    lemma foldl_except_some_error_of_error (l : List A) (f : B -> A -> Except Err B) : ∀ ok err, l.foldl_except f (Except.ok ok) = Except.error err ->
-      ∃ (i : (Fin l.length)) (res : B), ((l.take i).foldl_except f (Except.ok ok)) = Except.ok res ∧ f res (l.get i) = Except.error err := by
-      induction l with
-      | nil => simp [foldl_except]
-      | cons a as ih =>
-        intro ok err foldl_except_err
-        simp [foldl_except] at foldl_except_err
-        cases eq : f ok a with
-        | error step_err =>
-          exists ⟨0, by simp⟩
-          exists ok
-          constructor
-          · simp [foldl_except]
-          · rw [eq] at foldl_except_err
-            rw [← foldl_except] at foldl_except_err
-            rw [foldl_except_error_stays] at foldl_except_err
-            rw [← foldl_except_err]
-            exact eq
-        | ok step_res =>
-          specialize ih step_res err (by simp [foldl_except, ← eq]; exact foldl_except_err)
-          rcases ih with ⟨i, res, foldl, cond⟩
-          exists ⟨i.val + 1, by simp⟩
-          exists res
-          simp only [foldl_except, take_succ_cons, foldl_cons, length_cons, get_eq_getElem,
-            getElem_cons_succ]
-          simp only [foldl_except] at foldl
-          constructor
-          · rw [eq]; exact foldl
-          · exact cond
-
     lemma foldl_except_all_ok_of_ok (l : List A) (f : B -> A -> Except Err B) : ∀ init, (l.foldl_except f (Except.ok init)).isOk ->
       ∀ (i : (Fin l.length)), ∃ (res : B), ((l.take i).foldl_except f (Except.ok init)) = Except.ok res ∧ (f res (l.get i)).isOk := by
       induction l with
       | nil => simp
       | cons a as ih =>
         intro init ok i
-        simp only [foldl_except, foldl_cons] at ok
+        simp only [foldl_except] at ok
         cases eq : f init a with
-        | error _ => have stays := as.foldl_except_error_stays f; simp [foldl_except] at stays; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
+        | error _ => have stays := as.foldl_except_error_stays f;  simp at stays; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
         | ok b =>
           cases eq_i : i.val with
           | zero =>
             have : i = ⟨0, by simp⟩ := by simp [← eq_i]
             rw [this]
-            simp only [foldl_except, take_zero, foldl_nil, Except.ok.injEq, length_cons,
+            simp only [foldl_except, take_zero, Except.ok.injEq, length_cons,
               Fin.zero_eta, get_eq_getElem, Fin.val_zero, getElem_cons_zero, exists_eq_left']
             rw [eq]
             simp [Except.isOk, Except.toBool]
           | succ j =>
             let j_fin : Fin as.length := ⟨j, by have isLt := i.isLt; rw [eq_i] at isLt; simp at isLt; exact isLt⟩
-            simp only [foldl_except, take_succ_cons, foldl_cons, get_eq_getElem, length_cons]
+            simp only [foldl_except, take_succ_cons, get_eq_getElem, length_cons]
             cases eq : f init a with
-            | error _ => have stays := as.foldl_except_error_stays f; simp [foldl_except] at stays; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
+            | error _ => have stays := as.foldl_except_error_stays f; simp at stays; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
             | ok b =>
               rw [eq] at ok
-              simp only [foldl_except, get_eq_getElem] at ih
+              simp only [get_eq_getElem] at ih
               specialize ih b ok j_fin
               rcases ih with ⟨res, foldl_ok, f_ok⟩
               exists res
@@ -98,20 +68,18 @@ section FoldlExcept
         | nil => simp [foldl_except]; apply init_has_prop
         | cons a as ih =>
           simp [foldl_except]
-          apply ih
-          · intro b res a prop_b a_in_as
-            apply f_preserves_prop
-            exact prop_b
-            simp only [mem_cons]
-            apply Or.inr
-            exact a_in_as
-          · split
-            · simp
-            · intro step_res
+          split
+          · simp
+          · apply ih
+            · intro b res a prop_b a_in_as
               apply f_preserves_prop
-              · apply init_has_prop
-                rfl
-              · simp
+              exact prop_b
+              simp only [mem_cons]
+              apply Or.inr
+              exact a_in_as
+            · intro s h
+              rename_i init
+              apply f_preserves_prop init _ _ (init_has_prop init (by rfl)) (by simp) h
 
     lemma foldl_except_preserves_prop'
       (l : List A)
@@ -125,17 +93,14 @@ section FoldlExcept
         induction l generalizing init with
         | nil => simp at some_has_prop
         | cons a as ih =>
-          simp only [foldl_except, foldl_cons]
+          simp only [foldl_except]
           rcases some_has_prop with ⟨i, i_prop⟩
           cases eq : i.val with
           | zero =>
             intro eq_foldl
             cases init with
             | error _ =>
-              rw [← foldl_except] at eq_foldl
-              simp only at eq_foldl
-              rw [foldl_except_error_stays] at eq_foldl
-              contradiction
+              simp at eq_foldl
             | ok b =>
               apply as.foldl_except_preserves_prop
               · intro b res a b_prop a_mem
@@ -147,32 +112,35 @@ section FoldlExcept
               · intro init_unwrapped init_unwrapped_eq
                 apply i_prop
                 · rw [eq]
-                  simp only [foldl_except, take_zero, foldl_nil, Except.ok.injEq]
+                  simp only [foldl_except, take_zero, Except.ok.injEq]
                   rfl
                 · have : i = ⟨0, by simp⟩ := by apply Fin.eq_of_val_eq; exact eq
                   rw [this]
                   simp only [length_cons, Fin.zero_eta, get_eq_getElem, Fin.val_zero,
                     getElem_cons_zero]
                   exact init_unwrapped_eq
-              · rw [← foldl_except] at eq_foldl
-                simp only at eq_foldl
+              · simp only at eq_foldl
                 exact eq_foldl
           | succ j =>
-            apply ih
-            · intro b res a prop_b a_in_as
-              apply f_preserves_prop
-              · exact prop_b
-              · simp only [mem_cons]
-                apply Or.inr
-                exact a_in_as
-            · exists ⟨j, by have isLt := i.isLt; rw [eq] at isLt; simp at isLt; exact isLt⟩
-              intro b res eq2 eq3
-              apply i_prop
-              · simp [eq, foldl_except]; simp [foldl_except] at eq2; exact eq2
-              · have : i = ⟨j+1, by rw [← eq]; exact i.isLt⟩ := by apply Fin.eq_of_val_eq; exact eq
-                rw [this]
-                simp only [length_cons, get_eq_getElem, getElem_cons_succ]
-                exact eq3
+            cases init with
+            | error e => simp
+            | ok s =>
+              apply ih
+              · intro b res a prop_b a_in_as
+                apply f_preserves_prop
+                · exact prop_b
+                · simp only [mem_cons]
+                  apply Or.inr
+                  exact a_in_as
+              · exists ⟨j, by have isLt := i.isLt; rw [eq] at isLt; simp only [length_cons,
+                Nat.add_lt_add_iff_right] at isLt; exact isLt⟩
+                intro b res eq2 eq3
+                apply i_prop
+                · simp [eq, foldl_except]; simp only at eq2; exact eq2
+                · have : i = ⟨j+1, by rw [← eq]; exact i.isLt⟩ := by apply Fin.eq_of_val_eq; exact eq
+                  rw [this]
+                  simp only [length_cons, get_eq_getElem, getElem_cons_succ]
+                  exact eq3
 
     lemma foldl_except_is_ok_iff {l : List A} {f : B -> A -> Except Err B} {init : B} (prop : B → Prop)
       (f_preserves_prop : ∀ (b res : B) (a : A), prop b -> a ∈ l -> f b a = Except.ok res -> prop res)
