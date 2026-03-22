@@ -697,9 +697,9 @@ namespace Graph
             use cyc, cyc_isCycle, w.take (w.1.length - 1), (by simp [Walk.take, w_neq, h'])
             simp [Walk.take, h', List.take_head _ w_neq, List.head_eq_getElem_zero, List.getLast_eq_getElem, w_a]
 
-  lemma acyclicIffAllNotReachableFromCycle (G: Graph A): isAcyclic G ↔ ∀ (a:A), ¬ G.reachableFromCycle a := by
+  lemma acyclicIffAllNotReachableFromCycle (G: Graph A): isAcyclic G ↔ ∀ (a:A), a ∈ G.vertices → ¬ G.reachableFromCycle a := by
     constructor
-    · intro acyclic a contra
+    · intro acyclic a _ contra
       unfold reachableFromCycle at contra
       unfold isAcyclic at acyclic
       rcases contra with ⟨_, cyc, _⟩
@@ -710,13 +710,16 @@ namespace Graph
       intro w cyc
       let head := (w.val.head (by intro contra; unfold Walk.isCycle at cyc; simp [contra] at cyc))
       apply h head
-      unfold reachableFromCycle
-      exists w
-      constructor
-      · exact cyc
-      · exists head
-        have : head ∈ w.val := by apply List.head_mem
+      · simp [head, List.head_eq_getElem_zero]
+        apply w.2.1
+        simp
+      · unfold reachableFromCycle
+        exists w
         constructor
-        · exact this
-        · apply canReach_refl; apply w.prop.left; exact this
+        · exact cyc
+        · exists head
+          have : head ∈ w.val := by apply List.head_mem
+          constructor
+          · exact this
+          · apply canReach_refl; apply w.prop.left; exact this
 end Graph

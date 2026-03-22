@@ -24,4 +24,8 @@ namespace Except
     cases e with
     | ok u => simp
     | error e => simp
+
+  theorem map_ok_unit {e : Except E A} : Except.map (fun _ => ()) e = Except.ok () ↔ e.isOk := by
+    simp [Except.map, Except.isOk, Except.toBool]
+    grind
 end Except
