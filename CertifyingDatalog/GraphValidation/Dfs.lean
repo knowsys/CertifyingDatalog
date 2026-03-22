@@ -18,7 +18,7 @@ section FoldlExcept
       | nil => unfold foldl_except; simp
       | cons _ _ ih => apply ih
 
-    lemma foldl_expect_some_error_of_error (l : List A) (f : B -> A -> Except Err B) : ∀ ok err, l.foldl_except f (Except.ok ok) = Except.error err ->
+    lemma foldl_except_some_error_of_error (l : List A) (f : B -> A -> Except Err B) : ∀ ok err, l.foldl_except f (Except.ok ok) = Except.error err ->
       ∃ (i : (Fin l.length)) (res : B), ((l.take i).foldl_except f (Except.ok ok)) = Except.ok res ∧ f res (l.get i) = Except.error err := by
       induction l with
       | nil => simp [foldl_except]
@@ -85,8 +85,8 @@ section FoldlExcept
                 exact f_ok
 
     lemma foldl_except_preserves_prop
-      (l : List A)
-      (f : B -> A -> Except Err B)
+      {l : List A}
+      {f : B -> A -> Except Err B}
       (init : Except Err B)
       (prop : B -> Prop)
       (f_preserves_prop : ∀ (b res : B) (a : A), prop b -> a ∈ l -> f b a = Except.ok res -> prop res)
@@ -136,7 +136,7 @@ section FoldlExcept
               rw [foldl_except_error_stays] at eq_foldl
               contradiction
             | ok b =>
-              apply as.foldl_except_preserves_prop f (f b a)
+              apply as.foldl_except_preserves_prop
               · intro b res a b_prop a_mem
                 apply f_preserves_prop
                 · exact b_prop
@@ -183,7 +183,7 @@ section FoldlExcept
       (f_is_superset : ∀ (set res : HashSet B) (a : A), a ∈ l -> f set a = Except.ok res -> set ⊆ res) :
         ∀ res, l.foldl_except f (Except.ok init) = Except.ok res -> init ⊆ res := by
           intro res eq
-          apply l.foldl_except_preserves_prop f (Except.ok init)
+          apply l.foldl_except_preserves_prop (init := Except.ok init)
           · intro set res a init_sub_res a_mem f_eq
             apply HashSet.subset_trans
             · exact init_sub_res
@@ -197,11 +197,11 @@ section FoldlExcept
           · exact eq
 
     lemma foldl_except_contains_of_some_contains
-      (l : List A)
-      (f : HashSet B -> A -> Except Err (HashSet B))
-      (init : HashSet B)
+      {l : List A}
+      {f : HashSet B -> A -> Except Err (HashSet B)}
+      {init : HashSet B}
       (f_is_superset : ∀ (set res : HashSet B) (a : A), a ∈ l -> f set a = Except.ok res -> set ⊆ res)
-      (c : B)
+      {c : B}
       (some_contains : ∃ a ∈ l, ∀ (b res : HashSet B), f b a = Except.ok res -> res.contains c) :
         ∀ res, l.foldl_except f (Except.ok init) = Except.ok res -> res.contains c := by
           intro res eq
@@ -253,6 +253,13 @@ section Dfs
       stack := state.stack.prependPredecessor a (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
       nonempty := Walk.nonempty_prependPredecessor (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
       is_front := by simp [Walk.prependPredecessor]
+
+    lemma currNode_mem_of_DFS_State {state : DFS_State A} : state.currNode ∈ state.G.vertices := by
+      have := state.stack.2
+      simp [List.isWalk] at this
+      apply this.1
+      have := state.is_front
+      grind
 
     def isContained (state : DFS_State A) (node : A) : Bool :=
       node ∈ state.stack
@@ -344,165 +351,106 @@ section Dfs
       simp only [mem, ↓reduceIte, Except.ok.injEq] at h
       rw [h]
 
-    lemma verify_via_dfs_step_eq_ok_iff_not_mem {state : DFS_State A} {verifiedNodes : HashSet A} {s : HashSet A} (mem : ¬verifiedNodes.contains state.currNode = true)
-        (h : verify_via_dfs_step state verifiedNodes = Except.ok s) :
+    lemma verify_via_dfs_step_eq_ok_iff_not_mem {state : DFS_State A} {verifiedNodes : HashSet A} {s : HashSet A} (mem : ¬verifiedNodes.contains state.currNode = true) :
+        verify_via_dfs_step state verifiedNodes = Except.ok s ↔
         ∃ (s' : HashSet A), (state.G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
                 verify_via_dfs_step (extend_DFS_State state pred mem) verified
               ) (Except.ok verifiedNodes) = Except.ok s'
         ∧ s = s'.insert state.currNode
-        ∧ ∀ (a : A), a ∈ state.G.predecessors state.currNode → a ∉ state.stack := by
-      unfold verify_via_dfs_step at h
-      simp only [mem, Bool.false_eq_true, ↓reduceIte, Except.bind, List.any_eq_true,
-        dite_eq_ite] at h
-      split at h
-      · simp at h
-      · split at h
+        ∧ (∀ (a : A), a ∈ state.G.predecessors state.currNode → a ∉ state.stack)
+        ∧ state.cond state.currNode = Except.ok () := by
+      conv =>
+        lhs
+        unfold verify_via_dfs_step
+      simp [mem, Bool.false_eq_true, ↓reduceIte, Except.bind, List.any_eq_true,
+        dite_eq_ite, isContained_iff]
+      constructor
+      · intro h
+        split at h
         · simp at h
-        · unfold Except.map at h
-          split at h
+        · split at h
           · simp at h
-          · grind [isContained_iff]
+          · unfold Except.map at h
+            split at h
+            · simp at h
+            · grind [isContained_iff]
+      · intro s
+        obtain ⟨s', h₁, h₂, h₃⟩ := s
+        simp [h₃.2]
+        split
+        · rename_i h
+          obtain ⟨x, hx⟩ := h
+          have := h₃.1 x hx.1
+          grind
+        · simp [h₁, Except.map, h₂]
 
     lemma dfs_step_result_contains_currNode {state : DFS_State A} {verifiedNodes : HashSet A} {verifiedAfter : HashSet A}
     (h : verify_via_dfs_step state verifiedNodes = Except.ok verifiedAfter) :
         verifiedAfter.contains state.currNode := by
       by_cases mem : verifiedNodes.contains state.currNode
       · simp [verify_via_dfs_step_eq_ok_iff_mem mem h, mem]
-      · obtain ⟨s, _, h', _⟩ := verify_via_dfs_step_eq_ok_iff_not_mem mem h
+      · rw [verify_via_dfs_step_eq_ok_iff_not_mem mem] at h
+        obtain ⟨s, _, h', _⟩ := h
         simp [h']
 
     lemma dfs_step_extends_verified {state : DFS_State A} {verifiedNodes : HashSet A} {verifiedAfter : HashSet A}
     (h : verify_via_dfs_step state verifiedNodes = Except.ok verifiedAfter) :
-      verifiedNodes ⊆ verifiedAfter := by
-    by_cases mem : verifiedNodes.contains state.currNode
-    · simp [verify_via_dfs_step_eq_ok_iff_mem mem h, HashSet.subset_refl]
-    · obtain ⟨s, h₁, h₂, _⟩ := verify_via_dfs_step_eq_ok_iff_not_mem mem h
-      simp [h₂]
-    unfold verify_via_dfs_step at h
-    simp [isContained_iff] at h
-    split at h
-    · injection h with h; rw [h]; apply HashSet.subset_refl
-    · simp only [Except.bind] at h
-      split at h
-      · contradiction
-      · split at h
-        · contradiction
-        · case isFalse pred_not_mem_walk =>
-            unfold Except.map at h
-            split at h
-            · contradiction
-            · case h_2 eq =>
-              injection h with h
-              rw [← h]
-              simp only
-              apply HashSet.subset_trans
-              · apply List.foldl_except_is_superset_of_f_is_superset (G.predecessors a).attach (fun b pred =>
-                  let walkFromPred : {w : Walk G // w.val.head? = some pred} := ⟨walkFromA.val.prependPredecessor pred (by unfold Walk.predecessors; simp [walkFromA.prop]; exact pred.prop), by (unfold Walk.prependPredecessor; simp)⟩
-                verify_via_dfs_step pred.1 G cond walkFromPred b
-                ) verifiedNodes
-                · intro set res pred _ eq
-                  have _termination := G.verify_via_dfs_step_termination_aux walkFromA pred.prop (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred.prop)
-                  apply dfs_step_extends_verified
-                  exact eq
-                · exact eq
-              · rw [HashSet.subset_iff]
-                intro c c_contained
-                rw [HashSet.contains_insert]
-                simp only [Bool.or_eq_true, beq_iff_eq]
-                apply Or.inr
-                exact c_contained
-  termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
+        verifiedNodes ⊆ verifiedAfter := by
+      by_cases mem : verifiedNodes.contains state.currNode
+      · simp [verify_via_dfs_step_eq_ok_iff_mem mem h, HashSet.subset_refl]
+      · rw [verify_via_dfs_step_eq_ok_iff_not_mem mem] at h
+        obtain ⟨s, h₁, h₂, _⟩ := h
+        simp [h₂]
+        refine HashSet.subset_trans ?_ HashSet.subset_insert
+        apply List.foldl_except_is_superset_of_f_is_superset (state.G.predecessors state.currNode).attach _ _ (by intro _ _ _ _; apply dfs_step_extends_verified)
+        simp at h₁
+        apply h₁
+    termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.1)
+    decreasing_by
+      apply verify_via_dfs_step_termination_aux
+      grind
 
-    lemma dfs_step_result_valid
-      {a : A}
-      (G : Graph A)
-      (cond : NodeCondition A)
-      (walkFromA : {w : Walk G // w.val.head? = some a})
-      (verifiedNodes : HashSet A)
-      (verifiedAfter : HashSet A)
-      (verifiedAfterIsResult : verify_via_dfs_step a G cond walkFromA verifiedNodes = Except.ok verifiedAfter)
+    lemma dfs_step_result_valid {state : DFS_State A}
+      (verifiedNodes : HashSet A) (verifiedAfter : HashSet A)
+      (verifiedAfterIsResult : verify_via_dfs_step state verifiedNodes = Except.ok verifiedAfter)
       (verifiedNodesValid : ∀ node, verifiedNodes.contains node ->
-        (¬ G.reachableFromCycle node ∧
-          G.cond_ok_on_all_canReach node cond)
+        (¬ state.G.reachableFromCycle node ∧
+          state.G.cond_ok_on_all_canReach node state.cond)
       ) : (∀ node, verifiedAfter.contains node ->
-        (¬ G.reachableFromCycle node ∧
-          G.cond_ok_on_all_canReach node cond)) := by
-      unfold verify_via_dfs_step at verifiedAfterIsResult
-      simp only [List.any_eq_true, decide_eq_true_eq, dite_eq_ite] at verifiedAfterIsResult
-      split at verifiedAfterIsResult
-      · injection verifiedAfterIsResult with verifiedAfterIsResult; rw [← verifiedAfterIsResult]; assumption
-      · simp only [Except.bind] at verifiedAfterIsResult
-        split at verifiedAfterIsResult
-        · contradiction
-        · case h_2 cond_a =>
-          split at verifiedAfterIsResult
-          · contradiction
-          · case isFalse pred_not_mem_walk =>
-            unfold Except.map at verifiedAfterIsResult
-            split at verifiedAfterIsResult
-            · contradiction
-            · case h_2 foldl_result eq =>
-              simp at verifiedAfterIsResult
+        (¬ state.G.reachableFromCycle node ∧
+          state.G.cond_ok_on_all_canReach node state.cond)) := by
+      by_cases mem : state.currNode ∈ verifiedNodes
+      · simpa only [verify_via_dfs_step_eq_ok_iff_mem mem verifiedAfterIsResult]
+      · rw [verify_via_dfs_step_eq_ok_iff_not_mem mem] at verifiedAfterIsResult
+        obtain ⟨s, h₁, h₂, h₃, h₄⟩ := verifiedAfterIsResult
+        simp [h₂]
+        have : ∀ (node : A), node ∈ s → (¬ state.G.reachableFromCycle node ∧
+          state.G.cond_ok_on_all_canReach node state.cond) := by
+          apply List.foldl_except_preserves_prop (Except.ok verifiedNodes) (fun s => ∀ n ∈ s, (¬ state.G.reachableFromCycle n ∧
+          state.G.cond_ok_on_all_canReach n state.cond)) ?_ (by grind) s h₁
+          simp
+          intro x y z a b c
+          have := dfs_step_result_valid _ _ c b
+          simp [extend_DFS_State] at this
+          apply this
+        intro a ha
+        cases ha with
+        | inl ha =>
+          rw [notReachableFromCycleIffPredecessorsNotReachableFromCycle, cond_ok_on_all_canReach_iff _ _ (by grind [currNode_mem_of_DFS_State]), NodeCondition.true]
+          have : ∀ n ∈ state.G.predecessors a, n ∈ s := by
+            intro n hn
+            apply List.foldl_except_contains_of_some_contains ?_ ?_ s h₁
+            · grind [dfs_step_extends_verified]
+            · simp [ha]
+              use n, hn
+              apply dfs_step_result_contains_currNode
+          grind
+        | inr ha => apply this a ha
+    termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.1)
+    decreasing_by
+      apply verify_via_dfs_step_termination_aux
+      grind
 
-              intro node node_contained
-              rw [← verifiedAfterIsResult] at node_contained
-              rw [HashSet.contains_insert] at node_contained
-
-              let extendwalkFromA (c : A) (c_pred : c ∈ G.predecessors a) : {w : Walk G // w.val.head? = some c} := ⟨walkFromA.val.prependPredecessor c (by unfold Walk.predecessors; simp [walkFromA.prop]; exact c_pred), by (unfold Walk.prependPredecessor; simp)⟩
-
-              let foldl_f : HashSet A -> {c : A // c ∈ G.predecessors a} -> Except String (HashSet A) := (fun b pred =>
-                  verify_via_dfs_step pred.1 G cond (extendwalkFromA pred.val pred.prop) b
-                )
-
-              have foldl_preserves := (G.predecessors a).attach.foldl_except_preserves_prop foldl_f (Except.ok verifiedNodes)
-                (fun set => ∀ node, set.contains node ->(¬ G.reachableFromCycle node ∧ G.cond_ok_on_all_canReach node cond))
-
-              have prop_holds_after_foldl : ∀ {v}, foldl_result.contains v -> ¬ G.reachableFromCycle v ∧ G.cond_ok_on_all_canReach v cond := by
-                intro v contains
-                apply foldl_preserves
-                · simp only [List.mem_attach, forall_const, Subtype.forall]
-                  intro init_step res_step pred pred_is_pred prop_init_step f_preserves_prop
-                  have _termination := G.verify_via_dfs_step_termination_aux walkFromA pred_is_pred (by simp at pred_not_mem_walk; apply pred_not_mem_walk; exact pred_is_pred)
-                  apply dfs_step_result_valid
-                  · exact f_preserves_prop
-                  · exact prop_init_step
-                · intro init_unwrapped init_unwrapped_eq
-                  injection init_unwrapped_eq with init_unwrapped_eq
-                  rw [← init_unwrapped_eq]
-                  apply verifiedNodesValid
-                · exact eq
-                · exact contains
-
-              simp only [Bool.or_eq_true, beq_iff_eq] at node_contained
-              cases node_contained with
-              | inr node_contained => apply prop_holds_after_foldl node_contained
-              | inl node_contained =>
-                rw [← node_contained]
-                rw [notReachableFromCycleIffPredecessorsNotReachableFromCycle]
-                rw [cond_ok_on_all_canReach_iff]
-                · unfold NodeCondition.true
-                  simp only [cond_a, and_true]
-                  rw [← forall_and]
-                  intro c
-                  rw [← imp_and]
-                  intro c_pred
-                  apply prop_holds_after_foldl
-                  apply (G.predecessors a).attach.foldl_except_contains_of_some_contains foldl_f verifiedNodes
-                  · intro _ _ _ _
-                    apply dfs_step_extends_verified
-                  · exists ⟨c, c_pred⟩
-                    constructor
-                    · simp only [List.mem_attach]
-                    · intro b res f_ok
-                      apply dfs_step_result_contains_a
-                      simp only [foldl_f] at f_ok
-                      exact f_ok
-                  · exact eq
-                · apply walkFromA.val.prop.left
-                  apply List.mem_of_mem_head?
-                  rw [walkFromA.prop]
-                  simp
-    termination_by Finset.card (List.toFinset G.vertices \ List.toFinset walkFromA.val.val)
 
     lemma dfs_step_semantics
       {a : A}
