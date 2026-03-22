@@ -6,6 +6,7 @@ import CertifyingDatalog.Datastructures.Except
 
 section FoldlExcept
   namespace List
+    @[specialize]
     def foldl_except (l : List A) (f : B -> A -> Except Err B) (init : Except Err B): Except Err B :=
       match l with
       | nil => init
