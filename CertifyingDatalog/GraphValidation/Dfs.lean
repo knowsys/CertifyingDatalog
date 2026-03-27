@@ -229,8 +229,6 @@ section Dfs
       (nonempty : stack.1 ≠ [])
       (is_front : stack.1.head nonempty = currNode)
 
-    def DFS_State.G {G : Graph A} (_s : DFS_State G) : Graph A := G
-
     def initalize_DFS_State (a : A) (G : Graph A) (cond : NodeCondition A) (h : a ∈ G.vertices) : DFS_State G where
       currNode := a
       cond := cond
@@ -240,7 +238,7 @@ section Dfs
       nonempty := by simp [Walk.singleton]
       is_front := by simp [Walk.singleton]
 
-    def extend_DFS_State {G : Graph A} (state : DFS_State G) (a : A) (h : a ∈ state.G.predecessors state.currNode) : DFS_State G where
+    def extend_DFS_State {G : Graph A} (state : DFS_State G) (a : A) (h : a ∈ G.predecessors state.currNode) : DFS_State G where
       currNode := a
       cond := state.cond
       stack := state.stack.prependPredecessor a (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
@@ -249,7 +247,7 @@ section Dfs
       nonempty := Walk.nonempty_prependPredecessor (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
       is_front := by simp [Walk.prependPredecessor]
 
-    lemma currNode_mem_of_DFS_State {G : Graph A} {state : DFS_State G} : state.currNode ∈ state.G.vertices := by
+    lemma currNode_mem_of_DFS_State {G : Graph A} {state : DFS_State G} : state.currNode ∈ G.vertices := by
       have := state.stack.2
       simp [List.isWalk] at this
       apply this.1
@@ -299,8 +297,8 @@ section Dfs
         apply h a mem
         apply canReach_refl; apply mem
 
-    lemma verify_via_dfs_step_termination_aux {b : A} {G : Graph A} {state : DFS_State G} (b_pred : b ∈ state.G.predecessors state.currNode) (b_not_in_walk : b ∉ state.stack) :
-      (state.G.vertices.toFinset \ (extend_DFS_State state b b_pred).stack.1.toFinset).card < (state.G.vertices.toFinset \ state.stack.1.toFinset).card := by
+    lemma verify_via_dfs_step_termination_aux {b : A} {G : Graph A} {state : DFS_State G} (b_pred : b ∈ G.predecessors state.currNode) (b_not_in_walk : b ∉ state.stack) :
+      (G.vertices.toFinset \ (extend_DFS_State state b b_pred).stack.1.toFinset).card < (G.vertices.toFinset \ state.stack.1.toFinset).card := by
         apply Finset.card_lt_card
         rw [Finset.ssubset_iff]
         simp only [Finset.mem_sdiff, List.mem_toFinset, not_and, Decidable.not_not]
@@ -323,16 +321,16 @@ section Dfs
     def verify_via_dfs_step {G : Graph A} (state : DFS_State G) (verifiedNodes : HashSet A) : Except String (HashSet A) :=
       if verifiedNodes.contains state.currNode then Except.ok verifiedNodes
       else (state.cond state.currNode).bind (fun _ =>
-          if _pred_not_mem_walk : (state.G.predecessors state.currNode).any (isContained state)
+          if _pred_not_mem_walk : (G.predecessors state.currNode).any (isContained state)
           then Except.error "Cycle detected"
           else
             let verifiedAfterRecursion :=
-              (state.G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
+              (G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
                 verify_via_dfs_step (extend_DFS_State state pred mem) verified
               ) (Except.ok verifiedNodes)
 
             verifiedAfterRecursion.map (fun verified => verified.insert state.currNode))
-    termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.1)
+    termination_by Finset.card (List.toFinset G.vertices \ List.toFinset state.stack.1)
     decreasing_by
       apply verify_via_dfs_step_termination_aux
       simp only [List.any_eq_true, isContained_iff, not_exists,
@@ -348,11 +346,11 @@ section Dfs
 
     lemma verify_via_dfs_step_eq_ok_iff_not_mem {G : Graph A} {state : DFS_State G} {verifiedNodes : HashSet A} {s : HashSet A} (mem : ¬verifiedNodes.contains state.currNode = true) :
         verify_via_dfs_step state verifiedNodes = Except.ok s ↔
-        ∃ (s' : HashSet A), (state.G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
+        ∃ (s' : HashSet A), (G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
                 verify_via_dfs_step (extend_DFS_State state pred mem) verified
               ) (Except.ok verifiedNodes) = Except.ok s'
         ∧ s = s'.insert state.currNode
-        ∧ (∀ (a : A), a ∈ state.G.predecessors state.currNode → a ∉ state.stack)
+        ∧ (∀ (a : A), a ∈ G.predecessors state.currNode → a ∉ state.stack)
         ∧ state.cond state.currNode = Except.ok () := by
       conv =>
         lhs
@@ -381,10 +379,10 @@ section Dfs
 
     lemma verify_via_dfs_step_isOk_iff_not_mem {G : Graph A} {state : DFS_State G} {verifiedNodes : HashSet A} (mem : ¬verifiedNodes.contains state.currNode = true) :
         (verify_via_dfs_step state verifiedNodes).isOk ↔
-        ((state.G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
+        ((G.predecessors state.currNode).attach.foldl_except (fun verified ⟨pred, mem⟩ =>
                 verify_via_dfs_step (extend_DFS_State state pred mem) verified
               ) (Except.ok verifiedNodes)).isOk
-        ∧ (∀ (a : A), a ∈ state.G.predecessors state.currNode → a ∉ state.stack)
+        ∧ (∀ (a : A), a ∈ G.predecessors state.currNode → a ∉ state.stack)
         ∧ state.cond state.currNode = Except.ok () := by
       conv =>
         lhs
@@ -433,10 +431,10 @@ section Dfs
         obtain ⟨s, h₁, h₂, _⟩ := h
         simp [h₂]
         refine HashSet.subset_trans ?_ HashSet.subset_insert
-        apply List.foldl_except_is_superset_of_f_is_superset (state.G.predecessors state.currNode).attach _ _ (by intro _ _ _ _; apply dfs_step_extends_verified)
+        apply List.foldl_except_is_superset_of_f_is_superset (G.predecessors state.currNode).attach _ _ (by intro _ _ _ _; apply dfs_step_extends_verified)
         simp at h₁
         apply h₁
-    termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.1)
+    termination_by Finset.card (List.toFinset G.vertices \ List.toFinset state.stack.1)
     decreasing_by
       apply verify_via_dfs_step_termination_aux
       grind
@@ -445,20 +443,20 @@ section Dfs
       (verifiedNodes : HashSet A) (verifiedAfter : HashSet A)
       (verifiedAfterIsResult : verify_via_dfs_step state verifiedNodes = Except.ok verifiedAfter)
       (verifiedNodesValid : ∀ node, verifiedNodes.contains node ->
-        (¬ state.G.reachableFromCycle node ∧
-          state.G.cond_ok_on_all_canReach node state.cond)
+        (¬ G.reachableFromCycle node ∧
+          G.cond_ok_on_all_canReach node state.cond)
       ) : (∀ node, verifiedAfter.contains node ->
-        (¬ state.G.reachableFromCycle node ∧
-          state.G.cond_ok_on_all_canReach node state.cond)) := by
+        (¬ G.reachableFromCycle node ∧
+          G.cond_ok_on_all_canReach node state.cond)) := by
       by_cases mem : state.currNode ∈ verifiedNodes
       · simpa only [verify_via_dfs_step_eq_ok_iff_mem mem verifiedAfterIsResult]
       · rw [verify_via_dfs_step_eq_ok_iff_not_mem mem] at verifiedAfterIsResult
         obtain ⟨s, h₁, h₂, h₃, h₄⟩ := verifiedAfterIsResult
         simp [h₂]
-        have : ∀ (node : A), node ∈ s → (¬ state.G.reachableFromCycle node ∧
-          state.G.cond_ok_on_all_canReach node state.cond) := by
-          apply List.foldl_except_preserves_prop (Except.ok verifiedNodes) (fun s => ∀ n ∈ s, (¬ state.G.reachableFromCycle n ∧
-          state.G.cond_ok_on_all_canReach n state.cond)) ?_ (by grind) s h₁
+        have : ∀ (node : A), node ∈ s → (¬ G.reachableFromCycle node ∧
+          G.cond_ok_on_all_canReach node state.cond) := by
+          apply List.foldl_except_preserves_prop (Except.ok verifiedNodes) (fun s => ∀ n ∈ s, (¬ G.reachableFromCycle n ∧
+          G.cond_ok_on_all_canReach n state.cond)) ?_ (by grind) s h₁
           simp
           intro x y z a b c
           have := dfs_step_result_valid _ _ c b
@@ -468,7 +466,7 @@ section Dfs
         cases ha with
         | inl ha =>
           rw [notReachableFromCycleIffPredecessorsNotReachableFromCycle, cond_ok_on_all_canReach_iff (by grind [currNode_mem_of_DFS_State]), NodeCondition.true]
-          have : ∀ n ∈ state.G.predecessors a, n ∈ s := by
+          have : ∀ n ∈ G.predecessors a, n ∈ s := by
             intro n hn
             apply List.foldl_except_contains_of_some_contains ?_ ?_ s h₁
             · grind [dfs_step_extends_verified]
@@ -477,20 +475,20 @@ section Dfs
               apply dfs_step_result_contains_currNode
           grind
         | inr ha => apply this a ha
-    termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.1)
+    termination_by Finset.card (List.toFinset G.vertices \ List.toFinset state.stack.1)
     decreasing_by
       apply verify_via_dfs_step_termination_aux
       grind
 
-    lemma cycle_construction {G : Graph A} {state : DFS_State G} {a : A} (ha : a ∈ state.G.predecessors state.currNode)
-        (ha' : a ∈ state.stack) : reachableFromCycle state.G a := by
+    lemma cycle_construction {G : Graph A} {state : DFS_State G} {a : A} (ha : a ∈ G.predecessors state.currNode)
+        (ha' : a ∈ state.stack) : reachableFromCycle G a := by
       apply reachableFromCycle_of_predecessesor_in_walk state.nonempty state.is_front ha ha'
 
-    lemma verify_via_dfs_step_mem_stack {G : Graph A} {state : DFS_State G} {verifiedNodes : HashSet A} {a : A} (ha : a ∈ state.G.predecessors state.currNode)
+    lemma verify_via_dfs_step_mem_stack {G : Graph A} {state : DFS_State G} {verifiedNodes : HashSet A} {a : A} (ha : a ∈ G.predecessors state.currNode)
         (ha' : a ∈ state.stack)
         (verifiedNodesValid : ∀ node, verifiedNodes.contains node ->
-          (¬ state.G.reachableFromCycle node ∧
-            state.G.cond_ok_on_all_canReach node state.cond)
+          (¬ G.reachableFromCycle node ∧
+            G.cond_ok_on_all_canReach node state.cond)
         ) :
         (verify_via_dfs_step state verifiedNodes).isOk = false := by
       have : state.currNode ∉ verifiedNodes := by
@@ -517,21 +515,21 @@ section Dfs
         {G : Graph A} (state : DFS_State G)
         (verifiedNodes : HashSet A)
         (verifiedNodesValid : ∀ node, verifiedNodes.contains node ->
-          (¬ state.G.reachableFromCycle node ∧
-            state.G.cond_ok_on_all_canReach node state.cond)
+          (¬ G.reachableFromCycle node ∧
+            G.cond_ok_on_all_canReach node state.cond)
         ) :
-        (verify_via_dfs_step state verifiedNodes).isOk ↔ (¬ state.G.reachableFromCycle state.currNode ∧ state.G.cond_ok_on_all_canReach state.currNode state.cond) := by
+        (verify_via_dfs_step state verifiedNodes).isOk ↔ (¬ G.reachableFromCycle state.currNode ∧ G.cond_ok_on_all_canReach state.currNode state.cond) := by
       by_cases mem : state.currNode ∈ verifiedNodes
       · unfold verify_via_dfs_step
         simpa [mem, Except.isOk, Except.toBool] using verifiedNodesValid state.currNode mem
-      · by_cases h' : ∀ (a : A), a ∈ state.G.predecessors state.currNode → a ∉ state.stack
-        · rw [verify_via_dfs_step_isOk_iff_not_mem mem, List.foldl_except_is_ok_iff (fun s => ∀ a ∈ s, ¬ state.G.reachableFromCycle a ∧ state.G.cond_ok_on_all_canReach a state.cond) _ verifiedNodesValid]
+      · by_cases h' : ∀ (a : A), a ∈ G.predecessors state.currNode → a ∉ state.stack
+        · rw [verify_via_dfs_step_isOk_iff_not_mem mem, List.foldl_except_is_ok_iff (fun s => ∀ a ∈ s, ¬ G.reachableFromCycle a ∧ G.cond_ok_on_all_canReach a state.cond) _ verifiedNodesValid]
           · simp
-            have : ∀ (a : A) (b : a ∈ state.G.predecessors state.currNode),
-            (verify_via_dfs_step (extend_DFS_State state a b) verifiedNodes).isOk = true ↔  ¬ state.G.reachableFromCycle a ∧ state.G.cond_ok_on_all_canReach a state.cond := by
+            have : ∀ (a : A) (b : a ∈ G.predecessors state.currNode),
+            (verify_via_dfs_step (extend_DFS_State state a b) verifiedNodes).isOk = true ↔  ¬ G.reachableFromCycle a ∧ G.cond_ok_on_all_canReach a state.cond := by
               intro a ha
               · rw [dfs_step_semantics]
-                · simp [extend_DFS_State, DFS_State.G]
+                · simp [extend_DFS_State]
                 · simp only [HashSet.contains_iff_mem, extend_DFS_State]
                   apply verifiedNodesValid
             rw [cond_ok_on_all_canReach_iff currNode_mem_of_DFS_State]
@@ -563,12 +561,12 @@ section Dfs
           obtain ⟨x, hx, hx'⟩ := h'
           simp [verify_via_dfs_step_mem_stack hx hx' verifiedNodesValid]
           have := cycle_construction hx hx'
-          have : state.G.reachableFromCycle state.currNode := by
+          have : G.reachableFromCycle state.currNode := by
             obtain ⟨cyc, isCyc, a, ha, ha'⟩ := this
             use cyc, isCyc, a, ha
             apply canReach_trans ha' (canReach_pred hx)
           grind
-    termination_by Finset.card (List.toFinset state.G.vertices \ List.toFinset state.stack.val)
+    termination_by Finset.card (List.toFinset G.vertices \ List.toFinset state.stack.val)
     decreasing_by
       all_goals
         simp [extend_DFS_State]
@@ -588,7 +586,7 @@ section Dfs
           ↔ ¬ G.reachableFromCycle a ∧ G.cond_ok_on_all_canReach a cond := by
           intro a h
           rw [dfs_step_semantics]
-          · simp [initalize_DFS_State, DFS_State.G]
+          · simp [initalize_DFS_State]
           · simp [initalize_DFS_State]
         simp only [List.mem_attach, this, forall_const, Subtype.forall,
           cond_ok_on_all_iff_ok_on_all_canReach]
@@ -602,7 +600,7 @@ section Dfs
       · intro x s s' hs hs'
         have h₁ := dfs_step_semantics (initalize_DFS_State x.1 G cond x.2) s
         have h₂ := dfs_step_semantics (initalize_DFS_State x.1 G cond x.2) s'
-        simp only [HashSet.contains_iff_mem, initalize_DFS_State, DFS_State.G] at h₁ h₂ ⊢
+        simp only [HashSet.contains_iff_mem, initalize_DFS_State] at h₁ h₂ ⊢
         grind
   end Graph
 end Dfs
