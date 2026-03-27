@@ -242,9 +242,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
           apply i_gt_0
         · apply i_lt_len
 
-  def tail {G: Graph A} (walk: Walk G) : Walk G := ⟨walk.val.tail, by
-    apply walk_tail
-  ⟩
+  def tail {G: Graph A} (walk: Walk G) : Walk G := ⟨walk.val.tail, walk_tail⟩
 
   lemma head_in_tail_predecessors {G : Graph A} (w : Walk G) (neq : w.val.tail ≠ []) : w.val.head (by intro contra; rw [contra] at neq; simp at neq) ∈ w.tail.predecessors := by
     unfold predecessors
@@ -283,7 +281,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     apply conn
     apply i_gt_0
 
-  def take {G : Graph A} (walk : Walk G) (n : Nat) : Walk G := ⟨walk.val.take n, by apply take_walk⟩
+  def take {G : Graph A} (walk : Walk G) (n : Nat) : Walk G := ⟨walk.val.take n, take_walk⟩
 
   def takeUntil {G : Graph A} (walk : Walk G) (a : A) : Walk G := walk.take (walk.val.idxOf a + 1)
 
