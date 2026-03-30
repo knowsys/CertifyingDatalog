@@ -428,7 +428,7 @@ namespace Graph
       property := by apply PreGraph.add_vertex_with_predecessors_still_complete; apply g.property
     }
 
-  theorem mem_of_has_pred (G : Graph A) (a b : A) : b ∈ G.predecessors a -> a ∈ G.vertices := by
+  theorem mem_of_has_pred {G : Graph A} {a b : A} : b ∈ G.predecessors a -> a ∈ G.vertices := by
     intro b_pred
     unfold predecessors at b_pred
     rw [PreGraph.in_predecessors_iff_found] at b_pred

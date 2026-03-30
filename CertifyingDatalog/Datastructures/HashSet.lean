@@ -25,11 +25,15 @@ namespace Std.HashSet
     apply h1
     apply S1_b
 
-  theorem subset_iff  {S1 S2: HashSet A} : S1 ⊆ S2 ↔ (∀ (a:A), S1.contains a → S2.contains a) := by
+  theorem subset_iff {S1 S2: HashSet A} : S1 ⊆ S2 ↔ (∀ (a:A), S1.contains a → S2.contains a) := by
     unfold HasSubset.Subset
     unfold instHasSubset_certifyingDatalog
     simp
     unfold subset
     simp
-end Std.HashSet
 
+  theorem subset_insert {S : HashSet A} {a : A} :
+      S ⊆ S.insert a := by
+    grind [subset_iff]
+
+end Std.HashSet
