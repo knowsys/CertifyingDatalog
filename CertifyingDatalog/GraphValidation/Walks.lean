@@ -260,11 +260,8 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     rw [← List.getElem_zero this]
     rw [← List.getElem_zero this2]
     unfold Walk.tail
-    rw [List.tail_getElem w.val this 0]
-    · apply w.prop.right 1 (by simp)
-    · rw [← List.length_tail]
-      unfold tail at this2
-      exact this2
+    simp only [List.getElem_tail, Nat.zero_add]
+    apply w.prop.right 1 (by simp)
 
   theorem take_walk {G : Graph A} {walk : Walk G} {n : ℕ} :
     (walk.1.take n).isWalk G := by
