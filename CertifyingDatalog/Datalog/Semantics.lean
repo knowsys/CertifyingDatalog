@@ -271,7 +271,7 @@ namespace KnowledgeBase
       unfold modelTheoreticSemantics
       simp only [Set.mem_setOf_eq]
       by_contra h'
-      push_neg at h'
+      push Not at h'
       rcases h' with ⟨i, m, n_head⟩
       have m': i.models kb := by
         apply m
@@ -291,7 +291,7 @@ namespace KnowledgeBase
       unfold modelTheoreticSemantics
       rw [Set.mem_setOf]
       by_contra h
-      push_neg at h
+      push Not at h
       rcases h with ⟨i, m, a_n_i⟩
       unfold Interpretation.models at m
       have a_i: a ∈ i := by
