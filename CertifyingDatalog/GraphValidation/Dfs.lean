@@ -252,7 +252,8 @@ section Dfs
       simp [List.isWalk] at this
       apply this.1
       have := state.is_front
-      grind
+      rw [← this]
+      simp
 
     def isContained {G : Graph A} (state : DFS_State G) (node : A) : Bool :=
       node ∈ state.fastStack
