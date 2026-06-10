@@ -249,10 +249,10 @@ section Dfs
 
     lemma currNode_mem_of_DFS_State {G : Graph A} {state : DFS_State G} : state.currNode ∈ G.vertices := by
       have := state.stack.2
-      simp [List.isWalk] at this
+      simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt] at this
       apply this.1
-      have := state.is_front
-      grind
+      rw [← state.is_front]
+      simp
 
     def isContained {G : Graph A} (state : DFS_State G) (node : A) : Bool :=
       node ∈ state.fastStack
