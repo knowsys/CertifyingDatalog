@@ -27,7 +27,7 @@ section FoldlExcept
         intro init ok i
         simp only [foldl_except] at ok
         cases eq : f init a with
-        | error _ => have stays := as.foldl_except_error_stays f;  simp at stays; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
+        | error _ => have stays := as.foldl_except_error_stays f; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
         | ok b =>
           cases eq_i : i.val with
           | zero =>
@@ -41,7 +41,7 @@ section FoldlExcept
             let j_fin : Fin as.length := ⟨j, by have isLt := i.isLt; rw [eq_i] at isLt; simp at isLt; exact isLt⟩
             simp only [foldl_except, take_succ_cons, get_eq_getElem, length_cons]
             cases eq : f init a with
-            | error _ => have stays := as.foldl_except_error_stays f; simp at stays; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
+            | error _ => have stays := as.foldl_except_error_stays f; rw [eq] at ok; rw [stays] at ok; simp [Except.isOk, Except.toBool] at ok
             | ok b =>
               rw [eq] at ok
               simp only [get_eq_getElem] at ih
