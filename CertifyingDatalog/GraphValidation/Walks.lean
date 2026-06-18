@@ -69,8 +69,8 @@ namespace Walk
 
   @[simp]
   theorem mem_singleton {G : Graph A} {a y : A} {h : a ∈ G.vertices} :
-    y ∈ Walk.singleton G a h ↔ y = a := by
-  simp [singleton, mem_walk_iff]
+      y ∈ Walk.singleton G a h ↔ y = a := by
+    simp [singleton, mem_walk_iff]
 
   def isCycle {G: Graph A} (w : Walk G): Prop :=
     if h: w.val.length < 2
@@ -158,28 +158,28 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
   · grind
 
   theorem walk_append {G : Graph A} {w w' : Walk G} (h : w.1 ≠ [])
-    (h' : w.1.getLast h ∈ w'.predecessors) : (w.1 ++ w'.1).isWalk G := by
-  have walk1 := w.2
-  have walk2 := w'.2
-  simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt, List.mem_append, List.length_append] at *
-  constructor
-  · grind
-  · intro i hi hi'
-    simp only [List.getElem_append]
-    split
-    · split
-      · apply walk1.2 _ hi
-      · omega
-    · split
-      · simp only [predecessors, List.getLast_eq_getElem] at h'
-        split at h'
-        · simp at h'
-        · rename_i head h
-          have : head = w'.1[0] := by
-            simp [List.head?_eq_getElem?] at h
-            grind
-          simpa [show i = w.1.length by omega, ← this]
-      · grind
+      (h' : w.1.getLast h ∈ w'.predecessors) : (w.1 ++ w'.1).isWalk G := by
+    have walk1 := w.2
+    have walk2 := w'.2
+    simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt, List.mem_append, List.length_append] at *
+    constructor
+    · grind
+    · intro i hi hi'
+      simp only [List.getElem_append]
+      split
+      · split
+        · apply walk1.2 _ hi
+        · omega
+      · split
+        · simp only [predecessors, List.getLast_eq_getElem] at h'
+          split at h'
+          · simp at h'
+          · rename_i head h
+            have : head = w'.1[0] := by
+              simp [List.head?_eq_getElem?] at h
+              grind
+            simpa [show i = w.1.length by omega, ← this]
+        · grind
 
   def prependPredecessor {G: Graph A} (walk: Walk G) (pred : A) (is_pred : pred ∈ walk.predecessors) : Walk G := ⟨pred::walk.val, by
     rw [← List.singleton_append]
@@ -264,19 +264,19 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     apply w.prop.right 1 (by simp)
 
   theorem take_walk {G : Graph A} {walk : Walk G} {n : ℕ} :
-    (walk.1.take n).isWalk G := by
-  have prop := walk.prop
-  unfold List.isWalk at *
-  rcases prop with ⟨subs, conn⟩
-  constructor
-  · intro a a_in_take
-    apply subs
-    apply List.mem_of_mem_take a_in_take
-  · intro i i_gt_0 i_lt_len
-    rw [List.getElem_take]
-    rw [List.getElem_take]
-    apply conn
-    apply i_gt_0
+      (walk.1.take n).isWalk G := by
+    have prop := walk.prop
+    unfold List.isWalk at *
+    rcases prop with ⟨subs, conn⟩
+    constructor
+    · intro a a_in_take
+      apply subs
+      apply List.mem_of_mem_take a_in_take
+    · intro i i_gt_0 i_lt_len
+      rw [List.getElem_take]
+      rw [List.getElem_take]
+      apply conn
+      apply i_gt_0
 
   def take {G : Graph A} (walk : Walk G) (n : Nat) : Walk G := ⟨walk.val.take n, take_walk⟩
 
@@ -348,71 +348,71 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     grind
 
   theorem drop_until_isWalk_of_isWalk {G : Graph A} {w : Walk G} {a : A} :
-    (List.drop_until w.1 a).isWalk G := by
-  suffices ∀ (l : List A), l.isWalk G → (List.drop_until l a).isWalk G from this w.1 w.2
-  intro l h
-  induction l with
-  | nil => simp [List.drop_until, h]
-  | cons hd tl ih =>
-    simp [List.drop_until]
-    split
-    · exact h
-    · apply ih
-      simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
-        Nat.pred_eq_sub_one] at h ⊢
-      rcases h with ⟨h1, h2⟩
-      apply And.intro h1.right
-      intro i hi1 hi2
-      have hi1': 0 < i +1 := by omega
-      have hi2' : i + 1 < tl.length +1 := by omega
-      specialize h2 (i+1) hi1' hi2'
-      cases i with
-      | zero => simp at hi1
-      | succ j =>
-        simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at h2 ⊢
-        exact h2
+      (List.drop_until w.1 a).isWalk G := by
+    suffices ∀ (l : List A), l.isWalk G → (List.drop_until l a).isWalk G from this w.1 w.2
+    intro l h
+    induction l with
+    | nil => simp [List.drop_until, h]
+    | cons hd tl ih =>
+      simp only [List.drop_until]
+      split
+      · exact h
+      · apply ih
+        simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
+          Nat.pred_eq_sub_one] at h ⊢
+        rcases h with ⟨h1, h2⟩
+        apply And.intro h1.right
+        intro i hi1 hi2
+        have hi1': 0 < i +1 := by omega
+        have hi2' : i + 1 < tl.length +1 := by omega
+        specialize h2 (i+1) hi1' hi2'
+        cases i with
+        | zero => simp at hi1
+        | succ j =>
+          simp only [List.getElem_cons_succ, Nat.add_one_sub_one] at h2 ⊢
+          exact h2
 
   def removeCycles {G : Graph A} (w : Walk G) : Walk G := ⟨List.removeCycles w.1, by
-      suffices ∀ (l : List A), l.isWalk G → (List.removeCycles l).isWalk G from this w.1 w.2
-      intro l hl
-      induction h:l.length using Nat.strong_induction_on generalizing l with
-      | h n ih =>
-        cases n with
-        | zero =>
-          simp only [List.length_eq_zero_iff] at h
-          rw [h] at hl
-          simp [h, List.removeCycles, hl]
-        | succ k =>
-          obtain ⟨hd, tl, h'⟩ := List.exists_of_length_succ _ h
-          simp only [h', List.length_cons, Nat.add_right_cancel_iff, List.removeCycles] at hl h ⊢
-          have htl : tl.isWalk G := by
-            have := walk_tail (w := ⟨hd::tl, hl⟩)
-            simp only [List.tail_cons] at this
+    suffices ∀ (l : List A), l.isWalk G → (List.removeCycles l).isWalk G from this w.1 w.2
+    intro l hl
+    induction h:l.length using Nat.strong_induction_on generalizing l with
+    | h n ih =>
+      cases n with
+      | zero =>
+        simp only [List.length_eq_zero_iff] at h
+        rw [h] at hl
+        simp [h, List.removeCycles, hl]
+      | succ k =>
+        obtain ⟨hd, tl, h'⟩ := List.exists_of_length_succ _ h
+        simp only [h', List.length_cons, Nat.add_right_cancel_iff, List.removeCycles] at hl h ⊢
+        have htl : tl.isWalk G := by
+          have := walk_tail (w := ⟨hd::tl, hl⟩)
+          simp only [List.tail_cons] at this
+          apply this
+        split
+        · rename_i mem
+          have : (List.drop_until tl hd).length < k + 1 := by
+            rw [← h]
+            rw [Nat.lt_succ_iff]
+            apply List.drop_until_length
+          specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
+          have walk : (List.drop_until tl hd).isWalk G := by
+            apply drop_until_isWalk_of_isWalk (w:= ⟨tl, htl⟩)
+          apply ih walk rfl
+        · by_cases htl' : tl = []
+          · simp only [htl', List.removeCycles]
+            let := Walk.singleton G hd (by simp [List.isWalk] at hl; apply hl.1.1)
+            apply this.2
+          · have := walk_append (w := Walk.singleton G hd (by simp [List.isWalk] at hl; apply hl.1.1)) (w':= ⟨tl.removeCycles, ih k (by omega) tl htl h⟩)
+            simp [singleton] at this
             apply this
-          split
-          · rename_i mem
-            have : (List.drop_until tl hd).length < k + 1 := by
-              rw [← h]
-              rw [Nat.lt_succ_iff]
-              apply List.drop_until_length
-            specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
-            have walk : (List.drop_until tl hd).isWalk G := by
-              apply drop_until_isWalk_of_isWalk (w:= ⟨tl, htl⟩)
-            apply ih walk rfl
-          · by_cases htl' : tl = []
-            · simp only [htl', List.removeCycles]
-              let := Walk.singleton G hd (by simp [List.isWalk] at hl; apply hl.1.1)
-              apply this.2
-            · have := walk_append (w := Walk.singleton G hd (by simp [List.isWalk] at hl; apply hl.1.1)) (w':= ⟨tl.removeCycles, ih k (by omega) tl htl h⟩)
-              simp [singleton] at this
-              apply this
-              have := List.removeCycles_not_empty_iff.mpr htl'
-              simp only [predecessors, ne_eq, this, not_false_eq_true, List.head?_eq_some_head]
-              rw [List.removeCycles_head_eq_head htl', List.head_eq_getElem_zero]
-              have := hl.2 1 (by omega) (by simp; grind)
-              simp only [List.getElem_cons_succ, Nat.pred_eq_sub_one, Nat.sub_self,
-                List.getElem_cons_zero] at this
-              apply this
+            have := List.removeCycles_not_empty_iff.mpr htl'
+            simp only [predecessors, ne_eq, this, not_false_eq_true, List.head?_eq_some_head]
+            rw [List.removeCycles_head_eq_head htl', List.head_eq_getElem_zero]
+            have := hl.2 1 (by omega) (by simp; grind)
+            simp only [List.getElem_cons_succ, Nat.pred_eq_sub_one, Nat.sub_self,
+              List.getElem_cons_zero] at this
+            apply this
   ⟩
 
 end Walk

@@ -80,8 +80,8 @@ namespace Grounding
 
     lemma applyPartialGroundRule_eq_apply_only_ungrounded' (g : Grounding τ) (pgr : PartialGroundRule τ) :
     g.applyRule' pgr.toRule = { head := g.applyAtom' pgr.head, body := pgr.groundedBody ++ pgr.ungroundedBody.map g.applyAtom'} := by
-    rw [← applyPartialGroundRule_eq_apply_only_ungrounded]
-    simp [applyPartialGroundRule]
+      rw [← applyPartialGroundRule_eq_apply_only_ungrounded]
+      simp [applyPartialGroundRule]
 end Grounding
 
 namespace PartialGroundRule

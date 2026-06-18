@@ -51,7 +51,7 @@ namespace PreGraph
             | inr v_not_in_pg =>
               simp only [beq_iff_eq] at hl
               cases hl with
-              | inl hl => apply Or.inr; constructor; simp only at v_not_in_pg; exact v_not_in_pg; apply Or.inl; apply Eq.symm; exact hl
+              | inl hl => simp [v_not_in_pg, hl]
               | inr _ => contradiction
         | inr hr =>
           unfold add_vertex at hr
@@ -64,7 +64,7 @@ namespace PreGraph
           · rw [Std.HashMap.mem_insert] at hr
             cases Decidable.em (v ∈ pg) with
             | inl v_in_pg => apply Or.inl; exact v_in_pg
-            | inr v_not_in_pg => apply Or.inr; constructor; simp at v_not_in_pg; exact v_not_in_pg; apply Or.inr; exact hr.right
+            | inr v_not_in_pg => simp [v_not_in_pg, hr]
       · intro h
         cases h with
         | inl hl =>
@@ -167,11 +167,7 @@ namespace PreGraph
           simp only [beq_iff_eq] at hl
           cases hl with
           | inl hll =>
-            apply Or.inl
-            constructor
-            · rw [← hll]
-              apply hl'
-            · rw [hll]
+            simp [← hll, hl']
           | inr hlr =>
             cases Decidable.em (a = v) with
             | inl a_eq_v => apply Or.inl; constructor; exact hlr; exact a_eq_v
@@ -181,13 +177,7 @@ namespace PreGraph
           simp only [beq_iff_eq] at hl
           cases hl with
           | inl hll =>
-            apply Or.inr
-            apply Or.inr
-            apply Or.inl
-            constructor
-            · rw [← hll]
-              exact hr'
-            · rw [hll]
+            simp [← hll, hr']
           | inr hlr =>
             cases Decidable.em (a = v) with
             | inl a_eq_v => apply Or.inl; constructor; exact hlr; exact a_eq_v
@@ -210,14 +200,7 @@ namespace PreGraph
               have contra := hrl.right
               contradiction
             | inr not_mem =>
-              apply Or.inr
-              apply Or.inr
-              apply Or.inr
-              constructor
-              apply not_mem
-              constructor
-              · apply a_neq_v
-              · apply hrr
+              simp [not_mem, a_neq_v, hrr]
         case isFalse hr' =>
           rw [Std.HashMap.mem_insert] at hrl
           simp only [beq_iff_eq, not_or] at hrl
@@ -231,15 +214,7 @@ namespace PreGraph
             | inl mem =>
               simp only [mem, not_true_eq_false, and_false] at hrl
             | inr not_mem =>
-              apply Or.inr
-              apply Or.inr
-              apply Or.inr
-              constructor
-              · simp only at not_mem
-                apply not_mem
-              · constructor
-                · apply a_neq_v
-                · apply hrr
+              simp [not_mem, a_neq_v, hrr]
     · intro h
       cases h with
       | inl hll =>

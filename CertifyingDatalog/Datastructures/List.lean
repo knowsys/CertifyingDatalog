@@ -24,18 +24,16 @@ namespace List
 
   lemma mapExceptUnit_error {l: List A} {f: A → Except B Unit} {b : B}
     (h: mapExceptUnit l f = Except.error b) : ∃ a ∈ l, f a = Except.error b := by
-  induction l with
-  | nil => simp[mapExceptUnit] at h
-  | cons hd tl ih =>
-    simp only [mapExceptUnit] at h
-    split at h
-    · rename_i h
-      simp
-      right
-      apply ih h
-    · rename_i e b h'
-      use hd
-      simp [h', h]
+    induction l with
+    | nil => simp[mapExceptUnit] at h
+    | cons hd tl ih =>
+      simp only [mapExceptUnit] at h
+      split at h
+      · rename_i h
+        simp [ih h]
+      · rename_i e b h'
+        use hd
+        simp [h', h]
 
   def mapExcept.go (f: A → Except B C) (l: List A) (curr: List C): Except B (List C) :=
     match l with
@@ -83,10 +81,10 @@ namespace List
 
   lemma mem_foldl_union {A : Type u} {B : Type v} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (b:B):
     b ∈ foldl_union f init l ↔ b ∈ init ∨ ∃ (a:A), a ∈ l ∧ b ∈ f a := by
-  unfold foldl_union
-  induction l generalizing init with
-  | nil => simp
-  | cons hd tl ih => simp [ih, or_assoc]
+    unfold foldl_union
+    induction l generalizing init with
+    | nil => simp
+    | cons hd tl ih => simp [ih, or_assoc]
 
   lemma subset_foldl_union {A : Type u} {B : Type v} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B): init ⊆ foldl_union f init l := by
     unfold foldl_union
@@ -162,32 +160,12 @@ namespace List
     | nil =>
       simp
     | cons hd tl ih =>
-      unfold List.find?
+      simp only [not_and, Bool.not_eq_true, pairwise_cons, find?_cons_eq_some,
+        Bool.not_eq_eq_eq_not, Bool.not_true, mem_cons] at unique ih ⊢
+      rw [ih unique.2]
       by_cases p_hd: p hd = true
-      simp [p_hd]
-      constructor
-      intro hd_a
-      constructor
-      left
-      apply Eq.symm hd_a
-      rw [← hd_a]
-      exact p_hd
-      intro h
-      rcases h with ⟨a_mem, p_a⟩
-      cases a_mem with
-      | inl a_hd =>
-        apply Eq.symm a_hd
-      | inr a_tl =>
-        simp at unique
-        rcases unique with ⟨unique, _⟩
-        specialize unique a a_tl p_hd
-        rw [unique] at p_a
-        contradiction
-
-      simp [p_hd]
-      rw [ih]
-      aesop
-      aesop
+      · grind
+      · grind
 
   lemma mem_set_iff (l: List A)(i: Fin l.length) (a d: A): a ∈ l.set i d ↔ a = d ∨ ∃ (j: Fin l.length), j ≠ i ∧ a = l[j] := by
     simp
