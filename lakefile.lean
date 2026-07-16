@@ -10,7 +10,7 @@ lean_lib «CertifyingDatalog» {
 }
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4"@"v4.31.0"
+  "https://github.com/leanprover-community/mathlib4"@"v4.32.0"
 
 @[default_target]
 lean_exe «certifyingDatalog» where
