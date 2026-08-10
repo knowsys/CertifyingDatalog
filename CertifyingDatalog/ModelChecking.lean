@@ -105,7 +105,7 @@ namespace PartialGroundRule
     apply False.elim
     apply a_not_mem_i
     apply h.left
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     exact a_mem_body
 end PartialGroundRule
 

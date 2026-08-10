@@ -243,7 +243,12 @@ section Dfs
       cond := state.cond
       stack := state.stack.prependPredecessor a (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
       fastStack := state.fastStack.insert a
-      stacks_eq := by simp [Walk.prependPredecessor, Walk.mem_walk_iff, ←state.stacks_eq]; grind
+      stacks_eq := by
+        intro a'
+        simp only [Walk.prependPredecessor, HashSet.mem_insert, beq_iff_eq, ← state.stacks_eq]
+        rw [Walk.mem_walk_iff]
+        simp only [List.mem_cons, Eq.comm]
+        rw [Walk.mem_walk_iff]
       nonempty := Walk.nonempty_prependPredecessor (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
       is_front := by simp [Walk.prependPredecessor]
 

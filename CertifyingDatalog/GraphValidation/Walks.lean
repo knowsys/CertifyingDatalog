@@ -43,6 +43,7 @@ theorem List.isWalk_iff_isWalk_computable_eq_true (l : List A) (G: Graph A) :
 instance (G : Graph A) (l : List A) : Decidable (List.isWalk l G) :=
   decidable_of_bool (List.isWalk_computable l G) (Iff.symm (List.isWalk_iff_isWalk_computable_eq_true l G))
 
+@[implicit_reducible]
 def Walk (G : Graph A) := {l : List A // l.isWalk G}
 
 namespace Walk
@@ -70,7 +71,8 @@ namespace Walk
   @[simp]
   theorem mem_singleton {G : Graph A} {a y : A} {h : a ∈ G.vertices} :
       y ∈ Walk.singleton G a h ↔ y = a := by
-    simp [singleton, mem_walk_iff]
+    rw [mem_walk_iff]
+    simp [singleton]
 
   def isCycle {G: Graph A} (w : Walk G): Prop :=
     if h: w.val.length < 2
@@ -260,7 +262,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     rw [← List.getElem_zero this]
     rw [← List.getElem_zero this2]
     unfold Walk.tail
-    simp only [List.getElem_tail, Nat.zero_add]
+    rw [List.getElem_tail this2]
     apply w.prop.right 1 (by simp)
 
   theorem take_walk {G : Graph A} {walk : Walk G} {n : ℕ} :
@@ -303,10 +305,8 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     rw [takeUntil_head_same]
 
   lemma takeUntil_getLast_is_target {G : Graph A} (w : Walk G) (a : A) (mem : a ∈ w.val) : (w.takeUntil a).val.getLast (by apply takeUnil_ne_of_ne; intro contra; rw [contra] at mem; simp at mem) = a := by
-    unfold takeUntil
-    rw [List.getLast_eq_getElem]
-    unfold Walk.take
-    rw [List.getElem_take]
+    simp only [takeUntil, take]
+    rw [List.getLast_eq_getElem,List.getElem_take]
     simp [List.length_take_of_le (by
       show w.val.idxOf a + 1 ≤ w.val.length
       apply Nat.succ_le_of_lt
@@ -331,9 +331,8 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
       · intro contra; unfold tail at h; simp [contra] at h
       · intro contra; simp [contra] at h
     )).isCycle := by
-    simp only [isCycle, prependPredecessor, List.length_cons, Fin.zero_eta, List.get_eq_getElem,
-      Fin.val_zero, List.getElem_cons_zero, Nat.pred_eq_sub_one, Nat.add_one_sub_one,
-      dite_then_false, not_lt, Nat.reduceLeDiff]
+    simp only [isCycle, List.get_eq_getElem, Nat.pred_eq_sub_one, dite_then_false, not_lt]
+    unfold Walk.prependPredecessor
     have : (w.tail.takeUntil (w.val.head neq)).val.length - 1 + 1 = (w.tail.takeUntil (w.val.head neq)).val.length := by
       rw [Nat.sub_one_add_one_eq_of_pos]
       apply List.length_pos_of_ne_nil
@@ -341,7 +340,8 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
       intro contra; rw [contra] at h; simp at h
     have get_cons := @List.getElem_cons_succ _ (w.val.head neq) (w.tail.takeUntil (w.val.head neq)).val ((w.tail.takeUntil (w.val.head neq)).val.length - 1) (by rw [this]; simp)
     use (by grind)
-    simp only [this] at get_cons
+    simp only [List.getElem_cons_zero, List.length_cons, Nat.add_one_sub_one]
+    simp [this] at get_cons
     rw [get_cons]
     have applied_takeUntil_getLast_is_target := w.tail.takeUntil_getLast_is_target (w.val.head neq) h
     rw [← List.getLast_eq_getElem, applied_takeUntil_getLast_is_target]
@@ -515,7 +515,7 @@ namespace Graph
             simp only [List.tail_cons] at eq
             simp only [eq]
             simp only [eq, List.getLast_singleton] at w_last_c
-            simp [w_last_c]
+            simp [w_last_c, Walk]
         unfold Walk.concat
         simp only [this]
         unfold Walk.singleton
@@ -726,9 +726,8 @@ namespace Graph
     let w' := w.prependPredecessor b bmem
     have hw' : w'.1 ≠ [] := by simp[w', Walk.prependPredecessor]
     have hb' : b ∈ (w'.tail.takeUntil (w'.1.head hw')).predecessors := by
-      have := Walk.takeUnil_ne_of_ne w hw b
-      simpa [w', Walk.prependPredecessor, Walk.tail, Walk.predecessors, this,
-        List.head?_eq_some_head, Walk.takeUntil_head_same, hw, ha]
+      have : (Walk.takeUntil w b).1 ≠ [] := Walk.takeUnil_ne_of_ne w hw b
+      simp [w', Walk.prependPredecessor, Walk.tail, Walk.predecessors, List.head?_eq_some_head this, Walk.takeUntil_head_same w hw b, ha, hab]
     have := Walk.isCycle_of_head_in_tail w' hw' (by simp [w', Walk.prependPredecessor, Walk.tail, ←Walk.mem_walk_iff, hb])
     let cyc := (w'.tail.takeUntil (w'.1.head hw')).prependPredecessor b hb'
     simp only [reachableFromCycle]
