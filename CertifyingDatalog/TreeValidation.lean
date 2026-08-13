@@ -65,15 +65,15 @@ namespace Program
       intro l r
       unfold toSymbolSequenceMap_aux
       simp only [List.mem_cons]
-      rw [ih]
+      rw [ih l r (init := (Std.HashMap.insert init rule.symbolSequence (rule :: init.find rule.symbolSequence)))]
       by_cases l_symb: l = rule.symbolSequence
       · simp only [l_symb]
         unfold SymbolSequenceMap.find
-        rw [Std.HashMap.getD_insert_self]
+        rw [Std.HashMap.getD_insert_self (m :=init)]
         simp only [List.mem_cons]
         tauto
       · unfold SymbolSequenceMap.find
-        rw [Std.HashMap.getD_insert]
+        rw [Std.HashMap.getD_insert (m := init)]
         split
         case neg.isTrue h => simp at h; rw [h] at l_symb; contradiction
         constructor
@@ -269,7 +269,7 @@ namespace ProofTreeSkeleton
     intro h
     rw [Set.subset_def]
     intro ga
-    simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
+    simp only [Set.mem_ofPred_eq, forall_exists_index, and_imp]
     intros t t_l ga_t
     rw [checkValidityOfListOkIffAllValid] at h
     apply kb.elementsOfEveryProofTreeInSemantics ⟨t, by apply h; exact t_l⟩

@@ -80,7 +80,7 @@ namespace KnowledgeBase
     (kb : KnowledgeBase τ) : ∀ (t : ProofTree kb) (ga : GroundAtom τ), t.elem ga → ga ∈ kb.proofTheoreticSemantics := by
     intro t ga mem
     unfold proofTheoreticSemantics
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred]
     induction h': t.height using Nat.strongRecOn generalizing t with
     | ind n ih =>
       cases eq : t.tree with
@@ -139,7 +139,7 @@ namespace KnowledgeBase
         rw [Set.insert_subset_iff] at r_and_rs_valid
         rcases (ih r_and_rs_valid.right) with ⟨rsTrees, h_rsTrees⟩
         have r_valid := r_and_rs_valid.left
-        simp only [proofTheoreticSemantics, Set.mem_setOf_eq] at r_valid
+        simp only [proofTheoreticSemantics, Set.mem_ofPred] at r_valid
         rcases r_valid with ⟨rTree, h_rTree⟩
         exists rTree::rsTrees
         simp only [List.map_cons, List.cons.injEq]
@@ -150,7 +150,7 @@ namespace KnowledgeBase
     use ProofTree.node r.head l (by
       apply Or.inl
       unfold Program.groundProgram at rGP
-      simp only [exists_and_left, Set.mem_setOf_eq] at rGP
+      simp only [exists_and_left, Set.mem_ofPred] at rGP
       rcases rGP with ⟨r', rP, g, g_r⟩
       use r'
       use g
@@ -188,7 +188,7 @@ namespace KnowledgeBase
   lemma proofTreeAtomsInEveryModel [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (kb: KnowledgeBase τ) : ∀ a, a ∈ kb.proofTheoreticSemantics → ∀ i : Interpretation τ, i.models kb → a ∈ i := by
     intro a pt i m
     unfold proofTheoreticSemantics at pt
-    rw [Set.mem_setOf] at pt
+    rw [Set.mem_ofPred] at pt
     rcases pt with ⟨t, root_t⟩
     unfold Interpretation.models at m
     rcases m with ⟨ruleModel,dbModel⟩
@@ -206,7 +206,7 @@ namespace KnowledgeBase
           have r_true: i.satisfiesRule (g.applyRule' r) := by
             apply ruleModel
             unfold Program.groundProgram
-            rw [Set.mem_setOf]
+            rw [Set.mem_ofPred]
             use r
             use g
           unfold Interpretation.satisfiesRule at r_true
@@ -257,7 +257,7 @@ namespace KnowledgeBase
     unfold modelTheoreticSemantics
     rw [Set.subset_def]
     intro a
-    rw [Set.mem_setOf]
+    rw [Set.mem_ofPred_eq]
     intro h
     apply h
     apply m
@@ -269,7 +269,7 @@ namespace KnowledgeBase
       unfold Interpretation.satisfiesRule
       intro h
       unfold modelTheoreticSemantics
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       by_contra h'
       push Not at h'
       rcases h' with ⟨i, m, n_head⟩
@@ -289,7 +289,7 @@ namespace KnowledgeBase
 
     · intros a a_db
       unfold modelTheoreticSemantics
-      rw [Set.mem_setOf]
+      rw [Set.mem_ofPred_eq]
       by_contra h
       push Not at h
       rcases h with ⟨i, m, a_n_i⟩

@@ -30,7 +30,7 @@ namespace Substitution
     apply Eq.symm
     apply subs
     unfold domain
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [h]
     simp
 
@@ -46,7 +46,7 @@ namespace Substitution
       have s1_s2: s1 v = s2 v := by
         apply subs
         unfold domain
-        simp only [Set.mem_setOf_eq]
+        simp only [Set.mem_ofPred_eq]
         rw [q]
         simp
       rw [s1_s2] at p
@@ -75,7 +75,7 @@ namespace Substitution
     rw [subs_l]
     apply subs_r
     unfold domain
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [← subs_l]
     unfold domain at h
     simp at h
@@ -108,7 +108,7 @@ namespace Substitution
     constructor
     · intro h
       unfold domain at h
-      rw [Set.mem_setOf] at h
+      rw [Set.mem_ofPred_eq] at h
       rw [Option.isSome_iff_exists] at h
       rcases h with ⟨c, c_prop⟩
       exists c
@@ -119,7 +119,7 @@ namespace Substitution
       simp only at c_prop
       by_cases p: Option.isSome (s v) = true
       · unfold domain
-        rw [Set.mem_setOf]
+        rw [Set.mem_ofPred_eq]
         apply p
       · simp only [Bool.not_eq_true, Option.isSome_eq_false_iff, Option.isNone_iff_eq_none] at p
         simp [p] at c_prop
@@ -320,7 +320,7 @@ namespace Substitution
         intro v'
         simp only [Finset.mem_filter_nc, Finset.mem_singleton, not_and]
         unfold domain
-        simp only [Set.mem_setOf_eq, Bool.not_eq_true, Option.isSome_eq_false_iff,
+        simp only [Set.mem_ofPred_eq, Bool.not_eq_true, Option.isSome_eq_false_iff,
           Option.isNone_iff_eq_none]
         intro h' p
         rw [p] at h'

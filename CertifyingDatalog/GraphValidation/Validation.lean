@@ -65,8 +65,8 @@ namespace Graph
     rw [Set.subset_def]
     intro node node_mem
     unfold List.toSet at node_mem
-    simp only [List.coe_toFinset, Set.mem_setOf_eq] at node_mem
-    simp only [Set.mem_setOf_eq]
+    simp only [List.coe_toFinset, Set.mem_ofPred_eq] at node_mem
+    simp only [Set.mem_ofPred_eq]
     exists G.toProofTree kb ⟨node, node_mem⟩ acyclic all_valid
     unfold toProofTree
     unfold ProofTree.root
@@ -116,7 +116,7 @@ namespace Graph
   theorem checkValidityIsOkIffAcyclicAndAllValid (G : Graph (GroundAtom τ)) (kb : KnowledgeBase τ) :
     G.checkValidity kb.prog.toSymbolSequenceMap kb.db = Except.ok () ↔ G.isAcyclic ∧ ∀ a ∈ G.vertices, G.locallyValid_for_kb kb a := by
     unfold checkValidity
-    rw [dfs_semantics]
+    rw [dfs_semantics (G:= G) (cond := fun node => G.check_local_validity kb.prog.toSymbolSequenceMap kb.db node)]
     unfold NodeCondition.true
     simp only [and_congr_right_iff]
     intro _

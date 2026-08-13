@@ -144,6 +144,11 @@ namespace OrderedProofGraph
     Tree.node current.fst next_trees
   termination_by root
 
+  lemma root_toProfTreeSkeleton {G : OrderedProofGraph τ} {kb : KnowledgeBase τ} (valid : G.isValid kb) (root : Fin G.val.size) :
+      Tree.root (toProofTreeSkeleton valid root) = G.val[root].1 := by
+    unfold toProofTreeSkeleton Tree.root
+    rfl
+
   lemma toProofTreeSkeleton_isValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) (root : Fin G.val.size) : (G.toProofTreeSkeleton valid root).isValid kb := by
     unfold toProofTreeSkeleton
     unfold ProofTreeSkeleton.isValid
@@ -161,20 +166,19 @@ namespace OrderedProofGraph
       exists g
       constructor
       · exact r_mem
-      constructor
-      · rw [r_apply]
-        simp
-        intro a _
-        simp only [Tree.root]
-        unfold toProofTreeSkeleton
-        simp only [Fin.getElem_fin]
-      · rw [List.forall_iff_forall_mem]
-        simp only [Fin.getElem_fin, List.mem_attach, forall_const,
-          Subtype.forall, List.mem_map, true_and, Subtype.exists, forall_exists_index]
-        intro t j j_mem next_tree
-        rw [← next_tree]
-        have _termination : j < root.val := by apply G.prop root j j_mem
-        apply toProofTreeSkeleton_isValid
+      · constructor
+        · rw [r_apply]
+          simp
+          intro a _
+          rw [root_toProfTreeSkeleton valid]
+          simp only [Fin.getElem_fin]
+        · rw [List.forall_iff_forall_mem]
+          simp only [Fin.getElem_fin, List.mem_attach, forall_const,
+            Subtype.forall, List.mem_map, true_and, Subtype.exists, forall_exists_index]
+          intro t j j_mem next_tree
+          rw [← next_tree]
+          have _termination : j < root.val := by apply G.prop root j j_mem
+          apply toProofTreeSkeleton_isValid
   termination_by root
 
   def toProofTree (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) (root : Fin G.val.size) : ProofTree kb :=
@@ -183,7 +187,7 @@ namespace OrderedProofGraph
   theorem verticesValidOrderedProofGraphAreInProofTheoreticSemantics [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) : G.labels.toSet ⊆ kb.proofTheoreticSemantics := by
     unfold KnowledgeBase.proofTheoreticSemantics
     unfold List.toSet
-    simp only [List.coe_toFinset, Set.setOf_subset_setOf]
+    simp only [List.coe_toFinset, Set.ofPred_subset_ofPred]
     intro a a_mem
     rw [in_labels_iff_exists_index] at a_mem
     rcases a_mem with ⟨i, h⟩

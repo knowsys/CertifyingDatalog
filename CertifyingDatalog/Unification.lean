@@ -16,7 +16,7 @@ section TermMatching
       by_cases v'_v: v' = v
       · simp only [v'_v, ↓reduceIte]
         unfold domain at h
-        simp only [Set.mem_setOf_eq] at h
+        simp only [Set.mem_ofPred_eq] at h
         rw [v'_v] at h
         exfalso
         cases h':(s v) with
@@ -80,7 +80,7 @@ section TermMatching
         | inr neq =>
           simp [neq] at h
       | variableDL v =>
-        simp [Option.filter, extend, applyTerm] at h ⊢
+        simp [applyTerm, extend]
 
     lemma matchTermIsMinimal [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyTerm t = c -> ((s.matchTerm t c).get h) ⊆ s' := by
       intro s' ⟨subset, apply_t⟩
@@ -96,7 +96,7 @@ section TermMatching
         cases h with
         | inl h =>
           unfold_projs
-          simp only [Substitution.subset, domain, extend, Set.mem_setOf_eq]
+          simp only [Substitution.subset, domain, extend, Set.mem_ofPred_eq]
           intro v'
           by_cases v_v': v' = v
           · simp only [v_v', ↓reduceIte, Option.isSome_some, forall_const]
@@ -111,7 +111,7 @@ section TermMatching
             apply subset
         | inr h =>
           unfold_projs
-          simp only [Substitution.subset, domain, extend, Set.mem_setOf_eq]
+          simp only [Substitution.subset, domain, extend, Set.mem_ofPred_eq]
           intro v'
           by_cases v_v': v' = v
           · simp only [v_v', ↓reduceIte, Option.isSome_some, forall_const]
