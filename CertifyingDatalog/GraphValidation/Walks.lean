@@ -43,7 +43,8 @@ theorem List.isWalk_iff_isWalk_computable_eq_true (l : List A) (G: Graph A) :
 instance (G : Graph A) (l : List A) : Decidable (List.isWalk l G) :=
   decidable_of_bool (List.isWalk_computable l G) (Iff.symm (List.isWalk_iff_isWalk_computable_eq_true l G))
 
-abbrev Walk (G : Graph A) := {l : List A // l.isWalk G}
+@[implicit_reducible]
+def Walk (G : Graph A) := {l : List A // l.isWalk G}
 
 namespace Walk
 
@@ -458,17 +459,16 @@ namespace Graph
     simp [canReach_iff_canReach_with_at_most_vertices_length, canReach_computable, List.allSubsetListsOfLengthAtMost_iff]
     constructor
     · intro h
-      rcases h with ⟨w, len, isWalk, neq, h⟩
-      use w
-      apply And.intro len
-      apply And.intro isWalk.1
-      apply And.intro isWalk
+      rcases h with ⟨w, len, neq, h⟩
+      use w.1
+      have := w.2.1
+      refine ⟨len, ⟨w.2.1, ⟨w.2, ?_⟩⟩⟩
       use neq
     · intro h
       rcases h with ⟨l, len, _, walk, neq, h⟩
-      use l
+      use ⟨l, walk⟩
       simp only [len, true_and]
-      use walk, neq
+      use neq
 
   instance (G : Graph A) (a b: A) : Decidable (canReach G a b) :=
     decidable_of_bool (canReach_computable G a b) (Iff.symm (canReach_iff_canReach_computable_eq_true G a b))
