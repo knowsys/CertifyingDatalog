@@ -1,7 +1,8 @@
-import CertifyingDatalog.Datalog
-import CertifyingDatalog.Unification
-import Mathlib.Data.Set.Basic
-import CertifyingDatalog.Basic
+module
+
+public import CertifyingDatalog.Unification
+
+@[expose] public section
 
 structure PartialGroundRule (τ: Signature) where
   head: Atom τ

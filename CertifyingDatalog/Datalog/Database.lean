@@ -1,7 +1,9 @@
-import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog.Basic
-import CertifyingDatalog.Datalog.Grounding
-import CertifyingDatalog.Datalog.Substitution
+module
+
+public import CertifyingDatalog.Datalog.Basic
+public import CertifyingDatalog.Datalog.Grounding
+
+@[expose] public section
 
 class Database (τ: Signature) where
   contains: GroundAtom τ → Bool

@@ -1,5 +1,9 @@
+module
+
 import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog.Basic
+public import CertifyingDatalog.Datalog.Basic
+
+@[expose] public section
 
 @[ext]
 structure GroundAtom (τ: Signature)

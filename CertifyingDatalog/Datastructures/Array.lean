@@ -1,4 +1,8 @@
+module
+
 import CertifyingDatalog.Datastructures.List
+
+@[expose] public section
 
 namespace Array
 

@@ -1,4 +1,8 @@
-import CertifyingDatalog.Datalog
+module
+
+public import CertifyingDatalog.Datalog
+
+@[expose] public section
 
 section TermMatching
   variable {τ: Signature}

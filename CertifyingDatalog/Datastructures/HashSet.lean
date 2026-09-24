@@ -1,6 +1,10 @@
-import Std.Data.HashSet
+module
+
+public import Std.Data.HashSet
 
 variable {A : Type u} [Hashable A] [DecidableEq A]
+
+@[expose] public section
 
 namespace Std.HashSet
   def subset (S S': HashSet A): Prop := ∀ (b:A), S.contains b → S'.contains b

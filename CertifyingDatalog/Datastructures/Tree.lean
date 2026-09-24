@@ -1,4 +1,8 @@
+module
+
 import CertifyingDatalog.Datastructures.List
+
+@[expose] public section
 
 inductive Tree (A: Type u)
 | node: A → List (Tree A) → Tree A

@@ -1,5 +1,8 @@
-import CertifyingDatalog.GraphValidation.Basic
-import CertifyingDatalog.Basic
+module
+
+public import CertifyingDatalog.GraphValidation.Basic
+
+@[expose] public section
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 

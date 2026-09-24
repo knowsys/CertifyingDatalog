@@ -1,5 +1,6 @@
-import CertifyingDatalog.GraphValidation.Basic
-import CertifyingDatalog.GraphValidation.Walks
-import CertifyingDatalog.GraphValidation.Dfs
-import CertifyingDatalog.GraphValidation.Validation
+module
 
+public import CertifyingDatalog.GraphValidation.Basic
+public import CertifyingDatalog.GraphValidation.Walks
+public import CertifyingDatalog.GraphValidation.Dfs
+public import CertifyingDatalog.GraphValidation.Validation

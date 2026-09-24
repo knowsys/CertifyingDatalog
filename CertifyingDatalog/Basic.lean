@@ -1,9 +1,13 @@
-import CertifyingDatalog.Datastructures.Array
-import CertifyingDatalog.Datastructures.Except
-import CertifyingDatalog.Datastructures.Finset
-import CertifyingDatalog.Datastructures.HashSet
-import CertifyingDatalog.Datastructures.List
-import CertifyingDatalog.Datastructures.Tree
+module
+
+public import CertifyingDatalog.Datastructures.Array
+public import CertifyingDatalog.Datastructures.Except
+public import CertifyingDatalog.Datastructures.Finset
+public import CertifyingDatalog.Datastructures.HashSet
+public import CertifyingDatalog.Datastructures.List
+public import CertifyingDatalog.Datastructures.Tree
+
+@[expose] public section
 
 namespace Nat
   lemma pred_lt_of_lt' (n m : ℕ) (h : n < m) : n.pred < m := by

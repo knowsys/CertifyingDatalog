@@ -1,7 +1,10 @@
-import Mathlib.Data.Finset.Card
-import CertifyingDatalog.GraphValidation.Basic
-import CertifyingDatalog.GraphValidation.Walks
-import CertifyingDatalog.Datastructures.Except
+module
+
+public import Mathlib.Data.Finset.Card
+public import CertifyingDatalog.GraphValidation.Walks
+public import CertifyingDatalog.Datastructures.Except
+
+@[expose] public section
 
 section FoldlExcept
   namespace List

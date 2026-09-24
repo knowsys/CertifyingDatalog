@@ -1,6 +1,7 @@
-import CertifyingDatalog.Datalog.Basic
-import CertifyingDatalog.Datalog.Database
-import CertifyingDatalog.Datalog.Grounding
-import CertifyingDatalog.Datalog.Substitution
-import CertifyingDatalog.Datalog.Semantics
+module
 
+public import CertifyingDatalog.Datalog.Basic
+public import CertifyingDatalog.Datalog.Database
+public import CertifyingDatalog.Datalog.Grounding
+public import CertifyingDatalog.Datalog.Substitution
+public import CertifyingDatalog.Datalog.Semantics

@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 namespace Except
   theorem is_ok_iff_exists (e: Except A B): (∃ (b:B), e = Except.ok b) ↔ Except.isOk e := by
     cases e with

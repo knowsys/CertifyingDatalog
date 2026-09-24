@@ -1,6 +1,10 @@
-import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog.Basic
-import CertifyingDatalog.Datalog.Grounding
+module
+
+public import CertifyingDatalog.Basic
+public import CertifyingDatalog.Datalog.Basic
+public import CertifyingDatalog.Datalog.Grounding
+
+@[expose] public section
 
 def Substitution (τ: Signature) := τ.vars → Option (τ.constants)
 

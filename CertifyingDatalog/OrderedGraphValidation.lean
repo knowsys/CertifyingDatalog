@@ -1,6 +1,8 @@
-import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog
-import CertifyingDatalog.TreeValidation
+module
+
+public import CertifyingDatalog.TreeValidation
+
+@[expose] public section
 
 abbrev OrderedProofGraph (τ: Signature) :=
   { arr : Array ((GroundAtom τ) × List ℕ) // ∀ i : Fin arr.size, ∀ j ∈ arr[i].snd, j < i }

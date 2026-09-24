@@ -1,8 +1,12 @@
-import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog.Basic
-import CertifyingDatalog.Datalog.Grounding
-import CertifyingDatalog.Datalog.Substitution
-import CertifyingDatalog.Datalog.Database
+module
+
+public import CertifyingDatalog.Basic
+public import CertifyingDatalog.Datalog.Basic
+public import CertifyingDatalog.Datalog.Grounding
+public import CertifyingDatalog.Datalog.Substitution
+public import CertifyingDatalog.Datalog.Database
+
+@[expose] public section
 
 structure KnowledgeBase (τ: Signature) where
   prog : Program τ

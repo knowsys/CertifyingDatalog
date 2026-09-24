@@ -1,6 +1,9 @@
-import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog
-import CertifyingDatalog.Unification
+module
+
+public import CertifyingDatalog.Datalog
+public import CertifyingDatalog.Unification
+
+@[expose] public section
 
 section SymbolSequenceMap
 def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] :=
