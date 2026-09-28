@@ -1,7 +1,9 @@
-import CertifyingDatalog.TreeValidation
-import CertifyingDatalog.GraphValidation.Basic
-import CertifyingDatalog.GraphValidation.Walks
-import CertifyingDatalog.GraphValidation.Dfs
+module
+
+public import CertifyingDatalog.TreeValidation
+public import CertifyingDatalog.GraphValidation.Dfs
+
+@[expose] public section
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 

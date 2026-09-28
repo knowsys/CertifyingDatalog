@@ -1,4 +1,9 @@
-import CertifyingDatalog.Basic
+module
+
+public import CertifyingDatalog.Datastructures.List
+public import Mathlib.Data.Finset.SDiff
+
+@[expose] public section
 
 section Basic
   structure Signature where

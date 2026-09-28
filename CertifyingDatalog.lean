@@ -1,11 +1,12 @@
 -- This module serves as the root of the `CertifyingDatalog` library.
 -- Import modules here that should be built as part of the library.
-import «CertifyingDatalog».Basic
-import «CertifyingDatalog».Datalog
-import «CertifyingDatalog».Parsing
-import «CertifyingDatalog».TreeValidation
-import «CertifyingDatalog».Unification
-import «CertifyingDatalog».ModelChecking
-import «CertifyingDatalog».GraphValidation
-import «CertifyingDatalog».OrderedGraphValidation
+module
 
+public import «CertifyingDatalog».Basic
+public import «CertifyingDatalog».Datalog
+public import «CertifyingDatalog».Parsing
+public import «CertifyingDatalog».TreeValidation
+public import «CertifyingDatalog».Unification
+public import «CertifyingDatalog».ModelChecking
+public import «CertifyingDatalog».GraphValidation
+public import «CertifyingDatalog».OrderedGraphValidation

@@ -1,5 +1,16 @@
-import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog
+module
+
+public import Aesop.BuiltinRules
+public import Mathlib.Data.Subtype
+public import Mathlib.Tactic.ToDual
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.SetLike
+import Std.Data.HashMap.Lemmas
+
+@[expose] public section
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 
@@ -141,7 +152,7 @@ namespace PreGraph
         intro needle
         rw [Std.HashMap.getD_insert]
         simp [precond]
-
+    simp only [from_vertices, Std.HashMap.ofList_eq_insertMany_empty]
     apply aux Std.HashMap.emptyWithCapacity vs
     simp
 

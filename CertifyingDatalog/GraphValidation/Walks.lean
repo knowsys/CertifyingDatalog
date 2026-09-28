@@ -1,5 +1,12 @@
-import CertifyingDatalog.GraphValidation.Basic
-import CertifyingDatalog.Basic
+module
+
+public import CertifyingDatalog.GraphValidation.Basic
+public import CertifyingDatalog.Datastructures.List
+public import Mathlib.Data.Finset.Filter
+public import CertifyingDatalog.Basic --shake: kepp
+import Mathlib.Data.Finset.Attr
+
+@[expose] public section
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 

@@ -1,9 +1,17 @@
-import CertifyingDatalog.Datastructures.Array
-import CertifyingDatalog.Datastructures.Except
-import CertifyingDatalog.Datastructures.Finset
-import CertifyingDatalog.Datastructures.HashSet
-import CertifyingDatalog.Datastructures.List
-import CertifyingDatalog.Datastructures.Tree
+module
+
+public import Aesop.BuiltinRules
+public import Mathlib.Data.Nat.Notation
+public import Mathlib.Tactic.ToDual
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.SetLike
+
+@[expose] public section
 
 namespace Nat
   lemma pred_lt_of_lt' (n m : ℕ) (h : n < m) : n.pred < m := by

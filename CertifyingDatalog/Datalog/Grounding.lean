@@ -1,5 +1,9 @@
-import CertifyingDatalog.Basic
-import CertifyingDatalog.Datalog.Basic
+module
+
+public import CertifyingDatalog.Datalog.Basic
+import Mathlib.Data.Finset.Lattice.Lemmas
+
+@[expose] public section
 
 @[ext]
 structure GroundAtom (τ: Signature)

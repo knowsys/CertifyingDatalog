@@ -1,8 +1,9 @@
-import CertifyingDatalog.Datalog
-import CertifyingDatalog.Basic
-import CertifyingDatalog.GraphValidation
-import CertifyingDatalog.OrderedGraphValidation
-import Lean.Data.Json.FromToJson
+module
+
+public import CertifyingDatalog.OrderedGraphValidation
+public import CertifyingDatalog.GraphValidation.Dfs
+
+@[expose] public section
 
 def Nat.toString (n: ℕ): String :=
   match n with

@@ -1,4 +1,11 @@
+module
+
+public import Mathlib.Data.Finset.Dedup
+public import Mathlib.Data.Finset.Empty
+public import Mathlib.Data.Finset.Lattice.Basic
 import Mathlib.Data.Finset.Lattice.Lemmas
+
+@[expose] public section
 
 namespace List
   def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := SetLike.coe l.toFinset
