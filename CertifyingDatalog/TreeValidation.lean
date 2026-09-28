@@ -1,7 +1,8 @@
 module
 
-public import CertifyingDatalog.Datalog
 public import CertifyingDatalog.Unification
+public import CertifyingDatalog.Datalog.Semantics
+import Std.Data.HashMap.Lemmas
 
 @[expose] public section
 

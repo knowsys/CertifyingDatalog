@@ -2,7 +2,9 @@ module
 
 public import Mathlib.Data.Finset.Card
 public import CertifyingDatalog.GraphValidation.Walks
-public import CertifyingDatalog.Datastructures.Except
+public import CertifyingDatalog.Datastructures.HashSet
+import CertifyingDatalog.Datastructures.Except
+import Std.Data.HashSet.Lemmas
 
 @[expose] public section
 

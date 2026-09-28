@@ -1,11 +1,15 @@
 module
 
-public import CertifyingDatalog.Datastructures.Array
-public import CertifyingDatalog.Datastructures.Except
-public import CertifyingDatalog.Datastructures.Finset
-public import CertifyingDatalog.Datastructures.HashSet
-public import CertifyingDatalog.Datastructures.List
-public import CertifyingDatalog.Datastructures.Tree
+public import Aesop.BuiltinRules
+public import Mathlib.Data.Nat.Notation
+public import Mathlib.Tactic.ToDual
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.SetLike
 
 @[expose] public section
 

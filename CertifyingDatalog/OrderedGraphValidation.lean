@@ -1,6 +1,7 @@
 module
 
 public import CertifyingDatalog.TreeValidation
+import CertifyingDatalog.Datastructures.Array
 
 @[expose] public section
 

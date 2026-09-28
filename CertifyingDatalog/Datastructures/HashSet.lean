@@ -1,6 +1,7 @@
 module
 
-public import Std.Data.HashSet
+public import Std.Data.HashSet.Basic
+import Std.Data.HashSet.Lemmas
 
 variable {A : Type u} [Hashable A] [DecidableEq A]
 

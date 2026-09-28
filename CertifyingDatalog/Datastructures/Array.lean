@@ -1,6 +1,11 @@
 module
 
-import CertifyingDatalog.Datastructures.List
+import Aesop.BuiltinRules
+import Mathlib.Data.Finset.Attr
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 
 @[expose] public section
 

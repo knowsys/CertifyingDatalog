@@ -1,8 +1,7 @@
 module
 
-public import CertifyingDatalog.GraphValidation
 public import CertifyingDatalog.OrderedGraphValidation
-import Lean.Data.Json.FromToJson
+public import CertifyingDatalog.GraphValidation.Dfs
 
 @[expose] public section
 

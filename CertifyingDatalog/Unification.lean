@@ -1,6 +1,7 @@
 module
 
-public import CertifyingDatalog.Datalog
+public import CertifyingDatalog.Datalog.Substitution
+import CertifyingDatalog.Basic
 
 @[expose] public section
 

@@ -1,8 +1,7 @@
 module
 
-public import CertifyingDatalog.Basic
-public import CertifyingDatalog.Datalog.Basic
 public import CertifyingDatalog.Datalog.Grounding
+public import CertifyingDatalog.Datastructures.Finset
 
 @[expose] public section
 

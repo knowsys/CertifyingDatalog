@@ -1,7 +1,7 @@
 module
 
-import CertifyingDatalog.Basic
 public import CertifyingDatalog.Datalog.Basic
+import Mathlib.Data.Finset.Lattice.Lemmas
 
 @[expose] public section
 

@@ -1,6 +1,14 @@
 module
 
-public import CertifyingDatalog.Datalog
+public import Aesop.BuiltinRules
+public import Mathlib.Data.Subtype
+public import Mathlib.Tactic.ToDual
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.SetLike
+import Std.Data.HashMap.Lemmas
 
 @[expose] public section
 

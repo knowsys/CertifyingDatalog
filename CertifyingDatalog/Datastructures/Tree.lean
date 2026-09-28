@@ -1,6 +1,14 @@
 module
 
-import CertifyingDatalog.Datastructures.List
+public import Mathlib.Data.Nat.Notation
+import Aesop.BuiltinRules
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.Subtype
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.ToDual
 
 @[expose] public section
 

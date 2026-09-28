@@ -1,6 +1,5 @@
 module
 
-public import CertifyingDatalog.Datalog.Basic
 public import CertifyingDatalog.Datalog.Grounding
 
 @[expose] public section
