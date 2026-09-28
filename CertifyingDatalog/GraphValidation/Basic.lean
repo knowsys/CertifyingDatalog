@@ -258,8 +258,7 @@ namespace PreGraph
             · rw [Std.HashMap.mem_insert]
               simp only [beq_iff_eq]
               apply Or.inr
-              rw [hll.right]
-              assumption
+              rwa [hll.right]
             · rw [Std.HashMap.mem_insert]
               simp only [beq_iff_eq]
               apply Or.inl

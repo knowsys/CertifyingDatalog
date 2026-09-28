@@ -175,9 +175,9 @@ namespace ProofTreeSkeleton
         unfold checkValidity
         unfold isValid
         by_cases emptyL: l.isEmpty
-        · rw [if_pos emptyL]
+        · rw [ite_eq_left emptyL]
           by_cases contains_a: kb.db.contains a
-          · rw [if_pos contains_a]
+          · rw [ite_eq_left contains_a]
             constructor
             · intro _
               right

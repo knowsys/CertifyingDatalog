@@ -3,7 +3,7 @@ module
 public import CertifyingDatalog.GraphValidation.Basic
 public import CertifyingDatalog.Datastructures.List
 public import Mathlib.Data.Finset.Filter
-public import CertifyingDatalog.Basic --shake: kepp
+public import CertifyingDatalog.Basic --shake: keep
 import Mathlib.Data.Finset.Attr
 
 @[expose] public section
@@ -21,7 +21,7 @@ def List.isWalk_computable (l : List A) (G: Graph A) : Bool :=  l ⊆ G.vertices
 
 theorem List.isWalk_iff_isWalk_computable_eq_true (l : List A) (G: Graph A) :
     l.isWalk G ↔ l.isWalk_computable G = true := by
-  simp only [isWalk, gt_iff_lt, Nat.pred_eq_sub_one, isWalk_computable, Bool.if_true_right,
+  simp only [isWalk, gt_iff_lt, Nat.pred_eq_sub_one, isWalk_computable, Bool.ite_true_right,
     all_eq_true, mem_attach, Bool.or_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true,
     decide_eq_false_iff_not, not_lt, Nat.le_zero_eq, decide_eq_true_eq, forall_const,
     Subtype.forall, mem_range, Bool.decide_and, Bool.and_eq_true]
@@ -338,7 +338,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
       · intro contra; unfold tail at h; simp [contra] at h
       · intro contra; simp [contra] at h
     )).isCycle := by
-    simp only [isCycle, List.get_eq_getElem, Nat.pred_eq_sub_one, dite_then_false, not_lt]
+    simp only [isCycle, List.get_eq_getElem, Nat.pred_eq_sub_one, dite_false_left, not_lt]
     unfold Walk.prependPredecessor
     have : (w.tail.takeUntil (w.val.head neq)).val.length - 1 + 1 = (w.tail.takeUntil (w.val.head neq)).val.length := by
       rw [Nat.sub_one_add_one_eq_of_pos]
@@ -633,7 +633,7 @@ namespace Graph
         · rw [get_a]
           exact a_pred
       ))
-      simp only [Walk.isCycle, List.get_eq_getElem, Nat.pred_eq_sub_one, dite_then_false, not_lt]
+      simp only [Walk.isCycle, List.get_eq_getElem, Nat.pred_eq_sub_one, dite_false_left, not_lt]
       use (by simp [Walk.appendSuccessor, eq])
       simp only [Walk.appendSuccessor, List.length_append, List.length_cons, List.length_nil,
         Nat.zero_add, Nat.add_one_sub_one, le_refl, List.getElem_append_right, Nat.sub_self,
