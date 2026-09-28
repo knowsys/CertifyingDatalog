@@ -1,3 +1,5 @@
+module
+
 import «CertifyingDatalog»
 
 section CollectTreeModels
