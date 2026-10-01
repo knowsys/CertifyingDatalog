@@ -66,8 +66,7 @@ namespace Graph
     unfold KnowledgeBase.proofTheoreticSemantics
     rw [Set.subset_def]
     intro node node_mem
-    unfold List.toSet at node_mem
-    simp only [List.coe_toFinset, Set.mem_ofPred_eq] at node_mem
+    simp only [List.toSet_mem] at node_mem
     simp only [Set.mem_ofPred_eq]
     exists G.toProofTree kb ⟨node, node_mem⟩ acyclic all_valid
     unfold toProofTree

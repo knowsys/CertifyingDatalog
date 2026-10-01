@@ -7,7 +7,7 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 
-@[expose] public section
+public section
 
 namespace Array
 

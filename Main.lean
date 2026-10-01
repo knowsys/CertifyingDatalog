@@ -19,8 +19,7 @@ section CollectTreeModels
   lemma collectModelToSetIsSetOfTreesElements {helper: ParseArityHelper} (l: List (ProofTreeSkeleton helper.toSignature)): List.toSet (collectModel l) = {ga: GroundAtom helper.toSignature | ∃ t, t ∈ l ∧ t.elem ga} := by
     apply Set.ext
     intro ga
-    rw [← List.toSet_mem, collectModelHasTreeElements]
-    simp
+    simp [collectModelHasTreeElements]
 end CollectTreeModels
 
 section TreeListValidity

@@ -188,9 +188,8 @@ namespace OrderedProofGraph
     ⟨G.toProofTreeSkeleton valid root, G.toProofTreeSkeleton_isValid kb valid root⟩
 
   theorem verticesValidOrderedProofGraphAreInProofTheoreticSemantics [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) : G.labels.toSet ⊆ kb.proofTheoreticSemantics := by
+    simp [Set.subset_def]
     unfold KnowledgeBase.proofTheoreticSemantics
-    unfold List.toSet
-    simp only [List.coe_toFinset, Set.ofPred_subset_ofPred]
     intro a a_mem
     rw [in_labels_iff_exists_index] at a_mem
     rcases a_mem with ⟨i, h⟩

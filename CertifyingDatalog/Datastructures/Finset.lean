@@ -3,7 +3,7 @@ module
 public import Mathlib.Data.Finset.Filter
 import Mathlib.Data.Finset.Attr
 
-@[expose] public section
+public section
 
 namespace Finset
   -- added based on https://leanprover.zulipchat.com/#narrow/stream/113488-general/topic/finset.2Efilter
