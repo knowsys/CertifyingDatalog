@@ -52,7 +52,7 @@ section TermMatching
         (some (extend s v c)).filter (fun s' => (s v).isSome → s v = s' v)
 
     lemma matchTermSubset [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : s ⊆ ((s.matchTerm t c).get h) := by
-      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.ite_true_right, Bool.decide_eq_true,
         Option.not_isSome] at h ⊢
       cases t with
       | constant c' =>
@@ -72,7 +72,7 @@ section TermMatching
           apply extend_subset_self h
 
     lemma matchTermYieldsSubs [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : ((s.matchTerm t c).get h).applyTerm t = c := by
-      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.ite_true_right, Bool.decide_eq_true,
         Option.not_isSome] at h ⊢
       cases t with
       | constant c' =>
@@ -89,7 +89,7 @@ section TermMatching
 
     lemma matchTermIsMinimal [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ} {c: τ.constants} (h : (s.matchTerm t c).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyTerm t = c -> ((s.matchTerm t c).get h) ⊆ s' := by
       intro s' ⟨subset, apply_t⟩
-      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.ite_true_right, Bool.decide_eq_true,
         Option.not_isSome] at h ⊢
       cases t with
       | constant c' =>
@@ -131,7 +131,7 @@ section TermMatching
 
     lemma matchTermNoneThenNoSubs [DecidableEq τ.vars] [DecidableEq τ.constants] {s: Substitution τ} {t: Term τ}{c: τ.constants} (h : (s.matchTerm t c) = none) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyTerm t ≠ c := by
       intro s' subset apply_t
-      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.if_true_right, Bool.decide_eq_true,
+      simp only [matchTerm, decide_implies, dite_eq_ite, Bool.ite_true_right, Bool.decide_eq_true,
         Option.not_isSome] at h
       cases t with
       | constant c' =>
