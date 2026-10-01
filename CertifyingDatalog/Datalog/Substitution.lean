@@ -100,6 +100,37 @@ namespace Substitution
     rw [List.length_map]
     apply a.term_length
 
+  @[simp]
+  lemma applyTerm_const {s : Substitution τ} {c : τ.constants} :
+      s.applyTerm (Term.constant c) = Term.constant c := by
+    rfl
+
+  lemma applyTerm_var {s : Substitution τ} {v : τ.vars} :
+      s.applyTerm (Term.variableDL v) =
+        if h : (s v).isSome
+        then Term.constant ((s v).get h)
+        else Term.variableDL v := by
+    simp [applyTerm]
+    cases s v with
+    | none => simp
+    | some val => simp
+
+  lemma applyTerm_eq_var_iff {t : Term τ} {s : Substitution τ} {v : τ.vars} :
+      s.applyTerm t = Term.variableDL v ↔ ¬ v ∈ s.domain ∧ t = Term.variableDL v := by
+    simp only [applyTerm, domain, Set.mem_ofPred_eq, Bool.not_eq_true, Option.isSome_eq_false_iff,
+      Option.isNone_iff_eq_none]
+    cases t with
+    | constant _ => simp
+    | variableDL v' =>
+      simp
+      cases h : s v' with
+      | none => simp; intro h'; rwa[← h']
+      | some val =>
+        simp
+        intro h₂ h₃
+        rw [h₃, h₂] at h
+        simp at h
+
   def applyAtom (s: Substitution τ) (a: Atom τ) : Atom τ :=
     {symbol := a.symbol, atom_terms := List.map s.applyTerm a.atom_terms, term_length := s.applyTerm_preservesLength}
 
@@ -129,85 +160,59 @@ namespace Substitution
 
   lemma applyAtom_isGround_impl_varsSubsetDomain [DecidableEq τ.vars] {a: Atom τ} {s: Substitution τ} (subs_ground: ∃ (a': GroundAtom τ), s.applyAtom a = a'): ↑ a.vars ⊆ s.domain :=
   by
-    unfold Atom.vars
     rcases subs_ground with ⟨a', a'_prop⟩
-    unfold applyAtom at a'_prop
-    unfold GroundAtom.toAtom at a'_prop
-    rw [Atom.ext_iff] at a'_prop
-    simp only at a'_prop
+    simp only [applyAtom, GroundAtom.toAtom, Atom.mk.injEq, List.ext_get_iff, List.length_map,
+      List.get_eq_getElem, List.getElem_map] at a'_prop
     rcases a'_prop with ⟨_, terms_eq⟩
-    rw [List.foldl_union_subset_set]
-    simp only [Finset.coe_empty, Set.empty_subset, true_and]
-
-    intros t t_mem
-    cases t with
-    | constant c =>
-      unfold Term.vars
-      simp
-    | variableDL v =>
-      unfold Term.vars
-      simp only [Finset.coe_singleton, Set.singleton_subset_iff]
-      rw [varInDom_iff]
-      rw [List.mem_iff_get] at t_mem
-      rcases t_mem with ⟨v_pos, v_pos_proof⟩
-      rw [← v_pos_proof]
-      rcases v_pos with ⟨v_pos, v_pos_a⟩
-      have v_pos_a': v_pos < List.length a'.atom_terms := by
-        rw [← List.length_map (f:= Term.constant), ← terms_eq, List.length_map]
-        apply v_pos_a
-      use List.get a'.atom_terms {val:= v_pos, isLt:= v_pos_a'}
-      have get_of_terms_eq := List.get_of_eq terms_eq ⟨v_pos, by rw [List.length_map]; exact v_pos_a⟩
-      simp only [List.get_eq_getElem, List.getElem_map] at get_of_terms_eq
-      simp only [List.get_eq_getElem]
-      rw [get_of_terms_eq]
+    simp only [Set.subset_def, SetLike.mem_coe, Atom.mem_vars_iff, List.mem_iff_get,
+      List.get_eq_getElem, varInDom_iff, forall_exists_index]
+    intro v h hv
+    use a'.atom_terms[↑h]
+    rw [← hv]
+    apply terms_eq.2 h.1 h.2
+    grind -- grind solves some universe issue here
 
   lemma applyRule_isGround_impl_varsSubsetDomain [DecidableEq τ.vars] {r: Rule τ} {s: Substitution τ} (subs_ground: ∃ (r': GroundRule τ), s.applyRule r = r'): ↑ r.vars ⊆ s.domain :=
   by
-    unfold Rule.vars
-    simp only at subs_ground
-    rcases subs_ground with ⟨r', r'_prop⟩
-    unfold applyRule at r'_prop
-    rw [Rule.ext_iff] at r'_prop
-    simp only at r'_prop
-    rcases r'_prop with ⟨left,right⟩
-    simp only [Finset.coe_union, Set.union_subset_iff]
-    constructor
-    · apply applyAtom_isGround_impl_varsSubsetDomain
-      use r'.head
-      rw [left]
-      unfold GroundRule.toRule
-      simp
-    · rw [List.foldl_union_subset_set]
-      simp only [Finset.coe_empty, Set.empty_subset, true_and]
-      intros a a_mem
-      apply applyAtom_isGround_impl_varsSubsetDomain
-      unfold GroundRule.toRule at right
-      simp only at right
-      rw [List.mem_iff_get] at a_mem
-      rcases a_mem with ⟨a_pos, pos_prop⟩
-      rcases a_pos with ⟨a_pos, a_pos_proof⟩
-      have a_pos_proof': a_pos < List.length r'.body := by
-        rw [← List.length_map GroundAtom.toAtom, ← right, List.length_map]
-        apply a_pos_proof
-      use List.get r'.body (Fin.mk a_pos a_pos_proof')
-      rw [← pos_prop]
-      have h: a_pos < (List.map s.applyAtom r.body ).length := by
-        rw [List.length_map]
-        apply a_pos_proof
-      have get_of_right := List.get_of_eq right ⟨a_pos, h⟩
-      simp only [List.get_eq_getElem, List.getElem_map] at get_of_right
-      simp only [List.get_eq_getElem]
-      rw [get_of_right]
+    simp only [Set.subset_def, SetLike.mem_coe, Rule.mem_vars_iff]
+    simp only [applyRule, Rule.ext_iff] at subs_ground
+    rcases subs_ground with ⟨r', hhead, hbody⟩
+    intro v hv
+    cases hv with
+    | inl hv =>
+      have : ∃ (a : GroundAtom τ), s.applyAtom r.head = a := by
+        use r'.head
+        rw [hhead]
+        simp [GroundRule.toRule]
+      have := applyAtom_isGround_impl_varsSubsetDomain this
+      simp only [Set.subset_def, SetLike.mem_coe] at this
+      apply this v hv
+    | inr hv =>
+      rcases hv with ⟨a, ha, hv⟩
+      rw [List.mem_iff_getElem] at ha
+      have : ∃ (a' : GroundAtom τ), s.applyAtom a = a' := by
+        rcases ha with ⟨i, hi, h⟩
+        have hi' : i < r'.body.length := by
+          simp only [GroundRule.toRule] at hbody
+          rw [← List.length_map, ← hbody]
+          simpa
+        use r'.body[i]
+        rw [List.ext_get_iff] at hbody
+        have := hbody.2 i
+        simp only [List.length_map, GroundRule.toRule, List.get_eq_getElem,
+          List.getElem_map] at this
+        rw [← h]
+        apply this hi hi'
+      have := applyAtom_isGround_impl_varsSubsetDomain this
+      simp only [Set.subset_def, SetLike.mem_coe] at this
+      apply this v hv
 
   def toGrounding [ex: Inhabited τ.constants] (s: Substitution τ): Grounding τ := fun t => match s t with
     | .some c => c
     | .none => ex.default
 
   lemma toGrounding_applyTerm_eq [Inhabited τ.constants] {t: Term τ} {s: Substitution τ} (h: ↑ t.vars ⊆ s.domain): Term.constant (s.toGrounding.applyTerm' t) = s.applyTerm t := by
-    unfold toGrounding
-    unfold Grounding.applyTerm'
-    unfold applyTerm
-    simp only
+    simp [toGrounding, Grounding.applyTerm', applyTerm]
     cases t with
     | constant c =>
       simp
@@ -216,10 +221,7 @@ namespace Substitution
       cases eq : s v with
       | some c => simp
       | none =>
-        unfold Term.vars at h
-        unfold domain at h
-        unfold Option.isSome at h
-        simp [eq] at h
+        simp [domain, Set.subset_def, Term.mem_vars_iff, eq] at h
 
   lemma toGrounding_applyAtom_eq [DecidableEq τ.vars] [Inhabited τ.constants] {a: Atom τ} {s: Substitution τ} (h: ↑ a.vars ⊆ s.domain): (s.toGrounding.applyAtom' a).toAtom = s.applyAtom a := by
     unfold Grounding.applyAtom'
@@ -305,47 +307,11 @@ namespace Substitution
     · apply subset_applyTermList_eq subs right
 
   lemma applyTerm_remainingVarsNotInDomain {t: Term τ} {s: Substitution τ}: (s.applyTerm t).vars = t.vars.filter_nc (fun x => ¬ x ∈ s.domain) := by
-    cases t with
-    | constant c =>
-      unfold applyTerm
-      unfold Term.vars
-      rw [Finset.ext_iff]
-      simp only [Finset.notMem_empty, false_iff]
-      simp [Finset.mem_filter_nc]
-    | variableDL v =>
-      unfold applyTerm
-      unfold Term.vars
-      rw [Finset.ext_iff]
-      simp only
-      cases eq : s v with
-      | some c =>
-        simp only [Finset.notMem_empty, false_iff]
-        intro v'
-        simp only [Finset.mem_filter_nc, Finset.mem_singleton, not_and]
-        unfold domain
-        simp only [Set.mem_ofPred_eq, Bool.not_eq_true, Option.isSome_eq_false_iff,
-          Option.isNone_iff_eq_none]
-        intro h' p
-        rw [p] at h'
-        rw [eq] at h'
-        contradiction
-      | none =>
-        simp only [Finset.mem_singleton]
-        intro v'
-        simp only [Finset.mem_filter_nc, Finset.mem_singleton, iff_and_self]
-        intro h'
-        unfold domain
-        simp [h', eq]
+    simp[Finset.ext_iff, Finset.mem_filter_nc, Term.mem_vars_iff, Eq.comm (b := s.applyTerm t), applyTerm_eq_var_iff, Eq.comm]
 
   lemma applyAtom_remainingVarsNotInDomain [DecidableEq τ.vars] {a: Atom τ} {s: Substitution τ}: (s.applyAtom a).vars = a.vars.filter_nc (fun x => ¬ x ∈ s.domain)  := by
     apply Finset.ext
-    intro v
-    unfold Atom.vars
-    rw [List.mem_foldl_union, Finset.mem_filter_nc, List.mem_foldl_union]
-    simp only [Finset.notMem_empty, false_or]
-    unfold applyAtom
-    simp only [List.mem_map, exists_exists_and_eq_and]
-    simp_rw [applyTerm_remainingVarsNotInDomain, Finset.mem_filter_nc]
+    simp [Atom.mem_vars_iff, Finset.mem_filter_nc, applyAtom, applyTerm_eq_var_iff]
     tauto
 end Substitution
 

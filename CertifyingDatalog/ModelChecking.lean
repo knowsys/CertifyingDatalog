@@ -41,10 +41,7 @@ namespace PartialGroundRule
     simp
 
   lemma fromRule_safe_iff_rule_safe [DecidableEq τ.vars] {r : Rule τ} : (fromRule r).isSafe ↔ r.isSafe := by
-    unfold isSafe
-    unfold Rule.isSafe
-    unfold fromRule
-    simp
+    simp [isSafe, fromRule, Finset.subset_iff, List.mem_foldl_union]
 
   def isSatisfied [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (pgr : PartialGroundRule τ) (i : Interpretation τ) : Prop := ∀ (g : Grounding τ), i.satisfiesRule (g.applyRule' pgr.toRule)
 
@@ -285,9 +282,7 @@ namespace CheckableModel
           | constant c => simp
           | variableDL v =>
             have : v ∈ hd.vars := by
-              simp only [Atom.vars, List.mem_foldl_union, Finset.notMem_empty, false_or]
-              exists Term.variableDL v
-              simp [Term.vars, t_mem]
+              simp [Atom.mem_vars_iff, t_mem]
             simp [subs, this]
         have subs_domain : subs.domain = hd.vars := by
           simp [Substitution.domain, subs]
@@ -313,26 +308,22 @@ namespace CheckableModel
               rw [← g_eq_subs_on_hd] at s'_apply_also_ground
               intro v v_in_dom
               rw [subs_domain] at v_in_dom
-              simp only [Finset.mem_coe] at v_in_dom
+              simp only [SetLike.mem_coe, Atom.mem_vars_iff] at v_in_dom
               unfold Substitution.applyAtom at s'_apply_also_ground
               simp only [Atom.mk.injEq, List.map_inj_left, true_and, subs] at s'_apply_also_ground
-              specialize s'_apply_also_ground (Term.variableDL v) (by
-                unfold Atom.vars at v_in_dom
-                rw [List.mem_foldl_union] at v_in_dom
-                cases v_in_dom; contradiction;
-                case inr h =>
-                rcases h with ⟨t, t_mem, v_in_t⟩
-                unfold Term.vars at v_in_t
-                cases t <;> simp at v_in_t
-                rw [v_in_t]
-                exact t_mem
-              )
-              simp only [Substitution.applyTerm, v_in_dom, ↓reduceIte] at s'_apply_also_ground
-              simp only [v_in_dom, ↓reduceIte, subs]
+              specialize s'_apply_also_ground (Term.variableDL v) v_in_dom
+              simp only [Atom.mem_vars_iff, v_in_dom, ↓reduceIte, subs]
+              have hv : v ∈ hd.vars := by simp [Atom.mem_vars_iff, v_in_dom]
+              simp only [Substitution.applyTerm_var,
+                Substitution.applyTerm_var (s :=
+                    (fun v => if v ∈ hd.vars then some (g v) else none)),
+                hv, ↓reduceIte, Option.isSome_some, ↓reduceDIte,
+                Option.get_some] at s'_apply_also_ground
               cases eq : s' v with
               | none => simp [eq] at s'_apply_also_ground
               | some c =>
-                simp [eq] at s'_apply_also_ground
+                simp only [eq, Option.isSome_some, ↓reduceDIte, Option.get_some,
+                  Term.constant.injEq] at s'_apply_also_ground
                 rw [s'_apply_also_ground]
         specialize subs_works subs subs_in_substitutionsForAtom
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
@@ -421,10 +412,9 @@ namespace CheckableModel
 
   def checkProgram (m : CheckableModel τ) (p : Program τ) (safe : p.isSafe) : Except String Unit :=
     p.attach.mapExceptUnit (fun ⟨r, r_mem⟩ => m.checkPGR (PartialGroundRule.fromRule r) (by
-      rw [PartialGroundRule.fromRule_safe_iff_rule_safe]
-      unfold Program.isSafe at safe
-      apply safe
-      exact r_mem
+      simp only [Program.isSafeIff, Rule.isSafe_iff] at safe
+      simp only [PartialGroundRule.fromRule_safe_iff_rule_safe, Rule.isSafe_iff]
+      apply safe r r_mem
     ))
 
   theorem checkProgramIsOkIffAllRulesAreSatisfied [Inhabited τ.constants] {m : CheckableModel τ} {p : Program τ} (safe : p.isSafe) :
