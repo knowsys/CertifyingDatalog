@@ -119,6 +119,10 @@ section Methods
       | Term.constant c => c
       | Term.variableDL v => by simp [Term.vars] at h
 
+    @[simp]
+    lemma toConstant_constant {c : τ.constants} :
+      (Term.constant c).toConstant (by simp[vars]) = c := by rfl
+
     lemma toConstant_eq_self {t: Term τ} (h: t.vars = ∅) :
         t.toConstant h = t := by
       simp only [toConstant]

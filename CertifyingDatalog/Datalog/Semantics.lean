@@ -130,37 +130,17 @@ namespace KnowledgeBase
 
   lemma proofTreeForRule [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
     (kb: KnowledgeBase τ) (r: GroundRule τ) (rGP: r ∈ kb.prog.groundProgram) (subs: SetLike.coe r.bodySet ⊆ kb.proofTheoreticSemantics) : ∃ t : ProofTree kb, t.root = r.head := by
-    have h: SetLike.coe r.body.toFinset ⊆ kb.proofTheoreticSemantics → ∃ (l: List (ProofTree kb)), List.map ProofTree.root l = r.body := by
-      induction r.body with
-      | nil => simp
-      | cons r rs ih =>
-        intro r_and_rs_valid
-        simp only [List.toFinset_cons, Finset.coe_insert, List.coe_toFinset] at r_and_rs_valid
-        simp only [List.coe_toFinset] at ih
-        rw [Set.insert_subset_iff] at r_and_rs_valid
-        rcases (ih r_and_rs_valid.right) with ⟨rsTrees, h_rsTrees⟩
-        have r_valid := r_and_rs_valid.left
-        simp only [proofTheoreticSemantics, Set.mem_ofPred] at r_valid
-        rcases r_valid with ⟨rTree, h_rTree⟩
-        exists rTree::rsTrees
-        simp only [List.map_cons, List.cons.injEq]
-        constructor
-        · exact h_rTree
-        · exact h_rsTrees
-    rcases (h subs) with ⟨l, l_body⟩
+    simp [proofTheoreticSemantics, Set.subset_def, ← GroundRule.in_bodySet_iff_in_body] at subs
+    let l := r.body.attach.map (fun ⟨x, h⟩ => Classical.choose (subs x h))
     use ProofTree.node r.head l (by
-      apply Or.inl
-      unfold Program.groundProgram at rGP
-      simp only [exists_and_left, Set.mem_ofPred] at rGP
-      rcases rGP with ⟨r', rP, g, g_r⟩
+      simp at rGP
+      rcases rGP with ⟨r', hr, g, hg⟩
+      left
       use r'
       use g
-      constructor
-      · apply rP
-      · rw [← g_r]
-        rw [GroundRule.ext_iff]
-        simp only [true_and]
-        rw [l_body]
+      simp [← hg, hr, GroundRule.ext_iff, List.ext_get_iff, l]
+      intro i hi
+      rw [Classical.choose_spec (subs r.body[i] (by simp))]
     )
     simp [ProofTree.root, Tree.root, ProofTree.node]
 
@@ -181,7 +161,6 @@ namespace KnowledgeBase
       apply proofTreeForRule
       apply rGP
       apply h
-
     · intro a mem
       apply dbElementsHaveProofTrees
       apply mem
@@ -206,9 +185,9 @@ namespace KnowledgeBase
           rcases ex_g with ⟨g,r_ground⟩
           have r_true: i.satisfiesRule (g.applyRule' r) := by
             apply ruleModel
-            unfold Program.groundProgram
-            rw [Set.mem_ofPred]
+            simp [Program.mem_groundProgram_iff, exists_and_left]
             use r
+            simp [rP]
             use g
           unfold Interpretation.satisfiesRule at r_true
           have head_a: (g.applyRule' r).head = a := by

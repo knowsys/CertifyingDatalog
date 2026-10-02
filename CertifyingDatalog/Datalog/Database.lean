@@ -2,7 +2,7 @@ module
 
 public import CertifyingDatalog.Datalog.Grounding
 
-@[expose] public section
+public section
 
 class Database (τ: Signature) where
   contains: GroundAtom τ → Bool
