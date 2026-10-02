@@ -230,6 +230,12 @@ namespace Grounding
     rw [List.length_map]
     apply a.term_length
 
+  lemma applyTerm'_novars_eq_toConstant {g : Grounding τ} {t : Term τ} (noVars : t.vars = ∅) :
+      g.applyTerm' t = t.toConstant noVars := by
+    rw [Term.vars_eq_emptyset_iff] at noVars
+    rcases noVars with ⟨c, hc⟩
+    simp [hc]
+
   def applyAtom' (g: Grounding τ) (a: Atom τ): GroundAtom τ := {symbol := a.symbol, atom_terms := List.map g.applyTerm' a.atom_terms, term_length := applyTerm'_preservesLength}
 
   @[simp]
@@ -252,6 +258,11 @@ namespace Grounding
   lemma applyAtom'_on_Atom_without_vars_unchanged [DecidableEq τ.vars] {g : Grounding τ} {a : Atom τ} (noVars : a.vars = ∅) : g.applyAtom' a = a := by
     rw [a.toGroundAtom_isSelf noVars]
     rw [applyAtom'_on_GroundAtom_unchanged]
+
+  lemma applyAtom_noVars_eq_toGroundAtom [DecidableEq τ.vars] {g : Grounding τ} {a : Atom τ} (noVars : a.vars = ∅) : g.applyAtom' a = a.toGroundAtom noVars := by
+    simp [GroundAtom.ext_iff, List.ext_get_iff]
+    intro i hi
+    rw [applyTerm'_novars_eq_toConstant]
 
   def applyRule (r: Rule τ) (g: Grounding τ): Rule τ := {head := g.applyAtom r.head, body := List.map g.applyAtom r.body }
 

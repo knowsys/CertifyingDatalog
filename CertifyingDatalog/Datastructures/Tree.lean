@@ -28,6 +28,9 @@ namespace Tree
     match t with
     | .node _ l => l
 
+  @[simp]
+  lemma directSubtrees_def {a : A} {l : List (Tree A)} : directSubtrees (.node a l) = l := by rfl
+
   def member (t1 t2: Tree A): Prop :=
     match t1 with
     | .node _ l => t2 ∈ l
@@ -51,6 +54,10 @@ namespace Tree
 
   def children: Tree A → List A
   | .node _ l => List.map root l
+
+  @[simp]
+  lemma children_def {a : A} {l : List (Tree A)} :
+    children (.node a l) = l.map root := by rfl
 
   def height (t : Tree A): ℕ :=
     match t with

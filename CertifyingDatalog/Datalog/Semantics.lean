@@ -3,7 +3,7 @@ module
 public import CertifyingDatalog.Datalog.Database
 public import CertifyingDatalog.Datastructures.Tree
 
-@[expose] public section
+public section
 
 structure KnowledgeBase (τ: Signature) where
   prog : Program τ
@@ -21,18 +21,53 @@ namespace Interpretation
   def satisfiesRule [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
     (i: Interpretation τ) (r: GroundRule τ) : Prop := SetLike.coe r.bodySet ⊆ i → r.head ∈ i
 
+  @[simp]
+  lemma satisfiesRule_iff [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {i : Interpretation τ} {r : GroundRule τ} :
+      i.satisfiesRule r ↔ (∀ x ∈ r.body, x ∈ i) → r.head ∈ i := by
+    simp [satisfiesRule, Set.subset_def, ← GroundRule.in_bodySet_iff_in_body]
+
   def models [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
     (i: Interpretation τ) (kb: KnowledgeBase τ) : Prop :=
     (∀ (r: GroundRule τ), r ∈ kb.prog.groundProgram → i.satisfiesRule r) ∧ ∀ (a: GroundAtom τ), kb.db.contains a → a ∈ i
+
+  @[simp]
+  lemma models_iff [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {i : Interpretation τ} {kb : KnowledgeBase τ} :
+      i.models kb ↔ (∀ r ∈ kb.prog, ∀ (g : Grounding τ), i.satisfiesRule (g.applyRule' r)) ∧ ∀ (a: GroundAtom τ), kb.db.contains a → a ∈ i := by
+    simp only [models, Program.mem_groundProgram_iff, exists_and_left, satisfiesRule_iff,
+      forall_exists_index, and_imp, Grounding.applyRule'_body, List.mem_map,
+      forall_apply_eq_imp_iff₂, Grounding.applyRule'_head, and_congr_left_iff]
+    intro _
+    constructor
+    · intro h r hr g h'
+      specialize h (g.applyRule' r)
+      simp only [Grounding.applyRule'_body, List.mem_map, forall_exists_index, and_imp,
+        forall_apply_eq_imp_iff₂, Grounding.applyRule'_head] at h
+      apply h r hr g rfl h'
+    · intro h gr r hr g hg h'
+      specialize h r hr g
+      simp only [hg, Grounding.applyRule'_body, List.mem_map, forall_exists_index, and_imp,
+        forall_apply_eq_imp_iff₂, Grounding.applyRule'_head] at ⊢ h'
+      apply h h'
+
 end Interpretation
 
-def ProofTreeSkeleton.isValid (t: ProofTreeSkeleton τ) (kb : KnowledgeBase τ): Prop :=
+def ProofTreeSkeleton.isValid (t: ProofTreeSkeleton τ) (kb : KnowledgeBase τ) : Prop :=
   match t with
   | .node a l =>
     (∃ (r: Rule τ) (g: Grounding τ),  r ∈ kb.prog
       ∧ g.applyRule' r = {head:= a, body:= l.map Tree.root}
       ∧ l.attach.Forall (fun ⟨st, _h⟩ => isValid st kb))
     ∨ (l = [] ∧ kb.db.contains a)
+
+  lemma isValid_iff {t : ProofTreeSkeleton τ} {kb : KnowledgeBase τ} :
+      t.isValid kb ↔ (∃ (r : Rule τ), r ∈ kb.prog ∧ ∃ (g : Grounding τ),
+        (g.applyRule' r).head = t.root ∧ (g.applyRule' r).body = t.children ∧
+          ∀ t' ∈ t.directSubtrees, ProofTreeSkeleton.isValid t' kb) ∨
+        (t.directSubtrees = [] ∧ kb.db.contains t.root) := by
+    cases t with
+    | node a l =>
+      simp [ProofTreeSkeleton.isValid, GroundRule.ext_iff, List.forall_iff_forall_mem]
+      grind
 
 structure ProofTree (kb : KnowledgeBase τ) where
   tree : ProofTreeSkeleton τ
@@ -92,7 +127,7 @@ namespace KnowledgeBase
   def proofTheoreticSemantics (kb : KnowledgeBase τ) : Interpretation τ := {a: GroundAtom τ | ∃ (t: ProofTree kb), t.root = a}
 
   lemma elementsOfEveryProofTreeInSemantics [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
-    (kb : KnowledgeBase τ) : ∀ (t : ProofTree kb) (ga : GroundAtom τ), t.elem ga → ga ∈ kb.proofTheoreticSemantics := by
+    (kb : KnowledgeBase τ) : ∀ (t : ProofTree kb) (ga : GroundAtom τ), t.tree.elem ga → ga ∈ kb.proofTheoreticSemantics := by
     intro t ga mem
     unfold proofTheoreticSemantics
     simp only [Set.mem_ofPred]
@@ -100,7 +135,7 @@ namespace KnowledgeBase
     | ind n ih =>
       cases eq : t.tree with
       | node a' l =>
-        simp only [ProofTree.elem, eq, Tree.elem_def] at mem
+        simp only [eq, Tree.elem_def] at mem
         cases mem with
         | inl mem =>
           use t
