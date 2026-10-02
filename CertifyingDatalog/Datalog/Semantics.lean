@@ -40,8 +40,22 @@ structure ProofTree (kb : KnowledgeBase τ) where
 
 namespace ProofTree
   def root {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.root
+
+  @[simp]
+  lemma root_def {kb : KnowledgeBase τ} {t : ProofTree kb} :
+    t.root = t.tree.root := by rfl
+
   def elem [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.elem
+
+  @[simp]
+  lemma elem_def [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {kb : KnowledgeBase τ} {t : ProofTree kb} :
+    t.elem = t.tree.elem := by rfl
+
   def height {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.height
+
+  @[simp]
+  lemma height_def {kb : KnowledgeBase τ} {t : ProofTree kb} :
+    t.height = t.tree.height := by rfl
 
   def node {kb : KnowledgeBase τ} (a : GroundAtom τ) (l : List (ProofTree kb))
     (a_valid : (∃ (r: Rule τ) (g: Grounding τ), r ∈ kb.prog ∧ g.applyRule' r = {head:= a, body := l.map root}) ∨ (l = [] ∧ kb.db.contains a)) : ProofTree kb :=
@@ -86,27 +100,18 @@ namespace KnowledgeBase
     | ind n ih =>
       cases eq : t.tree with
       | node a' l =>
-        unfold ProofTree.elem at mem
-        unfold Tree.elem at mem
-        simp only [eq, List.any_eq_true, List.mem_attach, true_and, Subtype.exists, exists_prop,
-          Bool.decide_or, Bool.or_eq_true, decide_eq_true_eq] at mem
+        simp only [ProofTree.elem, eq, Tree.elem_def] at mem
         cases mem with
         | inl mem =>
           use t
-          unfold ProofTree.root
-          unfold Tree.root
-          simp only [eq]
-          apply Eq.symm
-          exact mem
+          simp [ProofTree.root, eq, mem]
         | inr mem =>
           rcases mem with ⟨t', t'_t, a_t'⟩
           specialize ih t'.height
           have height_t': t'.height < n := by
             rw [← h']
             apply Tree.heightOfMemberIsSmaller
-            unfold Tree.member
-            simp only [eq]
-            apply t'_t
+            simp [eq, t'_t]
           have valid_t': ProofTreeSkeleton.isValid t' kb := by
             have valid := t.isValid
             unfold ProofTreeSkeleton.isValid at valid
@@ -142,7 +147,7 @@ namespace KnowledgeBase
       intro i hi
       rw [Classical.choose_spec (subs r.body[i] (by simp))]
     )
-    simp [ProofTree.root, Tree.root, ProofTree.node]
+    simp [ProofTree.root, ProofTree.node]
 
   lemma dbElementsHaveProofTrees (kb : KnowledgeBase τ) : ∀ a, kb.db.contains a → ∃ (t: ProofTree kb), t.root = a := by
     intro a mem
@@ -151,7 +156,7 @@ namespace KnowledgeBase
       simp only [true_and]
       exact mem
     )
-    simp [ProofTree.root, Tree.root, ProofTree.node]
+    simp [ProofTree.root, ProofTree.node]
   theorem proofTheoreticSemanticsIsModel [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (kb: KnowledgeBase τ) : kb.proofTheoreticSemantics.models kb := by
     unfold Interpretation.models
     constructor
@@ -191,10 +196,8 @@ namespace KnowledgeBase
             use g
           unfold Interpretation.satisfiesRule at r_true
           have head_a: (g.applyRule' r).head = a := by
-            unfold ProofTree.root at root_t
-            unfold Tree.root at root_t
-            simp [eq] at root_t
-            rw [← root_t, r_ground]
+            simp only [ProofTree.root, eq, Tree.root_def] at root_t
+            simp [r_ground, root_t]
           rw [head_a] at r_true
           apply r_true
           rw [Set.subset_def]
@@ -218,17 +221,12 @@ namespace KnowledgeBase
             simp
           · rw [← h']
             apply Tree.heightOfMemberIsSmaller
-            unfold Tree.member
-            simp only [eq]
-            apply t_x_l
+            simp [eq, t_x_l]
         | inr dbCase =>
           rcases dbCase with ⟨_, contains⟩
           apply dbModel
-          unfold ProofTree.root at root_t
-          unfold Tree.root at root_t
-          simp only [eq] at root_t
-          rw [root_t] at contains
-          apply contains
+          simp only [ProofTree.root, eq, Tree.root_def] at root_t
+          rwa [← root_t]
 
   def modelTheoreticSemantics [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (kb: KnowledgeBase τ) : Interpretation τ := {a: GroundAtom τ | ∀ (i: Interpretation τ), i.models kb → a ∈ i}
 

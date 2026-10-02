@@ -20,7 +20,6 @@ namespace Graph
 
   lemma toTree_root_is_root (G : Graph A) (root : {a : A // a ∈ G.vertices}) (acyclic : G.isAcyclic) : (G.toTree_of_acyclic root acyclic).root = root := by
     unfold toTree_of_acyclic
-    unfold Tree.root
     simp
 
   variable {τ: Signature} [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols]

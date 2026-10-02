@@ -232,8 +232,7 @@ namespace ProofTreeSkeleton
               simp only [← h_t]
               intro t ht
               apply Tree.heightOfMemberIsSmaller
-              simp only [Tree.member]
-              exact ht
+              simp [ht]
             constructor
             · intro h'
               rcases h with ⟨r, g, rP, hg⟩

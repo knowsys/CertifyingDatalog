@@ -149,8 +149,8 @@ namespace OrderedProofGraph
 
   lemma root_toProfTreeSkeleton {G : OrderedProofGraph τ} {kb : KnowledgeBase τ} (valid : G.isValid kb) (root : Fin G.val.size) :
       Tree.root (toProofTreeSkeleton valid root) = G.val[root].1 := by
-    unfold toProofTreeSkeleton Tree.root
-    rfl
+    unfold toProofTreeSkeleton
+    simp
 
   lemma toProofTreeSkeleton_isValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) (root : Fin G.val.size) : (G.toProofTreeSkeleton valid root).isValid kb := by
     unfold toProofTreeSkeleton
@@ -194,10 +194,7 @@ namespace OrderedProofGraph
     rw [in_labels_iff_exists_index] at a_mem
     rcases a_mem with ⟨i, h⟩
     exists G.toProofTree kb valid i
-    unfold toProofTree
+    simp only [toProofTree, ProofTree.root_def]
     unfold toProofTreeSkeleton
-    unfold ProofTree.root
-    unfold Tree.root
-    simp only [Fin.getElem_fin]
-    exact h
+    simp [← h]
 end OrderedProofGraph
