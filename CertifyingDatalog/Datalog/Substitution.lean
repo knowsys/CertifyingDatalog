@@ -3,12 +3,18 @@ module
 public import CertifyingDatalog.Datalog.Grounding
 public import CertifyingDatalog.Datastructures.Finset
 
-@[expose] public section
+public section
 
+-- The compiler requires us to expose this function.
+@[expose]
 def Substitution (τ: Signature) := τ.vars → Option (τ.constants)
 
 namespace Substitution
   def domain (s: Substitution τ): Set (τ.vars) := {v | Option.isSome (s v) = true}
+
+  @[simp]
+  lemma mem_domain_iff {s : Substitution τ} {v : τ.vars} :
+      v ∈ s.domain ↔ (s v).isSome := by simp [domain]
 
   def empty : Substitution τ := (fun _ => none)
 
@@ -18,47 +24,31 @@ namespace Substitution
   instance: HasSubset (Substitution τ) where
     Subset := Substitution.subset
 
+  lemma subset_iff {s1 s2 : Substitution τ} :
+    s1 ⊆ s2 ↔ ∀ v, (s1 v).isSome → s1 v = s2 v := by
+      unfold_projs; simp [subset]
+
   lemma empty_isMinimal : ∀ s : Substitution τ, Substitution.empty ⊆ s := by
-    unfold_projs
-    unfold subset
-    intro v
-    unfold empty
-    unfold domain
-    simp
+    simp [empty, subset_iff]
 
   lemma subset_some (s1 s2: Substitution τ) (subs: s1 ⊆ s2) (c: τ.constants) (v: τ.vars) (h: s1 v = Option.some c): s2 v = Option.some c := by
-    unfold_projs at subs
-    unfold subset at subs
-    rw [← h]
-    apply Eq.symm
-    apply subs
-    unfold domain
-    simp only [Set.mem_ofPred_eq]
-    rw [h]
-    simp
+    simp only [subset_iff] at subs
+    specialize subs v
+    simp only [h, Option.isSome_some, forall_const] at subs
+    rw [subs]
 
   lemma subset_none (s1 s2: Substitution τ) (subs: s1 ⊆ s2) (v: τ.vars) (h: s2 v = Option.none): s1 v = Option.none := by
-    unfold_projs at subs
-    unfold Substitution.subset at subs
+    simp only [subset_iff] at subs
     specialize subs v
     by_contra p
-    cases q:(s1 v) with
+    cases q: (s1 v) with
     | none =>
       exact absurd q p
     | some c =>
-      have s1_s2: s1 v = s2 v := by
-        apply subs
-        unfold domain
-        simp only [Set.mem_ofPred_eq]
-        rw [q]
-        simp
-      rw [s1_s2] at p
-      exact absurd h p
+      simp [q, h] at subs
 
   lemma subset_refl (s: Substitution τ): s ⊆ s := by
-    unfold_projs
-    unfold subset
-    simp
+    simp [subset_iff]
 
   lemma subset_antisymm (s1 s2: Substitution τ) (subs_l: s1 ⊆ s2) (subs_r: s2 ⊆ s1): s1 = s2 := by
     funext x
@@ -71,17 +61,12 @@ namespace Substitution
       apply subset_none s2 s1 subs_r x p
 
   lemma subset_trans (s1 s2 s3: Substitution τ) (subs_l: s1 ⊆ s2) (subs_r: s2 ⊆ s3): s1 ⊆ s3 := by
-    unfold_projs at *
-    unfold subset at *
+    simp only [subset_iff] at *
     intro v h
     specialize subs_l v h
     rw [subs_l]
     apply subs_r
-    unfold domain
-    simp only [Set.mem_ofPred_eq]
     rw [← subs_l]
-    unfold domain at h
-    simp at h
     apply h
 
 end Substitution
@@ -203,7 +188,6 @@ namespace Substitution
     | inl hv =>
       apply applyAtom_isGround_impl_varsSubsetDomain
       use r'.head
-      rw [← hhead]
       exact hv
     | inr hv =>
       rcases hv with ⟨a, ha, hv⟩
@@ -279,7 +263,10 @@ namespace Substitution
     apply subset_applyTerm_eq subs (h₂ i hi)
 
   lemma applyTerm_remainingVarsNotInDomain {t: Term τ} {s: Substitution τ}: (s.applyTerm t).vars = t.vars.filter_nc (fun x => ¬ x ∈ s.domain) := by
-    simp[Finset.ext_iff, Finset.mem_filter_nc, Term.mem_vars_iff, Eq.comm (b := s.applyTerm t), applyTerm_eq_var_iff, Eq.comm]
+    simp only [mem_domain_iff, Bool.not_eq_true, Option.isSome_eq_false_iff,
+      Option.isNone_iff_eq_none, Finset.ext_iff, Term.mem_vars_iff, Eq.comm (b := s.applyTerm t),
+      applyTerm_eq_var_iff, Finset.mem_filter_nc, and_congr_right_iff]
+    exact fun a a_1 => eq_comm
 
   lemma applyAtom_remainingVarsNotInDomain [DecidableEq τ.vars] {a: Atom τ} {s: Substitution τ}: (s.applyAtom a).vars = a.vars.filter_nc (fun x => ¬ x ∈ s.domain)  := by
     apply Finset.ext

@@ -152,6 +152,7 @@ section Methods
     lemma mem_vars_iff {a : Atom τ} {v : τ.vars} :
         v ∈ a.vars ↔ Term.variableDL v ∈ a.atom_terms := by
       simp [vars, List.mem_foldl_union, Finset.notMem_empty, Term.mem_vars_iff]
+
   end Atom
 
   namespace Rule

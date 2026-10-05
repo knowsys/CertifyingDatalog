@@ -22,22 +22,29 @@ namespace Rule
   def symbolSequence (r: Rule τ): List τ.relationSymbols := r.head.symbol :: (List.map Atom.symbol r.body)
 
   lemma symbolSequence_eq_matchingGroundRule {r: Rule τ} {gr: GroundRule τ} (match_r: ∃ (s: Substitution τ), s.applyRule r = gr): r.symbolSequence = gr.toRule.symbolSequence := by
-    rcases match_r with ⟨s, apply_s⟩
-    rw [← apply_s]
-    unfold Substitution.applyRule
-    unfold Substitution.applyAtom
-    unfold symbolSequence
-    simp
+    simp only [eq_GroundRule_iff, Substitution.applyRule_head, Atom.eq_GroundAtom_iff,
+      Substitution.applyAtom_symbol, Substitution.applyAtom_terms, List.length_map,
+      List.getElem_map, Substitution.applyRule_body] at match_r
+    rcases match_r with ⟨s, symb_eq, h₁, h₂⟩
+    simp only [symbolSequence, GroundRule.toRule_head, GroundAtom.toAtom_symbol,
+      GroundRule.toRule_body, List.map_map, List.cons.injEq]
+    refine And.intro (Eq.symm symb_eq.1) ?_
+    apply List.ext_get
+    · simp [h₁]
+    · intro n hn₁ hn₂
+      simp only [List.length_map] at hn₁
+      specialize h₂ n hn₁
+      simp [h₂.1]
 
   lemma ne_of_symbolSequence_ne {r1 r2 : Rule τ} (h : r1.symbolSequence ≠ r2.symbolSequence) : ∀ (s : Substitution τ), s.applyRule r1 ≠ r2 := by
-    intro s apply_s
-    apply h
-    rw [← apply_s]
-    unfold symbolSequence
-    simp only [List.cons.injEq]
-    unfold Substitution.applyRule
-    unfold Substitution.applyAtom
-    simp
+    simp only [symbolSequence, ne_eq, List.cons.injEq, not_and] at h
+    simp only [ne_eq, Rule.ext_iff, Substitution.applyRule_head, Substitution.applyRule_body,
+      not_and]
+    intro s head_eq body_eq
+    have head_eq := congrArg Atom.symbol head_eq
+    simp only [Substitution.applyAtom_symbol] at head_eq
+    apply h head_eq
+    simp [List.ext_get_iff, ← body_eq] at ⊢ h
 
   lemma body_length_eq_of_symbolSequence_eq {r1 r2: Rule τ} (h: r1.symbolSequence = r2.symbolSequence): r1.body.length = r2.body.length := by
     unfold symbolSequence at h

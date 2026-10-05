@@ -286,8 +286,6 @@ namespace CheckableModel
             rw [Atom.mem_vars_iff, ← h]
             exact List.getElem_mem hi
           | constant c => simp
-        have subs_domain : subs.domain = hd.vars := by
-          simp [Substitution.domain, subs]
         have g_after_subs : ∀ a, g.applyAtom' (subs.applyAtom a) = g.applyAtom' a := by
           simp only [GroundAtom.ext_iff, Grounding.applyAtom'_symbol, Substitution.applyAtom_symbol,
             Grounding.applyAtom'_terms, Substitution.applyAtom_terms, List.map_map,
@@ -309,25 +307,23 @@ namespace CheckableModel
             · exact g_eq_subs_on_hd
             · intro s' s'_apply_also_ground
               rw [← g_eq_subs_on_hd] at s'_apply_also_ground
-              intro v v_in_dom
-              rw [subs_domain] at v_in_dom
-              simp only [SetLike.mem_coe, Atom.mem_vars_iff] at v_in_dom
-              unfold Substitution.applyAtom at s'_apply_also_ground
-              simp only [Atom.mk.injEq, List.map_inj_left, true_and, subs] at s'_apply_also_ground
-              specialize s'_apply_also_ground (Term.variableDL v) v_in_dom
-              simp only [Atom.mem_vars_iff, v_in_dom, ↓reduceIte, subs]
-              have hv : v ∈ hd.vars := by simp [Atom.mem_vars_iff, v_in_dom]
-              simp only [Substitution.applyTerm_var,
-                Substitution.applyTerm_var (s :=
-                    (fun v => if v ∈ hd.vars then some (g v) else none)),
-                hv, ↓reduceIte, Option.isSome_some, ↓reduceDIte,
-                Option.get_some] at s'_apply_also_ground
-              cases eq : s' v with
-              | none => simp [eq] at s'_apply_also_ground
-              | some c =>
-                simp only [eq, Option.isSome_some, ↓reduceDIte, Option.get_some,
-                  Term.constant.injEq] at s'_apply_also_ground
-                rw [s'_apply_also_ground]
+              rw [Substitution.subset_iff]
+              simp only [Atom.mem_vars_iff, Option.isSome_ite, subs]
+              intro v hv
+              simp only [hv, ↓reduceIte]
+              simp only [Atom.ext_iff, Substitution.applyAtom_symbol, Substitution.applyAtom_terms,
+                List.map_inj_left, true_and] at s'_apply_also_ground
+              specialize s'_apply_also_ground (Term.variableDL v) hv
+              simp only [Atom.eq_GroundAtom_iff, Grounding.applyAtom'_symbol,
+                Substitution.applyAtom_symbol, Substitution.applyAtom_terms, List.length_map,
+                List.getElem_map, Grounding.applyAtom'_terms, exists_true_left,
+                true_and] at g_eq_subs_on_hd
+              rw [List.mem_iff_getElem] at hv
+              rcases hv with ⟨i, hi, hv⟩
+              specialize g_eq_subs_on_hd i hi
+              rw [hv] at g_eq_subs_on_hd
+              simp [g_eq_subs_on_hd] at s'_apply_also_ground
+              grind
         specialize subs_works subs subs_in_substitutionsForAtom
         have _termination : tl.length < pgr.ungroundedBody.length := by rw [heq]; simp
         rw [checkPGRIsOkIffRuleIsSatisfied] at subs_works

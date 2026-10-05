@@ -46,23 +46,15 @@ variable {τ: Signature}
 namespace GroundAtom
   def toAtom (ga: GroundAtom τ): Atom τ:= {symbol:=ga.symbol, atom_terms:= List.map Term.constant ga.atom_terms,term_length := by rw [List.length_map]; exact ga.term_length}
 
+  @[simp]
+  lemma toAtom_symbol {ga : GroundAtom τ} : ga.toAtom.symbol = ga.symbol := by rfl
+
+  @[simp]
+  lemma toAtom_body {ga : GroundAtom τ} : ga.toAtom.atom_terms = ga.atom_terms.map Term.constant := by rfl
+
   lemma eq_iff_toAtom_eq {a1 a2: GroundAtom τ}: a1 = a2 ↔ a1.toAtom = a2.toAtom :=
   by
-    constructor
-    · intro h
-      rw [h]
-    · unfold GroundAtom.toAtom
-      simp only [Atom.mk.injEq, and_imp]
-      intros sym terms
-      rw [GroundAtom.ext_iff]
-      constructor
-      · apply sym
-      · have : Function.Injective (List.map (Term.constant (τ := τ))) := by
-          rw [List.map_injective_iff]
-          intro _ _ term_eq
-          injection term_eq
-        apply this
-        exact terms
+    simp [GroundAtom.ext_iff, Atom.ext_iff, List.ext_get_iff]
 
   instance: Coe (GroundAtom τ) (Atom τ) where
     coe := GroundAtom.toAtom
@@ -125,6 +117,12 @@ end GroundAtom
 namespace GroundRule
   def toRule (r: GroundRule τ): Rule τ := {head:= r.head.toAtom, body := List.map GroundAtom.toAtom r.body}
 
+  @[simp]
+  lemma toRule_head {r : GroundRule τ} : r.toRule.head = r.head.toAtom := by rfl
+
+  @[simp]
+  lemma toRule_body {r : GroundRule τ} : r.toRule.body = r.body.map GroundAtom.toAtom := by rfl
+
   instance [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] : ToString (GroundRule τ) where
     toString gr := ToString.toString gr.toRule
 
@@ -168,9 +166,10 @@ namespace GroundRule
 end GroundRule
 
 lemma Rule.eq_GroundRule_iff {gr : GroundRule τ} {r : Rule τ} :
-    r = gr ↔ gr.head = r.head ∧ ∃ (h : gr.body.length = r.body.length), ∀ (i : ℕ) (hi : i < r.body.length),
-      gr.body[i] = r.body[i] := by
-  simp [← GroundRule.eq_rule_iff, Eq.comm (a := r)]
+    r = gr ↔ r.head = gr.head ∧ ∃ (h : gr.body.length = r.body.length), ∀ (i : ℕ) (hi : i < r.body.length),
+      r.body[i] = gr.body[i] := by
+  simp [GroundRule.eq_rule_iff, Eq.comm (a := r)]
+  grind
 
 namespace Grounding
   def applyTerm (g: Grounding τ) : Term τ -> Term τ
