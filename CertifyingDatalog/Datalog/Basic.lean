@@ -1,8 +1,8 @@
 module
 
 public import CertifyingDatalog.Datastructures.List
-public import Mathlib.Data.Finset.SDiff
-public import Mathlib.Data.Finset.Lattice.Lemmas
+import Mathlib.Data.Finset.Lattice.Lemmas
+import Mathlib.Data.Finset.SDiff
 
 public section
 

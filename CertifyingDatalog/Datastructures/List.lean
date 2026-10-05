@@ -1,6 +1,5 @@
 module
 
-public import Mathlib.Data.Finset.Dedup
 public import Mathlib.Data.Finset.Empty
 public import Mathlib.Data.Finset.Lattice.Basic
 import Mathlib.Data.Finset.Lattice.Lemmas

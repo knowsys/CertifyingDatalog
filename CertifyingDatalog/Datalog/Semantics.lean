@@ -2,6 +2,7 @@ module
 
 public import CertifyingDatalog.Datalog.Database
 public import CertifyingDatalog.Datastructures.Tree
+import Mathlib.Data.Finset.Attr
 
 public section
 

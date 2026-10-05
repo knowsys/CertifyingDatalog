@@ -1,7 +1,8 @@
 module
 
 public import CertifyingDatalog.Datalog.Basic
-import Mathlib.Data.Finset.Lattice.Lemmas
+public import Mathlib.Data.Finset.Dedup
+import Mathlib.Data.Finset.Attr
 
 public section
 

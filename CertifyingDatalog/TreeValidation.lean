@@ -2,8 +2,9 @@ module
 
 public import CertifyingDatalog.Unification
 public import CertifyingDatalog.Datalog.Semantics
-public import CertifyingDatalog.Datastructures.Except
 import Std.Data.HashMap.Lemmas
+import CertifyingDatalog.Datastructures.Except
+import Mathlib.Data.Finset.Attr
 
 @[expose] public section
 

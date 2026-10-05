@@ -5,3 +5,4 @@ public import CertifyingDatalog.Datalog.Database
 public import CertifyingDatalog.Datalog.Grounding
 public import CertifyingDatalog.Datalog.Substitution
 public import CertifyingDatalog.Datalog.Semantics
+import Mathlib.Data.Finset.Attr

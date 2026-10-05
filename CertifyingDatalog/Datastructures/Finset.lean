@@ -1,7 +1,8 @@
 module
 
-public import Mathlib.Data.Finset.Filter
 import Mathlib.Data.Finset.Attr
+public import Mathlib.Data.Finset.Defs
+import Mathlib.Data.Finset.Filter
 
 public section
 
