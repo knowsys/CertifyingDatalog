@@ -28,50 +28,46 @@ namespace Graph
     (∃ r ∈ kb.prog, ∃ (g : Grounding τ), g.applyRule' r = { head := node, body := G.predecessors node }) ∨ (G.predecessors node = [] ∧ kb.db.contains node)
 
   lemma toTree_of_acyclic_isValid (G : Graph (GroundAtom τ)) (kb : KnowledgeBase τ) (root : { a : GroundAtom τ // a ∈ G.vertices }) (acyclic : G.isAcyclic) (all_valid : ∀ a ∈ G.vertices, G.locallyValid_for_kb kb a) : ProofTreeSkeleton.isValid (G.toTree_of_acyclic root acyclic) kb := by
-    unfold ProofTreeSkeleton.isValid
+    rw [ProofTreeSkeleton.isValid_iff]
     unfold toTree_of_acyclic
-    simp only [List.map_map, exists_and_left, exists_and_right, List.map_eq_nil_iff,
-      List.attach_eq_nil_iff]
+    simp only [Grounding.applyRule'_head, Tree.root_def, Grounding.applyRule'_body,
+      Tree.children_def, List.map_map, Tree.directSubtrees_def, List.mem_map, List.mem_attach,
+      true_and, Subtype.exists, forall_exists_index, List.map_eq_nil_iff, List.attach_eq_nil_iff]
     unfold locallyValid_for_kb at all_valid
+    simp only [GroundRule.ext_iff, Grounding.applyRule'_head,
+      Grounding.applyRule'_body] at all_valid
     cases all_valid root.val root.prop with
-    | inr h => apply Or.inr; exact h
+    | inr h => right; exact h
     | inl h =>
-      apply Or.inl
+      left
       rcases h with ⟨r, r_mem, g, r_eq⟩
       exists r
+      refine And.intro r_mem ?_
+      use g
+      refine And.intro r_eq.1 ?_
       constructor
-      · exact r_mem
-      · constructor
-        · exists g; rw [r_eq]; simp; apply List.ext_get
-          rw [List.length_map, List.length_attach]
-          intro n _ _; simp
-          rw [toTree_root_is_root]
-        · rw [List.forall_iff_forall_mem]
-          simp
-          intro tree node node_is_pred tree_comes_from_node
-          rw [← tree_comes_from_node]
-          have _termination : (G.verticesThatReach node).card < (G.verticesThatReach root).card := by
-            apply Finset.card_lt_card
-            apply verticesThatReachPredStrictSubsetReachSelfIfAcyclic
-            · apply acyclic
-            · apply node_is_pred
-          apply toTree_of_acyclic_isValid
-          exact all_valid
+      · unfold toTree_of_acyclic
+        simp [r_eq.2]
+      · intro tree node node_is_pred tree_comes_from_node
+        rw [← tree_comes_from_node]
+        have _termination : (G.verticesThatReach node).card < (G.verticesThatReach root).card := by
+          apply Finset.card_lt_card
+          apply verticesThatReachPredStrictSubsetReachSelfIfAcyclic
+          · apply acyclic
+          · apply node_is_pred
+        apply toTree_of_acyclic_isValid
+        unfold locallyValid_for_kb
+        simp only [GroundRule.ext_iff, Grounding.applyRule'_head, Grounding.applyRule'_body]
+        apply all_valid
   termination_by Finset.card (G.verticesThatReach root)
 
   def toProofTree (G : Graph (GroundAtom τ)) (kb : KnowledgeBase τ) (root : { a : GroundAtom τ // a ∈ G.vertices }) (acyclic : G.isAcyclic) (all_valid : ∀ a ∈ G.vertices, G.locallyValid_for_kb kb a) : ProofTree kb := ⟨G.toTree_of_acyclic root acyclic, toTree_of_acyclic_isValid G kb root acyclic all_valid⟩
 
   theorem verticesOfLocallyValidAcyclicGraphAreInProofTheoreticSemantics (G : Graph (GroundAtom τ)) (kb : KnowledgeBase τ) (acyclic : G.isAcyclic) (all_valid : ∀ a ∈ G.vertices, G.locallyValid_for_kb kb a) : G.vertices.toSet ⊆ kb.proofTheoreticSemantics := by
-    unfold KnowledgeBase.proofTheoreticSemantics
-    rw [Set.subset_def]
+    simp [Set.subset_def, KnowledgeBase.mem_proofTheoreticSemantics_iff]
     intro node node_mem
-    simp only [List.toSet_mem] at node_mem
-    simp only [Set.mem_ofPred_eq]
     exists G.toProofTree kb ⟨node, node_mem⟩ acyclic all_valid
-    unfold toProofTree
-    unfold ProofTree.root
-    simp only
-    rw [toTree_root_is_root]
+    simp [toProofTree, toTree_root_is_root]
 
   variable [Inhabited τ.constants] [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols]
 

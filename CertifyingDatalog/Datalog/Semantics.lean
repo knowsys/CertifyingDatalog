@@ -59,7 +59,7 @@ def ProofTreeSkeleton.isValid (t: ProofTreeSkeleton τ) (kb : KnowledgeBase τ) 
       ∧ l.attach.Forall (fun ⟨st, _h⟩ => isValid st kb))
     ∨ (l = [] ∧ kb.db.contains a)
 
-  lemma isValid_iff {t : ProofTreeSkeleton τ} {kb : KnowledgeBase τ} :
+  lemma ProofTreeSkeleton.isValid_iff {t : ProofTreeSkeleton τ} {kb : KnowledgeBase τ} :
       t.isValid kb ↔ (∃ (r : Rule τ), r ∈ kb.prog ∧ ∃ (g : Grounding τ),
         (g.applyRule' r).head = t.root ∧ (g.applyRule' r).body = t.children ∧
           ∀ t' ∈ t.directSubtrees, ProofTreeSkeleton.isValid t' kb) ∨
@@ -125,6 +125,10 @@ end ProofTree
 
 namespace KnowledgeBase
   def proofTheoreticSemantics (kb : KnowledgeBase τ) : Interpretation τ := {a: GroundAtom τ | ∃ (t: ProofTree kb), t.root = a}
+
+  lemma mem_proofTheoreticSemantics_iff {kb : KnowledgeBase τ} {ga : GroundAtom τ} :
+      ga ∈ proofTheoreticSemantics kb ↔ ∃ (t : ProofTree kb), t.root = ga := by
+    rfl
 
   lemma elementsOfEveryProofTreeInSemantics [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
     (kb : KnowledgeBase τ) : ∀ (t : ProofTree kb) (ga : GroundAtom τ), t.tree.elem ga → ga ∈ kb.proofTheoreticSemantics := by
