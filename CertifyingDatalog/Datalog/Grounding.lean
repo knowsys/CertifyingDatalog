@@ -61,10 +61,12 @@ namespace GroundAtom
     coe := GroundAtom.toAtom
 
   lemma eq_atom_iff {ga : GroundAtom τ} {a : Atom τ} :
-      ga = a ↔ ga.symbol = a.symbol ∧ ∃ (h : a.atom_terms.length = ga.atom_terms.length),
-        ∀ (i : ℕ) (hi : i < a.atom_terms.length), a.atom_terms[i] = Term.constant ga.atom_terms[i] := by
-    simp only [toAtom, Atom.ext_iff, List.ext_get_iff, List.length_map, List.get_eq_getElem,
-      List.getElem_map, and_congr_right_iff]
+      ga = a ↔ ∃ (h : ga.symbol = a.symbol),
+        ∀ (i : ℕ) (hi : i < a.atom_terms.length), a.atom_terms[i] = Term.constant (ga.atom_terms[i]'(by rwa[a.term_length, ← h, ← ga.term_length] at hi)) := by
+    have : a.symbol = ga.symbol → a.atom_terms.length = ga.atom_terms.length := by
+      intro h
+      rw [a.term_length, h, ← ga.term_length]
+    simp  [toAtom, Atom.ext_iff, List.ext_get_iff]
     grind
 
   lemma vars_empty {ga : GroundAtom τ} [DecidableEq τ.vars] : ga.toAtom.vars = ∅ := by
@@ -76,9 +78,13 @@ end GroundAtom
 
 namespace Atom
   lemma eq_GroundAtom_iff {ga : GroundAtom τ} {a : Atom τ} :
-      a = ga ↔ ga.symbol = a.symbol ∧ ∃ (h : a.atom_terms.length = ga.atom_terms.length),
-        ∀ (i : ℕ) (hi : i < a.atom_terms.length), a.atom_terms[i] = Term.constant ga.atom_terms[i] := by
-    simp [← GroundAtom.eq_atom_iff, Eq.comm (a:= a)]
+      a = ga ↔ ∃ (h : a.symbol = ga.symbol),
+        ∀ (i : ℕ) (hi : i < a.atom_terms.length), a.atom_terms[i] = Term.constant (ga.atom_terms[i]'(by rwa[a.term_length, h, ← ga.term_length] at hi)) := by
+    have : a.symbol = ga.symbol → a.atom_terms.length = ga.atom_terms.length := by
+      intro h
+      rw [a.term_length, h, ← ga.term_length]
+    simp [Atom.ext_iff, List.ext_get_iff]
+    grind
 
   def toGroundAtom (a: Atom τ) [DecidableEq τ.vars] (h: a.vars = ∅) : GroundAtom τ :=
   {

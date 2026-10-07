@@ -217,7 +217,7 @@ namespace Substitution
   lemma toGrounding_applyAtom_eq [DecidableEq τ.vars] [Inhabited τ.constants] {a: Atom τ} {s: Substitution τ} (h: ↑ a.vars ⊆ s.domain): (s.toGrounding.applyAtom' a).toAtom = s.applyAtom a := by
     simp only [GroundAtom.eq_atom_iff, Grounding.applyAtom'_symbol, applyAtom_symbol,
       applyAtom_terms, List.length_map, List.getElem_map, Grounding.applyAtom'_terms,
-      exists_true_left, true_and]
+      exists_true_left]
     intro i hi
     rw [toGrounding_applyTerm_eq]
     apply Atom.vars_subset_impl_term_vars_subset (by simp) h
@@ -257,8 +257,7 @@ namespace Substitution
   lemma subset_applyAtom_eq {s1 s2: Substitution τ} {a: Atom τ} {ga: GroundAtom τ} (subs: s1 ⊆ s2) (eq: s1.applyAtom a = ga): s2.applyAtom a = ga := by
     simp only [Atom.eq_GroundAtom_iff, applyAtom_symbol, applyAtom_terms, List.length_map,
       List.getElem_map] at ⊢ eq
-    rcases eq with ⟨h₁, h, h₂⟩
-    apply And.intro h₁
+    rcases eq with ⟨h, h₂⟩
     use h
     intro i hi
     apply subset_applyTerm_eq subs (h₂ i hi)

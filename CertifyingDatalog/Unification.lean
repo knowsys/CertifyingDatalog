@@ -265,15 +265,13 @@ section AtomMatching
         intro contra
         unfold matchAtom at h
         simp [contra] at h
-      have term_lists_eq_len : a.atom_terms.length = ga.atom_terms.length := by rw [a.term_length, ga.term_length, symb_eq]
-      simp only [matchAtom, symb_eq, ↓reduceIte, true_and] at h ⊢
+      simp only [matchAtom, symb_eq, ↓reduceIte, exists_true_left] at h ⊢
       apply matchTermListYieldsSubs at h
       simp only [List.map_map, List.map_inj_left, Function.comp_apply, Prod.forall] at h
-      use term_lists_eq_len
       intro i hi
       apply h
-      simp only [List.mem_iff_get, List.get_eq_getElem, List.getElem_zip, Prod.mk.injEq]
-      use ⟨i, by simp[hi, ← term_lists_eq_len]⟩
+      simp [List.mem_iff_get, List.get_eq_getElem, List.getElem_zip, Prod.mk.injEq]
+      use ⟨i, by simp[hi, ga.term_length, ← symb_eq, ← a.term_length]⟩
 
     lemma matchAtomIsMinimal {s: Substitution τ} {a: Atom τ} {ga: GroundAtom τ} (h : (s.matchAtom a ga).isSome) : ∀ s' : Substitution τ, s ⊆ s' ∧ s'.applyAtom a = ga -> ((s.matchAtom a ga).get h) ⊆ s' := by
       intro s' ⟨subset, apply_a⟩
@@ -292,14 +290,14 @@ section AtomMatching
         · intro n h₁ h₂
           simp only [List.get_eq_getElem, List.map_map, List.getElem_map, List.getElem_zip,
             Function.comp_apply]
-          apply terms_eq.2
+          apply terms_eq
           simp only [List.map_map, List.length_map, List.length_zip, lt_min_iff] at h₁
           apply h₁.1
 
     lemma matchAtomNoneThenNoSubs {s: Substitution τ} {a: Atom τ} {ga: GroundAtom τ} (h : (s.matchAtom a ga) = none) : ∀ s' : Substitution τ, s ⊆ s' -> s'.applyAtom a ≠ ga := by
       simp only [subset_iff, ne_eq, Atom.eq_GroundAtom_iff, applyAtom_symbol, applyAtom_terms,
-        List.length_map, List.getElem_map, not_and, not_exists, not_forall]
-      intro s' subset symb_eq length_eq
+        List.length_map, List.getElem_map, not_exists, not_forall]
+      intro s' subset symb_eq
       unfold matchAtom at h
       have term_lists_eq_len : a.atom_terms.length = ga.atom_terms.length := by rw [a.term_length, ga.term_length, symb_eq]
       simp only [symb_eq, ↓reduceIte] at h

@@ -275,7 +275,7 @@ namespace CheckableModel
         have g_eq_subs_on_hd : subs.applyAtom hd = g.applyAtom' hd := by
           simp only [Atom.eq_GroundAtom_iff, Grounding.applyAtom'_symbol,
             Substitution.applyAtom_symbol, Substitution.applyAtom_terms, List.length_map,
-            List.getElem_map, Grounding.applyAtom'_terms, exists_true_left, true_and]
+            List.getElem_map, Grounding.applyAtom'_terms, exists_true_left]
           intro i hi
           rw [Substitution.applyTerm_eq_const_iff]
           simp only [Option.ite_none_right_eq_some, Option.some.injEq, subs]
@@ -316,8 +316,7 @@ namespace CheckableModel
               specialize s'_apply_also_ground (Term.variableDL v) hv
               simp only [Atom.eq_GroundAtom_iff, Grounding.applyAtom'_symbol,
                 Substitution.applyAtom_symbol, Substitution.applyAtom_terms, List.length_map,
-                List.getElem_map, Grounding.applyAtom'_terms, exists_true_left,
-                true_and] at g_eq_subs_on_hd
+                List.getElem_map, Grounding.applyAtom'_terms, exists_true_left] at g_eq_subs_on_hd
               rw [List.mem_iff_getElem] at hv
               rcases hv with ⟨i, hi, hv⟩
               specialize g_eq_subs_on_hd i hi

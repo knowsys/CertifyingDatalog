@@ -27,9 +27,10 @@ namespace Rule
       Substitution.applyAtom_symbol, Substitution.applyAtom_terms, List.length_map,
       List.getElem_map, Substitution.applyRule_body] at match_r
     rcases match_r with ⟨s, symb_eq, h₁, h₂⟩
+    rcases symb_eq with ⟨symb_eq, h⟩
     simp only [symbolSequence, GroundRule.toRule_head, GroundAtom.toAtom_symbol,
       GroundRule.toRule_body, List.map_map, List.cons.injEq]
-    refine And.intro (Eq.symm symb_eq.1) ?_
+    refine And.intro symb_eq ?_
     apply List.ext_get
     · simp [h₁]
     · intro n hn₁ hn₂
