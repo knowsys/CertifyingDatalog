@@ -91,6 +91,29 @@ namespace Substitution
     rfl
 
   @[simp]
+  lemma applyTerm_var_of_isSome {s : Substitution τ} {v : τ.vars} (h : (s v).isSome) :
+      s.applyTerm (Term.variableDL v) = (s v).get h := by
+    rw [Option.isSome_iff_exists] at h
+    rcases h with ⟨c, h⟩
+    simp [applyTerm, h]
+
+  @[simp]
+  lemma applyTerm_var_of_eq_some {s : Substitution τ} {v : τ.vars} {c : τ.constants} (h : s v = some c) :
+      s.applyTerm (Term.variableDL v) = Term.constant c := by
+    simp [applyTerm, h]
+
+  @[simp]
+  lemma applyTerm_var_of_isNone {s : Substitution τ} {v : τ.vars} (h : (s v).isNone) :
+      s.applyTerm (Term.variableDL v) = Term.variableDL v := by
+    rw[Option.isNone_iff_eq_none] at h
+    simp [applyTerm, h]
+
+  @[simp]
+  lemma applyTerm_var_of_eq_none {s : Substitution τ} {v : τ.vars} (h : s v = none) :
+      s.applyTerm (Term.variableDL v) = Term.variableDL v := by
+    simp [applyTerm, h]
+
+  @[simp]
   lemma applyTerm_var {s : Substitution τ} {v : τ.vars} :
       s.applyTerm (Term.variableDL v) =
         if h : (s v).isSome
@@ -281,7 +304,7 @@ namespace Grounding
   lemma toSubstitution_applyTerm_eq {g: Grounding τ} {t: Term τ}: g.applyTerm' t = g.toSubstitution.applyTerm t := by
     cases t with
     | constant _ => simp
-    | variableDL _ => simp [toSubstitution, Substitution.applyTerm_var]
+    | variableDL _ => simp [toSubstitution]
 
   lemma toSubstitution_applyAtom_eq {a: Atom τ} {g: Grounding τ}: g.applyAtom' a = g.toSubstitution.applyAtom a := by
     simp [GroundAtom.eq_atom_iff, toSubstitution_applyTerm_eq]
