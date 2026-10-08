@@ -1,7 +1,6 @@
 module
 
 public import CertifyingDatalog.Datalog.Grounding
-import Mathlib.Data.Finset.Attr
 
 public section
 

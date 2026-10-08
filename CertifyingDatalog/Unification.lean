@@ -2,7 +2,6 @@ module
 
 public import CertifyingDatalog.Datalog.Substitution
 import CertifyingDatalog.Basic
-import Mathlib.Data.Finset.Attr
 
 @[expose] public section
 

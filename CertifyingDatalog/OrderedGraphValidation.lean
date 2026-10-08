@@ -2,7 +2,6 @@ module
 
 public import CertifyingDatalog.TreeValidation
 import CertifyingDatalog.Datastructures.Array
-import Mathlib.Data.Finset.Attr
 
 @[expose] public section
 

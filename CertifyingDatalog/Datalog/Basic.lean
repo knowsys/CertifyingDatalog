@@ -3,6 +3,7 @@ module
 public import CertifyingDatalog.Datastructures.List
 import Mathlib.Data.Finset.Lattice.Lemmas
 import Mathlib.Data.Finset.SDiff
+public import Mathlib.Data.Finset.Insert
 
 public section
 
@@ -104,6 +105,12 @@ section Methods
     def vars: Term τ → Finset τ.vars
     | Term.constant _ => ∅
     | Term.variableDL v => {v}
+
+    @[simp]
+    lemma vars_constant {c : τ.constants} : vars (Term.constant c) = ∅ := by rfl
+
+    @[simp]
+    lemma vars_variable {v : τ.vars} : vars (Term.variableDL v) = {v} := by rfl
 
     lemma vars_eq_emptyset_iff {t : Term τ} :
         t.vars = ∅ ↔ ∃ (c : τ.constants), t = Term.constant c := by

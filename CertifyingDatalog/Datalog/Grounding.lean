@@ -1,8 +1,6 @@
 module
 
 public import CertifyingDatalog.Datalog.Basic
-public import Mathlib.Data.Finset.Dedup
-import Mathlib.Data.Finset.Attr
 
 public section
 
@@ -70,10 +68,8 @@ namespace GroundAtom
     grind
 
   lemma vars_empty {ga : GroundAtom τ} [DecidableEq τ.vars] : ga.toAtom.vars = ∅ := by
-    simp only [toAtom, Atom.vars_empty_iff, List.mem_map, forall_exists_index, and_imp,
-      forall_apply_eq_imp_iff₂]
-    intro _ _
-    simp [Term.vars_eq_emptyset_iff]
+    simp [toAtom, Atom.vars_empty_iff]
+
 end GroundAtom
 
 namespace Atom

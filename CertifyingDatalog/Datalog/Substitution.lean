@@ -2,7 +2,6 @@ module
 
 public import CertifyingDatalog.Datalog.Grounding
 public import CertifyingDatalog.Datastructures.Finset
-import Mathlib.Data.Finset.Attr
 
 public section
 
@@ -212,7 +211,7 @@ namespace Substitution
       cases eq : s v with
       | some c => simp
       | none =>
-        simp [domain, Set.subset_def, Term.mem_vars_iff, eq] at h
+        simp [domain, Set.subset_def, eq] at h
 
   lemma toGrounding_applyAtom_eq [DecidableEq τ.vars] [Inhabited τ.constants] {a: Atom τ} {s: Substitution τ} (h: ↑ a.vars ⊆ s.domain): (s.toGrounding.applyAtom' a).toAtom = s.applyAtom a := by
     simp only [GroundAtom.eq_atom_iff, Grounding.applyAtom'_symbol, applyAtom_symbol,
