@@ -21,7 +21,7 @@ namespace Interpretation
   def satisfiesRule [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols]
     (i: Interpretation τ) (r: GroundRule τ) : Prop := SetLike.coe r.bodySet ⊆ i → r.head ∈ i
 
-  @[simp]
+  @[simp, grind =]
   lemma satisfiesRule_iff [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {i : Interpretation τ} {r : GroundRule τ} :
       i.satisfiesRule r ↔ (∀ x ∈ r.body, x ∈ i) → r.head ∈ i := by
     simp [satisfiesRule, Set.subset_def, ← GroundRule.in_bodySet_iff_in_body]
@@ -30,7 +30,7 @@ namespace Interpretation
     (i: Interpretation τ) (kb: KnowledgeBase τ) : Prop :=
     (∀ (r: GroundRule τ), r ∈ kb.prog.groundProgram → i.satisfiesRule r) ∧ ∀ (a: GroundAtom τ), kb.db.contains a → a ∈ i
 
-  @[simp]
+  @[simp, grind =]
   lemma models_iff [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {i : Interpretation τ} {kb : KnowledgeBase τ} :
       i.models kb ↔ (∀ r ∈ kb.prog, ∀ (g : Grounding τ), i.satisfiesRule (g.applyRule' r)) ∧ ∀ (a: GroundAtom τ), kb.db.contains a → a ∈ i := by
     simp only [models, Program.mem_groundProgram_iff, exists_and_left, satisfiesRule_iff,
@@ -76,19 +76,19 @@ structure ProofTree (kb : KnowledgeBase τ) where
 namespace ProofTree
   def root {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.root
 
-  @[simp]
+  @[simp, grind =]
   lemma root_def {kb : KnowledgeBase τ} {t : ProofTree kb} :
     t.root = t.tree.root := by rfl
 
   def elem [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.elem
 
-  @[simp]
+  @[simp, grind =]
   lemma elem_def [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] {kb : KnowledgeBase τ} {t : ProofTree kb} :
     t.elem = t.tree.elem := by rfl
 
   def height {kb : KnowledgeBase τ} (t : ProofTree kb) := t.tree.height
 
-  @[simp]
+  @[simp, grind =]
   lemma height_def {kb : KnowledgeBase τ} {t : ProofTree kb} :
     t.height = t.tree.height := by rfl
 

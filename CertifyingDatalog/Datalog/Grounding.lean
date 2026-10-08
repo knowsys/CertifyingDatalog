@@ -45,10 +45,10 @@ variable {τ: Signature}
 namespace GroundAtom
   def toAtom (ga: GroundAtom τ): Atom τ:= {symbol:=ga.symbol, atom_terms:= List.map Term.constant ga.atom_terms,term_length := by rw [List.length_map]; exact ga.term_length}
 
-  @[simp]
+  @[simp, grind =]
   lemma toAtom_symbol {ga : GroundAtom τ} : ga.toAtom.symbol = ga.symbol := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma toAtom_body {ga : GroundAtom τ} : ga.toAtom.atom_terms = ga.atom_terms.map Term.constant := by rfl
 
   lemma eq_iff_toAtom_eq {a1 a2: GroundAtom τ}: a1 = a2 ↔ a1.toAtom = a2.toAtom :=
@@ -89,11 +89,11 @@ namespace Atom
     term_length := by simp; apply a.term_length
   }
 
-  @[simp]
+  @[simp, grind =]
   lemma toGroundAtom_symbol {a : Atom τ} [DecidableEq τ.vars] (h: a.vars = ∅) :
     (a.toGroundAtom h).symbol = a.symbol := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma toGroundAtom_atomTerms {a : Atom τ} [DecidableEq τ.vars] (h: a.vars = ∅) :
     (a.toGroundAtom h).atom_terms = a.atom_terms.attach.map (fun ⟨t, t_in_a⟩ => t.toConstant (a.vars_empty_iff.mp h t t_in_a)) := by rfl
 
@@ -120,10 +120,10 @@ end GroundAtom
 namespace GroundRule
   def toRule (r: GroundRule τ): Rule τ := {head:= r.head.toAtom, body := List.map GroundAtom.toAtom r.body}
 
-  @[simp]
+  @[simp, grind =]
   lemma toRule_head {r : GroundRule τ} : r.toRule.head = r.head.toAtom := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma toRule_body {r : GroundRule τ} : r.toRule.body = r.body.map GroundAtom.toAtom := by rfl
 
   instance [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] : ToString (GroundRule τ) where
@@ -179,11 +179,11 @@ namespace Grounding
   | Term.constant c => Term.constant c
   | Term.variableDL v => Term.constant (g v)
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm_const {c : τ.constants} {g : Grounding τ} :
     g.applyTerm (Term.constant c) = Term.constant c := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm_var {v : τ.vars} {g : Grounding τ} :
     g.applyTerm (Term.variableDL v) = Term.constant (g v) := by rfl
 
@@ -207,11 +207,11 @@ namespace Grounding
     simp only [applyTerm, Term.vars_eq_emptyset_iff]
     cases x <;> simp
 
-  @[simp]
+  @[simp, grind =]
   lemma applyAtom_symbol {a : Atom τ} {g : Grounding τ} :
     (g.applyAtom a).symbol = a.symbol := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyAtom_terms {a : Atom τ} {g : Grounding τ} :
     (g.applyAtom a).atom_terms = a.atom_terms.map g.applyTerm := by rfl
 
@@ -219,11 +219,11 @@ namespace Grounding
   | Term.constant c =>  c
   | Term.variableDL v => (g v)
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm'_const {c : τ.constants} {g : Grounding τ} :
     g.applyTerm' (Term.constant c) = c := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm'_var {v : τ.vars} {g : Grounding τ} :
     g.applyTerm' (Term.variableDL v) = g v := by rfl
 
@@ -240,11 +240,11 @@ namespace Grounding
 
   def applyAtom' (g: Grounding τ) (a: Atom τ): GroundAtom τ := {symbol := a.symbol, atom_terms := List.map g.applyTerm' a.atom_terms, term_length := applyTerm'_preservesLength}
 
-  @[simp]
+  @[simp, grind =]
   lemma applyAtom'_symbol {a : Atom τ} {g : Grounding τ} :
     (g.applyAtom' a).symbol = a.symbol := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyAtom'_terms {a : Atom τ} {g : Grounding τ} :
     (g.applyAtom' a).atom_terms = a.atom_terms.map g.applyTerm' := by rfl
 
@@ -268,10 +268,10 @@ namespace Grounding
 
   def applyRule (r: Rule τ) (g: Grounding τ): Rule τ := {head := g.applyAtom r.head, body := List.map g.applyAtom r.body }
 
-  @[simp]
+  @[simp, grind =]
   lemma applyRule_head {r : Rule τ} {g : Grounding τ} : (g.applyRule r).head = g.applyAtom r.head := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyRule_body {r : Rule τ} {g : Grounding τ} :
     (g.applyRule r).body = r.body.map g.applyAtom := by rfl
 
@@ -280,17 +280,17 @@ namespace Grounding
 
   def applyRule' (g: Grounding τ) (r: Rule τ) : GroundRule τ := {head := g.applyAtom' r.head, body:= List.map g.applyAtom' r.body }
 
-  @[simp]
+  @[simp, grind =]
   lemma applyRule'_head {r : Rule τ} {g : Grounding τ} : (g.applyRule' r).head = g.applyAtom' r.head := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyRule'_body {r : Rule τ} {g : Grounding τ} :
     (g.applyRule' r).body = r.body.map g.applyAtom' := by rfl
 end Grounding
 
 def Program.groundProgram (p : Program τ) := {r : GroundRule τ | ∃ (r': Rule τ) (g: Grounding τ), r' ∈ p ∧ r = g.applyRule' r'}
 
-@[simp]
+@[simp, grind =]
 lemma Program.mem_groundProgram_iff {gr : GroundRule τ} {p : Program τ} :
     gr ∈ p.groundProgram ↔ ∃ (r : Rule τ) (g : Grounding τ), r ∈ p ∧ gr = g.applyRule' r := by
   simp [groundProgram]

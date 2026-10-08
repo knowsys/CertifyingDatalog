@@ -12,7 +12,7 @@ def Substitution (τ: Signature) := τ.vars → Option (τ.constants)
 namespace Substitution
   def domain (s: Substitution τ): Set (τ.vars) := {v | Option.isSome (s v) = true}
 
-  @[simp]
+  @[simp, grind =]
   lemma mem_domain_iff {s : Substitution τ} {v : τ.vars} :
       v ∈ s.domain ↔ (s v).isSome := by simp [domain]
 
@@ -85,35 +85,39 @@ namespace Substitution
     rw [List.length_map]
     apply a.term_length
 
-  @[simp]
+  -- the order of these theorems is deliberate so that the more complicate
+  -- statement only applies if all other lemmas fail
+
+  @[simp, grind =]
   lemma applyTerm_const {s : Substitution τ} {c : τ.constants} :
       s.applyTerm (Term.constant c) = Term.constant c := by
     rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm_var_of_isSome {s : Substitution τ} {v : τ.vars} (h : (s v).isSome) :
       s.applyTerm (Term.variableDL v) = (s v).get h := by
     rw [Option.isSome_iff_exists] at h
     rcases h with ⟨c, h⟩
     simp [applyTerm, h]
 
+  -- cant be a grind theorem because of the c
   @[simp]
   lemma applyTerm_var_of_eq_some {s : Substitution τ} {v : τ.vars} {c : τ.constants} (h : s v = some c) :
       s.applyTerm (Term.variableDL v) = Term.constant c := by
     simp [applyTerm, h]
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm_var_of_isNone {s : Substitution τ} {v : τ.vars} (h : (s v).isNone) :
       s.applyTerm (Term.variableDL v) = Term.variableDL v := by
     rw[Option.isNone_iff_eq_none] at h
     simp [applyTerm, h]
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm_var_of_eq_none {s : Substitution τ} {v : τ.vars} (h : s v = none) :
       s.applyTerm (Term.variableDL v) = Term.variableDL v := by
     simp [applyTerm, h]
 
-  @[simp]
+  @[simp, grind =]
   lemma applyTerm_var {s : Substitution τ} {v : τ.vars} :
       s.applyTerm (Term.variableDL v) =
         if h : (s v).isSome
@@ -155,20 +159,20 @@ namespace Substitution
   def applyAtom (s: Substitution τ) (a: Atom τ) : Atom τ :=
     {symbol := a.symbol, atom_terms := List.map s.applyTerm a.atom_terms, term_length := s.applyTerm_preservesLength}
 
-  @[simp]
+  @[simp, grind =]
   lemma applyAtom_symbol {a : Atom τ} {s : Substitution τ} :
     (s.applyAtom a).symbol = a.symbol := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyAtom_terms {a : Atom τ} {s : Substitution τ} :
     (s.applyAtom a).atom_terms = a.atom_terms.map s.applyTerm := by rfl
 
   def applyRule (s: Substitution τ) (r: Rule τ) : Rule τ := {head := s.applyAtom r.head, body := List.map s.applyAtom r.body}
 
-  @[simp]
+  @[simp, grind =]
   lemma applyRule_head {r : Rule τ} {s : Substitution τ} : (s.applyRule r).head = s.applyAtom r.head := by rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma applyRule_body {r : Rule τ} {s : Substitution τ} :
     (s.applyRule r).body = r.body.map s.applyAtom := by rfl
 

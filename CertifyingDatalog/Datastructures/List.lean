@@ -9,7 +9,7 @@ public section
 namespace List
   def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := SetLike.coe l.toFinset
 
-  @[simp]
+  @[simp, grind =]
   lemma toSet_mem {A: Type u} [DecidableEq A] {a:A} {l: List A}: a ∈ l.toSet ↔ a ∈ l := by simp [toSet]
 
   def mapExceptUnit (l: List A) (f: A → Except B Unit): Except B Unit :=
@@ -86,12 +86,12 @@ namespace List
   def foldl_union {A : Type u} {B : Type v} [DecidableEq B] (f: A → Finset B) (init: Finset B) (l: List A): Finset B :=
     foldl (fun x y => x ∪ f y) init l
 
-  @[simp]
+  @[simp, grind =]
   lemma foldl_union_nil {A : Type u} {B : Type v} [DecidableEq B] {f: A → Finset B} {init: Finset B} :
       foldl_union f init [] = init := by
     rfl
 
-  @[simp]
+  @[simp, grind =]
   lemma foldl_union_cons {A : Type u} {B : Type v} [DecidableEq B] {f: A → Finset B} {init: Finset B} {hd : A} {tl : List A} :
       foldl_union f init (hd::tl) = foldl_union f (init ∪ f hd) tl := by
     rfl
@@ -417,7 +417,7 @@ section dedup
       then hd :: tl
       else List.drop_until tl a
 
-  @[simp]
+  @[simp, grind =]
   lemma List.drop_until_nil {a : A} :
       drop_until [] a = [] := by
     rfl
@@ -514,7 +514,7 @@ section dedup
       omega
     · simp
 
-  @[simp]
+  @[simp, grind =]
   lemma List.removeCycles_nil : removeCycles ([] : List A) = [] := by
     simp [List.removeCycles]
 

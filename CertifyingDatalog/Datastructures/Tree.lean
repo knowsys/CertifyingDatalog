@@ -20,21 +20,21 @@ namespace Tree
   def root: Tree A → A
   | .node a _ => a
 
-  @[simp]
+  @[simp, grind =]
   lemma root_def {a : A} {l : List (Tree A)} : root (.node a l) = a := by rfl
 
   def directSubtrees (t : Tree A) : List (Tree A) :=
     match t with
     | .node _ l => l
 
-  @[simp]
+  @[simp, grind =]
   lemma directSubtrees_def {a : A} {l : List (Tree A)} : directSubtrees (.node a l) = l := by rfl
 
   def member (t1 t2: Tree A): Prop :=
     match t1 with
     | .node _ l => t2 ∈ l
 
-  @[simp]
+  @[simp, grind =]
   lemma member_def {t2 : Tree A} {a : A} {l : List (Tree A)} :
     (Tree.node a l).member t2 ↔ t2 ∈ l := by rfl
 
@@ -42,7 +42,7 @@ namespace Tree
     match t with
     | .node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elem a x)
 
-  @[simp]
+  @[simp, grind =]
   lemma elem_def [DecidableEq A] {a a' : A} {l : List (Tree A)} :
       elem a' (.node a l) ↔ a' = a ∨ ∃ t ∈ l, elem a' t := by
     simp [elem]
@@ -54,7 +54,7 @@ namespace Tree
   def children: Tree A → List A
   | .node _ l => List.map root l
 
-  @[simp]
+  @[simp, grind =]
   lemma children_def {a : A} {l : List (Tree A)} :
     children (.node a l) = l.map root := by rfl
 

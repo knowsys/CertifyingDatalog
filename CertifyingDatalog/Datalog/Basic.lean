@@ -106,10 +106,10 @@ section Methods
     | Term.constant _ => ∅
     | Term.variableDL v => {v}
 
-    @[simp]
+    @[simp, grind =]
     lemma vars_constant {c : τ.constants} : vars (Term.constant c) = ∅ := by rfl
 
-    @[simp]
+    @[simp, grind =]
     lemma vars_variable {v : τ.vars} : vars (Term.variableDL v) = {v} := by rfl
 
     lemma vars_eq_emptyset_iff {t : Term τ} :
@@ -126,7 +126,7 @@ section Methods
       | Term.constant c => c
       | Term.variableDL v => by simp [Term.vars] at h
 
-    @[simp]
+    @[simp, grind =]
     lemma toConstant_constant {c : τ.constants} :
       (Term.constant c).toConstant (by simp[vars]) = c := by rfl
 
@@ -197,7 +197,7 @@ section Methods
 
     def isSafe (r: Rule τ) : Prop := r.head.vars ⊆ List.foldl_union Atom.vars ∅ r.body
 
-    @[simp]
+    @[simp, grind =]
     lemma isSafe_iff {r : Rule τ} :
         r.isSafe ↔ ∀ v ∈ r.head.vars, ∃ a ∈ r.body,  v ∈ a.vars := by
       simp [isSafe, Finset.subset_iff, List.mem_foldl_union]
@@ -216,7 +216,7 @@ section Methods
   namespace Program
     def isSafe (p : Program τ) : Prop := ∀ r, r ∈ p -> r.isSafe
 
-    @[simp]
+    @[simp, grind =]
     lemma isSafeIff {p : Program τ} :
         p.isSafe ↔ ∀ r ∈ p, r.isSafe := by rfl
 
