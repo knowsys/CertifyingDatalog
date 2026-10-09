@@ -8,9 +8,8 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.ToDual
 
-@[expose] public section
+public section
 
 inductive Tree (A: Type u)
 | node: A → List (Tree A) → Tree A
@@ -18,23 +17,46 @@ inductive Tree (A: Type u)
 namespace Tree
   variable {A: Type u}
 
+  def root: Tree A → A
+  | .node a _ => a
+
+  @[simp, grind =]
+  lemma root_def {a : A} {l : List (Tree A)} : root (.node a l) = a := by rfl
+
+  def directSubtrees (t : Tree A) : List (Tree A) :=
+    match t with
+    | .node _ l => l
+
+  @[simp, grind =]
+  lemma directSubtrees_def {a : A} {l : List (Tree A)} : directSubtrees (.node a l) = l := by rfl
+
   def member (t1 t2: Tree A): Prop :=
     match t1 with
     | .node _ l => t2 ∈ l
 
-  def elem  [DecidableEq A] (a: A) (t: Tree A): Bool  :=
+  @[simp, grind =]
+  lemma member_def {t2 : Tree A} {a : A} {l : List (Tree A)} :
+    (Tree.node a l).member t2 ↔ t2 ∈ l := by rfl
+
+  def elem [DecidableEq A] (a: A) (t: Tree A): Bool :=
     match t with
     | .node a' l => (a=a') ∨ List.any l.attach (fun ⟨x, _h⟩ => elem a x)
+
+  @[simp, grind =]
+  lemma elem_def [DecidableEq A] {a a' : A} {l : List (Tree A)} :
+      elem a' (.node a l) ↔ a' = a ∨ ∃ t ∈ l, elem a' t := by
+    simp [elem]
 
   def elements (t: Tree A): List A :=
     match t with
     | .node a l => List.foldl (fun x ⟨y,_h⟩ => x ++ elements y) [a] l.attach
 
-  def root: Tree A → A
-  | .node a _ => a
-
   def children: Tree A → List A
   | .node _ l => List.map root l
+
+  @[simp, grind =]
+  lemma children_def {a : A} {l : List (Tree A)} :
+    children (.node a l) = l.map root := by rfl
 
   def height (t : Tree A): ℕ :=
     match t with

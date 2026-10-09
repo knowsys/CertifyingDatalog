@@ -3,6 +3,7 @@ module
 public import CertifyingDatalog.Unification
 public import CertifyingDatalog.Datalog.Semantics
 import Std.Data.HashMap.Lemmas
+import CertifyingDatalog.Datastructures.Except
 
 @[expose] public section
 
@@ -21,22 +22,30 @@ namespace Rule
   def symbolSequence (r: Rule τ): List τ.relationSymbols := r.head.symbol :: (List.map Atom.symbol r.body)
 
   lemma symbolSequence_eq_matchingGroundRule {r: Rule τ} {gr: GroundRule τ} (match_r: ∃ (s: Substitution τ), s.applyRule r = gr): r.symbolSequence = gr.toRule.symbolSequence := by
-    rcases match_r with ⟨s, apply_s⟩
-    rw [← apply_s]
-    unfold Substitution.applyRule
-    unfold Substitution.applyAtom
-    unfold symbolSequence
-    simp
+    simp only [eq_GroundRule_iff, Substitution.applyRule_head, Atom.eq_GroundAtom_iff,
+      Substitution.applyAtom_symbol, Substitution.applyAtom_terms, List.length_map,
+      List.getElem_map, Substitution.applyRule_body] at match_r
+    rcases match_r with ⟨s, symb_eq, h₁, h₂⟩
+    rcases symb_eq with ⟨symb_eq, h⟩
+    simp only [symbolSequence, GroundRule.toRule_head, GroundAtom.toAtom_symbol,
+      GroundRule.toRule_body, List.map_map, List.cons.injEq]
+    refine And.intro symb_eq ?_
+    apply List.ext_get
+    · simp [h₁]
+    · intro n hn₁ hn₂
+      simp only [List.length_map] at hn₁
+      specialize h₂ n hn₁
+      simp [h₂.1]
 
   lemma ne_of_symbolSequence_ne {r1 r2 : Rule τ} (h : r1.symbolSequence ≠ r2.symbolSequence) : ∀ (s : Substitution τ), s.applyRule r1 ≠ r2 := by
-    intro s apply_s
-    apply h
-    rw [← apply_s]
-    unfold symbolSequence
-    simp only [List.cons.injEq]
-    unfold Substitution.applyRule
-    unfold Substitution.applyAtom
-    simp
+    simp only [symbolSequence, ne_eq, List.cons.injEq, not_and] at h
+    simp only [ne_eq, Rule.ext_iff, Substitution.applyRule_head, Substitution.applyRule_body,
+      not_and]
+    intro s head_eq body_eq
+    have head_eq := congrArg Atom.symbol head_eq
+    simp only [Substitution.applyAtom_symbol] at head_eq
+    apply h head_eq
+    simp [List.ext_get_iff, ← body_eq] at ⊢ h
 
   lemma body_length_eq_of_symbolSequence_eq {r1 r2: Rule τ} (h: r1.symbolSequence = r2.symbolSequence): r1.body.length = r2.body.length := by
     unfold symbolSequence at h
@@ -158,7 +167,7 @@ namespace ProofTreeSkeleton
   def checkValidity (t : ProofTreeSkeleton τ) (m : SymbolSequenceMap τ) (d : Database τ) : Except String Unit :=
     match t with
     | .node a l =>
-      if l.isEmpty
+      if l = []
       then  if d.contains a
             then Except.ok ()
             else
@@ -173,86 +182,34 @@ namespace ProofTreeSkeleton
       cases t with
       | node a l =>
         unfold checkValidity
-        unfold isValid
-        by_cases emptyL: l.isEmpty
+        rw [isValid_iff]
+        by_cases emptyL: l = []
         · rw [ite_eq_left emptyL]
           by_cases contains_a: kb.db.contains a
-          · rw [ite_eq_left contains_a]
-            constructor
-            · intro _
-              right
-              rw [← List.isEmpty_iff]
-              constructor
-              · exact emptyL
-              · exact contains_a
-            · simp
-          · rw [List.isEmpty_iff] at emptyL
-            simp only [contains_a, Bool.false_eq_true, ↓reduceIte, Except.map, emptyL, List.map_nil,
-              exists_and_left, exists_and_right, and_false, or_false]
-            split
-            · simp only [reduceCtorEq, false_iff, not_exists, not_and, forall_exists_index]
-              rename_i checkRuleMatchResult
-              have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := [] } = Except.ok () := by
-                rw [checkRuleMatchResult]
-                simp
-              simp only [checkRuleMatchOkIffExistsRule, exists_and_left, not_exists, not_and,
-                ne_eq] at checkRuleMatch'
-              intro r r_mem g g_apply
-              simp only [List.forall_iff_forall_mem, List.mem_attach, forall_const, Subtype.forall,
-                emptyL, List.not_mem_nil, IsEmpty.forall_iff, implies_true, not_true_eq_false]
-              specialize checkRuleMatch' r r_mem g
-              contradiction
-            · rename_i u checkRuleMatch
-              rw [checkRuleMatchOkIffExistsRule] at checkRuleMatch
-              rcases checkRuleMatch with ⟨r, g, rP, apply_g⟩
-              simp only [true_iff]
-              use r
-              refine And.intro rP (And.intro (by use g) ?_)
-              simp [List.forall_iff_forall_mem, emptyL]
-
-        · simp only [emptyL, Bool.false_eq_true, ↓reduceIte, Except.bind, exists_and_left,
-          exists_and_right]
-          rw [List.isEmpty_iff] at emptyL
+          · simp [emptyL, contains_a]
+          · simp [contains_a, Except.map_ok_unit, Except.is_ok_unit, checkRuleMatchOkIffExistsRule, emptyL, GroundRule.ext_iff]
+        · simp only [emptyL, ↓reduceIte, Except.bind, Grounding.applyRule'_head, Tree.root_def,
+          Grounding.applyRule'_body, Tree.children_def, Tree.directSubtrees_def, false_and,
+          or_false]
           split
-          · simp only [reduceCtorEq, emptyL, false_and, or_false, false_iff, not_exists, not_and,
-              forall_exists_index]
+          · simp only [reduceCtorEq, false_iff, not_exists, not_and, not_forall]
             rename_i checkRuleMatchResult
             have checkRuleMatch': ¬ checkRuleMatch kb.prog.toSymbolSequenceMap { head := a, body := List.map Tree.root l } = Except.ok () := by
               rw [checkRuleMatchResult]
               simp
             rw [checkRuleMatchOkIffExistsRule] at checkRuleMatch'
-            simp only [exists_and_left, not_exists, not_and, ne_eq] at checkRuleMatch'
-            intro r rP g ground
-            specialize checkRuleMatch' r rP g
-            contradiction
+            simp [exists_and_left, not_exists, not_and, ne_eq, GroundRule.ext_iff] at checkRuleMatch'
+            grind
           · rename_i e u h
             rw [checkRuleMatchOkIffExistsRule] at h
-            simp only [emptyL, false_and, or_false]
+            simp [GroundRule.ext_iff] at h
+            simp [List.mapExceptUnit_iff]
             have height : ∀ (t: Tree (GroundAtom τ)), t ∈ l → t.height < n := by
               simp only [← h_t]
               intro t ht
               apply Tree.heightOfMemberIsSmaller
-              simp only [Tree.member]
-              exact ht
-            constructor
-            · intro h'
-              rcases h with ⟨r, g, rP, hg⟩
-              use r
-              refine And.intro rP (And.intro (by use g) ?_)
-              simp only [List.forall_iff_forall_mem, List.mem_attach, forall_const, Subtype.forall]
-              simp only [List.mapExceptUnit_iff, List.mem_attach, forall_const, Subtype.forall] at h'
-              intro t ht
-              specialize ih t.height (height t ht) rfl
-              rw [← ih]
-              exact h' t ht
-            · intro h'
-              simp only [List.mapExceptUnit_iff, List.mem_attach, forall_const, Subtype.forall]
-              intro t ht
-              rw [ih t.height (height t ht) rfl]
-              rcases h' with ⟨_, _, _, h'⟩
-              simp only [List.forall_iff_forall_mem, List.mem_attach, forall_const,
-                Subtype.forall] at h'
-              exact h' t ht
+              simp [ht]
+            grind
 
   def checkValidityOfList (l: List (ProofTreeSkeleton τ)) (kb : KnowledgeBase τ) : Except String Unit :=
     let m := kb.prog.toSymbolSequenceMap
@@ -270,12 +227,9 @@ namespace ProofTreeSkeleton
       apply h t t_l
 
   lemma checkValidityOfImplSubsetSemantics [Inhabited τ.constants] {l: List (ProofTreeSkeleton τ)} {kb: KnowledgeBase τ} : checkValidityOfList l kb = Except.ok () -> {ga | ∃ t, t ∈ l ∧ t.elem ga } ⊆ kb.proofTheoreticSemantics := by
-    intro h
-    rw [Set.subset_def]
-    intro ga
-    simp only [Set.mem_ofPred_eq, forall_exists_index, and_imp]
-    intros t t_l ga_t
-    rw [checkValidityOfListOkIffAllValid] at h
+    simp only [checkValidityOfListOkIffAllValid, ge_iff_le, Set.subset_def, Set.mem_ofPred_eq,
+      forall_exists_index, and_imp]
+    intro h ga t t_l ga_t
     apply kb.elementsOfEveryProofTreeInSemantics ⟨t, by apply h; exact t_l⟩
     apply ga_t
 

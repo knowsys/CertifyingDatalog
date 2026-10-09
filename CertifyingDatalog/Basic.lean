@@ -11,7 +11,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.SetLike
 
-@[expose] public section
+public section
 
 namespace Nat
   lemma pred_lt_of_lt' (n m : ℕ) (h : n < m) : n.pred < m := by

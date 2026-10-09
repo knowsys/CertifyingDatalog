@@ -2,7 +2,6 @@ module
 
 public import Aesop.BuiltinRules
 public import Mathlib.Data.Subtype
-public import Mathlib.Tactic.ToDual
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Finiteness.Attr

@@ -1,6 +1,6 @@
 module
 
-@[expose] public section
+public section
 
 namespace Except
   theorem is_ok_iff_exists (e: Except A B): (∃ (b:B), e = Except.ok b) ↔ Except.isOk e := by
@@ -32,4 +32,9 @@ namespace Except
   theorem map_ok_unit {e : Except E A} : Except.map (fun _ => ()) e = Except.ok () ↔ e.isOk := by
     simp [Except.map, Except.isOk, Except.toBool]
     grind
+
+  theorem is_ok_unit {e : Except E Unit} : e.isOk ↔ e = .ok () := by
+    cases e with
+    | error e => simp [Except.isOk, Except.toBool]
+    | ok u => simp [Except.isOk, Except.toBool]
 end Except

@@ -1,16 +1,16 @@
 module
 
-public import Mathlib.Data.Finset.Dedup
 public import Mathlib.Data.Finset.Empty
 public import Mathlib.Data.Finset.Lattice.Basic
 import Mathlib.Data.Finset.Lattice.Lemmas
 
-@[expose] public section
+public section
 
 namespace List
   def toSet {A: Type u} [DecidableEq A] (l: List A): Set A := SetLike.coe l.toFinset
 
-  lemma toSet_mem {A: Type u} [DecidableEq A] {a:A} {l: List A}: a ∈ l ↔ a ∈ l.toSet := by simp [toSet]
+  @[simp, grind =]
+  lemma toSet_mem {A: Type u} [DecidableEq A] {a:A} {l: List A}: a ∈ l.toSet ↔ a ∈ l := by simp [toSet]
 
   def mapExceptUnit (l: List A) (f: A → Except B Unit): Except B Unit :=
     match l with
@@ -83,8 +83,18 @@ namespace List
     simp only [length_nil, Nat.add_zero] at h'
     apply h'
 
-  def foldl_union {A : Type u} {B : Type v} [DecidableEq B]  (f: A → Finset B) (init: Finset B) (l: List A): Finset B :=
+  def foldl_union {A : Type u} {B : Type v} [DecidableEq B] (f: A → Finset B) (init: Finset B) (l: List A): Finset B :=
     foldl (fun x y => x ∪ f y) init l
+
+  @[simp, grind =]
+  lemma foldl_union_nil {A : Type u} {B : Type v} [DecidableEq B] {f: A → Finset B} {init: Finset B} :
+      foldl_union f init [] = init := by
+    rfl
+
+  @[simp, grind =]
+  lemma foldl_union_cons {A : Type u} {B : Type v} [DecidableEq B] {f: A → Finset B} {init: Finset B} {hd : A} {tl : List A} :
+      foldl_union f init (hd::tl) = foldl_union f (init ∪ f hd) tl := by
+    rfl
 
   lemma mem_foldl_union {A : Type u} {B : Type v} [DecidableEq B] (l: List A) (f: A → Finset B) (init: Finset B) (b:B):
     b ∈ foldl_union f init l ↔ b ∈ init ∨ ∃ (a:A), a ∈ l ∧ b ∈ f a := by
@@ -407,6 +417,19 @@ section dedup
       then hd :: tl
       else List.drop_until tl a
 
+  @[simp, grind =]
+  lemma List.drop_until_nil {a : A} :
+      drop_until [] a = [] := by
+    rfl
+
+  lemma List.drop_until_cons_hd_eq {a hd : A} {tl : List A} (h : a = hd) :
+      drop_until (hd::tl) a = hd::tl := by
+    simp [drop_until, h]
+
+  lemma List.drop_until_cons_hd_neq {a hd : A} {tl : List A} (h : a ≠ hd) :
+      drop_until (hd::tl) a = drop_until tl a := by
+    simp [drop_until, h]
+
   theorem List.drop_until_length {l : List A} {a : A} : (List.drop_until l a).length ≤ l.length := by
     induction l with
     | nil => simp [drop_until]
@@ -491,6 +514,18 @@ section dedup
       omega
     · simp
 
+  @[simp, grind =]
+  lemma List.removeCycles_nil : removeCycles ([] : List A) = [] := by
+    simp [List.removeCycles]
+
+  lemma List.removeCycles_cons_mem {hd : A} {tl : List A} (h : hd ∈ tl) :
+      List.removeCycles (hd::tl) = List.removeCycles (List.drop_until tl hd) := by
+    simp [List.removeCycles, h]
+
+  lemma List.removeCycles_cons_neg_mem {hd : A} {tl : List A} (h : ¬ hd ∈ tl) :
+      List.removeCycles (hd::tl) = hd::(List.removeCycles tl) := by
+    simp [List.removeCycles, h]
+
   theorem List.removeCycles_not_mem_preserved {l : List A} {a : A} (h : ¬ a ∈ l) :
       ¬ a ∈ List.removeCycles l := by
     induction h':l.length using Nat.strong_induction_on generalizing l
@@ -498,7 +533,7 @@ section dedup
     cases n with
     | zero =>
       simp only [List.length_eq_zero_iff] at h'
-      simp [h', removeCycles]
+      simp [h']
     | succ m =>
       have := List.exists_of_length_succ _ h'
       rcases this with ⟨hd, tl, hl'⟩
@@ -527,7 +562,7 @@ section dedup
     cases n with
     | zero =>
       simp only [List.length_eq_zero_iff] at h
-      simp [h, removeCycles]
+      simp [h]
     | succ m =>
       have := List.exists_of_length_succ _ h
       rcases this with ⟨hd, tl, h'⟩
@@ -595,7 +630,7 @@ section dedup
           | nil => simp at mem
           | cons hd' tl' => simp
       · by_cases htl : tl = []
-        · simp [htl, removeCycles]
+        · simp [htl]
         · rw [List.getLast_cons]
           specialize ih m (by omega)
           · exact tl
@@ -610,7 +645,7 @@ section dedup
     | zero =>
       simp at h
       rw [h]
-      simp [removeCycles]
+      simp
     | succ m =>
       have := List.exists_of_length_succ _ h
       rcases this with ⟨hd, tl, h'⟩

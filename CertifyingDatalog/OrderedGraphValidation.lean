@@ -147,58 +147,61 @@ namespace OrderedProofGraph
     Tree.node current.fst next_trees
   termination_by root
 
+  @[simp]
   lemma root_toProfTreeSkeleton {G : OrderedProofGraph τ} {kb : KnowledgeBase τ} (valid : G.isValid kb) (root : Fin G.val.size) :
       Tree.root (toProofTreeSkeleton valid root) = G.val[root].1 := by
-    unfold toProofTreeSkeleton Tree.root
-    rfl
+    unfold toProofTreeSkeleton
+    simp
+
+  @[simp]
+  lemma root_toProfTreeSkeleton' {G : OrderedProofGraph τ} {kb : KnowledgeBase τ} (valid : G.isValid kb) (root : ℕ) (h : root < G.val.size) :
+      Tree.root (toProofTreeSkeleton valid ⟨root, h⟩) = G.val[root].1 := by
+    unfold toProofTreeSkeleton
+    simp
 
   lemma toProofTreeSkeleton_isValid (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) (root : Fin G.val.size) : (G.toProofTreeSkeleton valid root).isValid kb := by
+    rw [ProofTreeSkeleton.isValid_iff]
     unfold toProofTreeSkeleton
-    unfold ProofTreeSkeleton.isValid
     unfold isValid at valid
     unfold locallyValid at valid
+    simp only [Grounding.applyRule'_head, Fin.getElem_fin, Tree.root_def, Grounding.applyRule'_body,
+      Tree.children_def, List.map_map, Tree.directSubtrees_def, List.mem_map, List.mem_attach,
+      true_and, Subtype.exists, forall_exists_index, List.map_eq_nil_iff, List.attach_eq_nil_iff]
+    simp only [Fin.getElem_fin] at valid
     cases valid root with
     | inl h =>
-      apply Or.inr
-      simp only [Fin.getElem_fin, List.map_eq_nil_iff, List.attach_eq_nil_iff]
-      exact h
+      right
+      apply h
     | inr h =>
-      apply Or.inl
+      left
       rcases h with ⟨r, r_mem, g, r_apply⟩
       exists r
+      apply And.intro r_mem
       exists g
+      rw [GroundRule.ext_iff] at r_apply
+      simp only [Grounding.applyRule'_head, Grounding.applyRule'_body] at r_apply
+      simp only [r_apply, List.map_inj_left, List.mem_attach, Function.comp_apply, forall_const,
+        Subtype.forall, true_and]
       constructor
-      · exact r_mem
-      · constructor
-        · rw [r_apply]
-          simp
-          intro a _
-          rw [root_toProfTreeSkeleton valid]
-          simp only [Fin.getElem_fin]
-        · rw [List.forall_iff_forall_mem]
-          simp only [Fin.getElem_fin, List.mem_attach, forall_const,
-            Subtype.forall, List.mem_map, true_and, Subtype.exists, forall_exists_index]
-          intro t j j_mem next_tree
-          rw [← next_tree]
-          have _termination : j < root.val := by apply G.prop root j j_mem
-          apply toProofTreeSkeleton_isValid
+      · intro a h'
+        rw [root_toProfTreeSkeleton' valid]
+      · intro t' n hn h
+        rw [← h]
+        apply toProofTreeSkeleton_isValid
   termination_by root
+  decreasing_by
+    simp only [Fin.getElem_fin, Fin.sizeOf, Nat.add_lt_add_iff_right]
+    apply G.2 _ _ hn
 
   def toProofTree (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) (root : Fin G.val.size) : ProofTree kb :=
     ⟨G.toProofTreeSkeleton valid root, G.toProofTreeSkeleton_isValid kb valid root⟩
 
   theorem verticesValidOrderedProofGraphAreInProofTheoreticSemantics [DecidableEq τ.constants] [DecidableEq τ.vars] [DecidableEq τ.relationSymbols] (G : OrderedProofGraph τ) (kb : KnowledgeBase τ) (valid : G.isValid kb) : G.labels.toSet ⊆ kb.proofTheoreticSemantics := by
-    unfold KnowledgeBase.proofTheoreticSemantics
-    unfold List.toSet
-    simp only [List.coe_toFinset, Set.ofPred_subset_ofPred]
+    simp only [ge_iff_le, Set.subset_def, List.toSet_mem,
+      KnowledgeBase.mem_proofTheoreticSemantics_iff, ProofTree.root_def]
     intro a a_mem
     rw [in_labels_iff_exists_index] at a_mem
     rcases a_mem with ⟨i, h⟩
     exists G.toProofTree kb valid i
-    unfold toProofTree
-    unfold toProofTreeSkeleton
-    unfold ProofTree.root
-    unfold Tree.root
-    simp only [Fin.getElem_fin]
-    exact h
+    simp [toProofTree, ← h]
 end OrderedProofGraph

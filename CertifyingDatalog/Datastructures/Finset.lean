@@ -1,9 +1,10 @@
 module
 
-public import Mathlib.Data.Finset.Filter
 import Mathlib.Data.Finset.Attr
+public import Mathlib.Data.Finset.Defs
+import Mathlib.Data.Finset.Filter
 
-@[expose] public section
+public section
 
 namespace Finset
   -- added based on https://leanprover.zulipchat.com/#narrow/stream/113488-general/topic/finset.2Efilter

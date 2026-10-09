@@ -5,6 +5,7 @@ public import CertifyingDatalog.Datastructures.List
 public import Mathlib.Data.Finset.Filter
 public import CertifyingDatalog.Basic --shake: keep
 import Mathlib.Data.Finset.Attr
+public import Mathlib.Data.Finset.Dedup
 
 @[expose] public section
 
@@ -359,12 +360,12 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     suffices ∀ (l : List A), l.isWalk G → (List.drop_until l a).isWalk G from this w.1 w.2
     intro l h
     induction l with
-    | nil => simp [List.drop_until, h]
+    | nil => simp [h]
     | cons hd tl ih =>
-      simp only [List.drop_until]
-      split
-      · exact h
-      · apply ih
+      by_cases h' : a = hd
+      · simp [List.drop_until_cons_hd_eq, h', h]
+      · simp only [List.drop_until_cons_hd_neq h']
+        apply ih
         simp only [List.isWalk, List.mem_cons, forall_eq_or_imp, gt_iff_lt, List.length_cons,
           Nat.pred_eq_sub_one] at h ⊢
         rcases h with ⟨h1, h2⟩
@@ -388,26 +389,25 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
       | zero =>
         simp only [List.length_eq_zero_iff] at h
         rw [h] at hl
-        simp [h, List.removeCycles, hl]
+        simp [h, hl]
       | succ k =>
         obtain ⟨hd, tl, h'⟩ := List.exists_of_length_succ _ h
-        simp only [h', List.length_cons, Nat.add_right_cancel_iff, List.removeCycles] at hl h ⊢
+        simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl ⊢ h
         have htl : tl.isWalk G := by
           have := walk_tail (w := ⟨hd::tl, hl⟩)
           simp only [List.tail_cons] at this
           apply this
-        split
-        · rename_i mem
+        by_cases hhd : hd ∈ tl
+        · simp only [List.removeCycles_cons_mem hhd]
           have : (List.drop_until tl hd).length < k + 1 := by
-            rw [← h]
-            rw [Nat.lt_succ_iff]
-            apply List.drop_until_length
+            simpa [← h, h', Nat.lt_succ_iff] using List.drop_until_length
           specialize ih (List.drop_until tl hd).length this (List.drop_until tl hd)
           have walk : (List.drop_until tl hd).isWalk G := by
             apply drop_until_isWalk_of_isWalk (w:= ⟨tl, htl⟩)
           apply ih walk rfl
-        · by_cases htl' : tl = []
-          · simp only [htl', List.removeCycles]
+        · simp only [List.removeCycles_cons_neg_mem hhd]
+          by_cases htl' : tl = []
+          · simp only [htl', List.removeCycles_nil]
             let := Walk.singleton G hd (by simp [List.isWalk] at hl; apply hl.1.1)
             apply this.2
           · have := walk_append (w := Walk.singleton G hd (by simp [List.isWalk] at hl; apply hl.1.1)) (w':= ⟨tl.removeCycles, ih k (by omega) tl htl h⟩)

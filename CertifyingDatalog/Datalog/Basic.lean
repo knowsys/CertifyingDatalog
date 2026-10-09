@@ -1,9 +1,11 @@
 module
 
 public import CertifyingDatalog.Datastructures.List
-public import Mathlib.Data.Finset.SDiff
+import Mathlib.Data.Finset.Lattice.Lemmas
+import Mathlib.Data.Finset.SDiff
+public import Mathlib.Data.Finset.Insert
 
-@[expose] public section
+public section
 
 section Basic
   structure Signature where
@@ -97,20 +99,49 @@ section Basic
 end Basic
 
 section Methods
-  variable {τ: Signature} [DecidableEq τ.vars]
+  variable {τ: Signature}
 
   namespace Term
     def vars: Term τ → Finset τ.vars
     | Term.constant _ => ∅
     | Term.variableDL v => {v}
 
+    @[simp, grind =]
+    lemma vars_constant {c : τ.constants} : vars (Term.constant c) = ∅ := by rfl
+
+    @[simp, grind =]
+    lemma vars_variable {v : τ.vars} : vars (Term.variableDL v) = {v} := by rfl
+
+    lemma vars_eq_emptyset_iff {t : Term τ} :
+        t.vars = ∅ ↔ ∃ (c : τ.constants), t = Term.constant c := by
+      simp only [vars]
+      split <;> simp
+
+    lemma mem_vars_iff {t : Term τ} {v : τ.vars} :
+        v ∈ t.vars ↔ Term.variableDL v = t := by
+      cases t <;> simp [vars]
+
     def toConstant (t: Term τ) (h: t.vars = ∅) : τ.constants :=
       match t with
       | Term.constant c => c
       | Term.variableDL v => by simp [Term.vars] at h
+
+    @[simp, grind =]
+    lemma toConstant_constant {c : τ.constants} :
+      (Term.constant c).toConstant (by simp[vars]) = c := by rfl
+
+    lemma toConstant_eq_self {t: Term τ} (h: t.vars = ∅) :
+        t.toConstant h = t := by
+      simp only [toConstant]
+      cases t with
+      | constant _ => simp
+      | variableDL _ => simp [vars] at h
   end Term
 
+  variable [DecidableEq τ.vars]
+
   namespace Atom
+
     def vars (a: Atom τ) : Finset τ.vars := List.foldl_union Term.vars ∅ a.atom_terms
 
     lemma vars_subset_impl_term_vars_subset {a: Atom τ} {t: Term τ}{S: Set τ.vars}(mem: t ∈ a.atom_terms) (subs: ↑ a.vars ⊆ S): ↑ t.vars ⊆ S := by
@@ -124,10 +155,23 @@ section Methods
       unfold Atom.vars
       rw [List.foldl_union_empty]
       simp
+
+    lemma mem_vars_iff {a : Atom τ} {v : τ.vars} :
+        v ∈ a.vars ↔ Term.variableDL v ∈ a.atom_terms := by
+      simp [vars, List.mem_foldl_union, Finset.notMem_empty, Term.mem_vars_iff]
+
   end Atom
 
   namespace Rule
     def vars (r: Rule τ): Finset τ.vars := r.head.vars ∪ (List.foldl_union Atom.vars ∅ r.body)
+
+    lemma vars_eq_empty_iff {r : Rule τ} :
+        r.vars = ∅ ↔ r.head.vars = ∅ ∧ ∀ a ∈ r.body, a.vars = ∅ := by
+      simp [vars, Finset.union_eq_empty, List.foldl_union_empty]
+
+    lemma mem_vars_iff {r : Rule τ} {v : τ.vars} :
+        v ∈ r.vars ↔ v ∈ r.head.vars ∨ ∃ a ∈ r.body, v ∈ a.vars := by
+      simp [vars, List.mem_foldl_union]
 
     lemma vars_subset_impl_atom_vars_subset {r: Rule τ} {a: Atom τ} {S: Set τ.vars}(mem: a = r.head ∨ a ∈ r.body) (subs: ↑ r.vars ⊆ S): ↑ a.vars ⊆ S :=
     by
@@ -153,6 +197,11 @@ section Methods
 
     def isSafe (r: Rule τ) : Prop := r.head.vars ⊆ List.foldl_union Atom.vars ∅ r.body
 
+    @[simp, grind =]
+    lemma isSafe_iff {r : Rule τ} :
+        r.isSafe ↔ ∀ v ∈ r.head.vars, ∃ a ∈ r.body,  v ∈ a.vars := by
+      simp [isSafe, Finset.subset_iff, List.mem_foldl_union]
+
     def checkSafety [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] (r: Rule τ) : Except String Unit :=
       if r.head.vars \ (List.foldl_union Atom.vars ∅ r.body) = ∅
       then Except.ok ()
@@ -166,6 +215,10 @@ section Methods
 
   namespace Program
     def isSafe (p : Program τ) : Prop := ∀ r, r ∈ p -> r.isSafe
+
+    @[simp, grind =]
+    lemma isSafeIff {p : Program τ} :
+        p.isSafe ↔ ∀ r ∈ p, r.isSafe := by rfl
 
     def checkSafety [ToString τ.constants] [ToString τ.vars] [ToString τ.relationSymbols] (p : Program τ): Except String Unit :=
       List.mapExceptUnit p (fun r => r.checkSafety)
