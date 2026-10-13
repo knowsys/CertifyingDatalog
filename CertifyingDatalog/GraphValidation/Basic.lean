@@ -1,13 +1,13 @@
 module
 
 public import Aesop.BuiltinRules
-public import Mathlib.Data.Subtype
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.SetLike
 import Std.Data.HashMap.Lemmas
+public import Mathlib.Tactic.ToDual
 
 public section
 
