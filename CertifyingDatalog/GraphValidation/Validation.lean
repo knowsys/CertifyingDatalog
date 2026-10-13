@@ -3,7 +3,7 @@ module
 public import CertifyingDatalog.TreeValidation
 public import CertifyingDatalog.GraphValidation.Dfs
 
-@[expose] public section
+public section
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 
@@ -113,16 +113,13 @@ namespace Graph
     G.checkValidity kb.prog.toSymbolSequenceMap kb.db = Except.ok () ↔ G.isAcyclic ∧ ∀ a ∈ G.vertices, G.locallyValid_for_kb kb a := by
     unfold checkValidity
     rw [dfs_semantics (G:= G) (cond := fun node => G.check_local_validity kb.prog.toSymbolSequenceMap kb.db node)]
-    unfold NodeCondition.true
-    simp only [and_congr_right_iff]
+    simp only [NodeCondition.true, and_congr_right_iff]
     intro _
     constructor
     · intro h a a_mem
       rw [← check_local_validity_unit_iff_locallyValid]
-      apply h
-      exact a_mem
+      apply h a a_mem
     · intro h a a_mem
       rw [check_local_validity_unit_iff_locallyValid]
-      apply h
-      exact a_mem
+      apply h a a_mem
 end Graph

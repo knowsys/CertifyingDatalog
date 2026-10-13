@@ -6,7 +6,7 @@ public import CertifyingDatalog.Datastructures.HashSet
 import CertifyingDatalog.Datastructures.Except
 import Std.Data.HashSet.Lemmas
 
-@[expose] public section
+public section
 
 section FoldlExcept
   namespace List
@@ -217,14 +217,20 @@ section FoldlExcept
 end FoldlExcept
 
 section Dfs
-  variable {A: Type u} [DecidableEq A] [Hashable A]
   open Std
 
+  -- required by the compiler
+  @[expose]
   def NodeCondition (A : Type u) := A -> Except String Unit
 
+  -- no good lemma found as an alternative
+  @[expose]
   def NodeCondition.true (a : A) (cond : NodeCondition A) : Prop := cond a = Except.ok ()
 
   namespace Graph
+    variable {A: Type u} [DecidableEq A] [Hashable A]
+
+
     structure DFS_State {A : Type u} [DecidableEq A] [Hashable A] (G : Graph A) where
       (currNode : A)
       (cond : NodeCondition A)
