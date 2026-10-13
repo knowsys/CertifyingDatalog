@@ -9,7 +9,7 @@ import Mathlib.Tactic.Push
 import Mathlib.Tactic.SetLike
 import Std.Data.HashMap.Lemmas
 
-@[expose] public section
+public section
 
 variable {A: Type u} [DecidableEq A] [Hashable A]
 

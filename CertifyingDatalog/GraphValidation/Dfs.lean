@@ -232,7 +232,7 @@ section Dfs
       (fastStack : HashSet A)
       (stacks_eq : ∀ (a : A), a ∈ stack ↔ a ∈ fastStack)
       (nonempty : stack.1 ≠ [])
-      (is_front : stack.1.head nonempty = currNode)
+      (is_front : stack.head nonempty = currNode)
 
     def initalize_DFS_State (a : A) (G : Graph A) (cond : NodeCondition A) (h : a ∈ G.vertices) : DFS_State G where
       currNode := a
@@ -240,8 +240,8 @@ section Dfs
       stack := Walk.singleton G a h
       fastStack := HashSet.emptyWithCapacity.insert a
       stacks_eq := by simp; grind
-      nonempty := by simp [Walk.singleton]
-      is_front := by simp [Walk.singleton]
+      nonempty := Walk.singleton_neq_nil
+      is_front := by simp
 
     def extend_DFS_State {G : Graph A} (state : DFS_State G) (a : A) (h : a ∈ G.predecessors state.currNode) : DFS_State G where
       currNode := a
