@@ -215,7 +215,7 @@ namespace Walk
       apply mem_graph_of_mem_walk
       apply mem_head
 
-  lemma mem_predecessors_of_nonempty {G : Graph A} {w : Walk G} {a : A} (h : w.1 ≠ []) :
+  lemma mem_predecessors_of_nonempty_iff {G : Graph A} {w : Walk G} {a : A} (h : w.1 ≠ []) :
       a ∈ G.predecessors (w.head h) ↔ a ∈ predecessors w := by
     simp [predecessors, h]
 
@@ -264,8 +264,12 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     simp [prependPredecessor]
 
   lemma head_prependPredecessors {G: Graph A} {walk: Walk G} {pred : A} (is_pred : pred ∈ walk.predecessors) :
-      (prependPredecessor walk pred is_pred).1.head (nonempty_prependPredecessor is_pred) = pred := by
-    simp [prependPredecessor]
+      (prependPredecessor walk pred is_pred).head (nonempty_prependPredecessor is_pred) = pred := by
+    simp [prependPredecessor, head]
+
+  lemma mem_prependPredecessors {G: Graph A} {walk: Walk G} {pred a : A} (is_pred : pred ∈ walk.predecessors) :
+      a ∈ walk.prependPredecessor pred is_pred ↔ a = pred ∨ a ∈ walk := by
+    simp [prependPredecessor, mem_walk_iff]
 
   def appendSuccessor {G: Graph A} (walk: Walk G) (succ : A) (is_succ : succ ∈ walk.successors) : Walk G := ⟨walk.val++[succ], by
     by_cases h : walk.1 = []
@@ -287,7 +291,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     apply walk
 
   lemma head_in_tail_predecessors {G : Graph A} (w : Walk G) (neq : w.tail.1 ≠ []) : w.head (neq_nil_of_tail_neq_nil neq) ∈ w.tail.predecessors := by
-    rw [← mem_predecessors_of_nonempty neq , ← getElem_zero_eq_head,
+    rw [← mem_predecessors_of_nonempty_iff neq , ← getElem_zero_eq_head,
       ← getElem_zero_eq_head, getElem_tail]
     apply w.2.2
     simp
@@ -338,7 +342,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     by_cases h' : w2.tail.1 = []
     · simpa [h'] using w1.2
     · apply walk_append w1_neq
-      simp only [h, ← getElem_zero_eq_head, ← mem_predecessors_of_nonempty h', getElem_tail]
+      simp only [h, ← getElem_zero_eq_head, ← mem_predecessors_of_nonempty_iff h', getElem_tail]
       apply w2.2.2
       simp
 ⟩
@@ -423,7 +427,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
             simp [singleton] at this
             apply this
             have := List.removeCycles_not_empty_iff.mpr htl'
-            rw [← mem_predecessors_of_nonempty this, head_eq_head_list, List.removeCycles_head_eq_head htl', List.head_eq_getElem_zero]
+            rw [← mem_predecessors_of_nonempty_iff this, head_eq_head_list, List.removeCycles_head_eq_head htl', List.head_eq_getElem_zero]
             have := hl.2 1 (by omega) (by simp; grind)
             simp only [List.getElem_cons_succ, Nat.pred_eq_sub_one, Nat.sub_self,
               List.getElem_cons_zero] at this
@@ -436,6 +440,22 @@ namespace Graph
   def isAcyclic (G: Graph A) := ∀ (w: Walk G), ¬ w.isCycle
 
   def canReach (G : Graph A) (a b : A) : Prop := ∃ (w : Walk G) (neq : w.val ≠ []), (w.val.head neq) = a ∧ (w.val.getLast neq) = b
+
+  lemma mem_of_canReach_left {G : Graph A} {a b : A} (h : canReach G a b) :
+      a ∈ G.vertices := by
+    simp only [canReach, ne_eq] at h
+    rcases h with ⟨w, h₁, h₂, h₃⟩
+    rw [← h₂]
+    apply Walk.mem_graph_of_mem_walk
+    apply Walk.mem_head
+
+  lemma mem_of_canReach_right {G : Graph A} {a b : A} (h : canReach G a b) :
+      b ∈ G.vertices := by
+    simp only [canReach, ne_eq] at h
+    rcases h with ⟨w, h₁, h₂, h₃⟩
+    rw [← h₃]
+    apply Walk.mem_graph_of_mem_walk (w := w)
+    simp [Walk.mem_walk_iff]
 
   theorem canReach_iff_canReach_with_at_most_vertices_length
  (G : Graph A) (a b : A) :
@@ -496,7 +516,7 @@ namespace Graph
   lemma canReach_pred {G : Graph A} {a b : A} (a_pred: a ∈ G.predecessors b) : G.canReach a b := by
     unfold canReach
     exists ((Walk.singleton G b (by apply mem_of_has_pred; apply a_pred)).prependPredecessor a (by
-      simpa [Walk.mem_predecessors_of_nonempty]
+      simpa [Walk.mem_predecessors_of_nonempty_iff]
     ))
     exists (by simp [Walk.singleton, Walk.prependPredecessor])
 
@@ -692,7 +712,7 @@ namespace Graph
           use cyc, cyc_isCycle, (cyc.prevInCycle cyc_isCycle b)
           refine ⟨Walk.prevInCycleIsInCycle cyc_isCycle, canReach_refl ?_⟩
           apply Walk.mem_of_mem_predecessors (w := w)
-          simp only [← Walk.mem_predecessors_of_nonempty w_neq, Walk.head_eq_head_list,
+          simp only [← Walk.mem_predecessors_of_nonempty_iff w_neq, Walk.head_eq_head_list,
             List.head_eq_getElem_zero, w_b]
           apply Walk.prevInCycleIsPred cyc_isCycle w_a
         | succ k =>
@@ -736,7 +756,7 @@ namespace Graph
       (hab : b ∈ G.predecessors a) (hb : b ∈ w) :
       G.reachableFromCycle b := by
     have b_mem : b ∈ w.predecessors := by
-      simp only [← ha, Walk.mem_predecessors_of_nonempty hw] at hab
+      simp only [← ha, Walk.mem_predecessors_of_nonempty_iff hw] at hab
       apply hab
     let w' := w.prependPredecessor b b_mem
     have hw' : w'.1 ≠ [] := by simp[w', Walk.prependPredecessor]
@@ -751,4 +771,14 @@ namespace Graph
     simp only [canReach, ne_eq]
     use (Walk.singleton G b (by apply w.2.1; rwa [← Walk.mem_walk_iff])), (by simp [Walk.singleton])
     simp [Walk.singleton]
+
+  theorem reachableFromCycle_of_pred_reachableFromCycle {G : Graph A} {a b : A} (h₁ : G.reachableFromCycle a) (h₂ : a ∈ G.predecessors b) : G.reachableFromCycle b := by
+    simp only [reachableFromCycle] at ⊢ h₁
+    rcases h₁ with ⟨cyc, hcyc, c, hc, hca⟩
+    use cyc
+    apply And.intro hcyc
+    use c
+    apply And.intro hc
+    apply canReach_trans hca (canReach_pred h₂)
+
 end Graph
