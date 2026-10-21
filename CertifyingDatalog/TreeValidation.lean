@@ -5,9 +5,12 @@ public import CertifyingDatalog.Datalog.Semantics
 import Std.Data.HashMap.Lemmas
 import CertifyingDatalog.Datastructures.Except
 
-@[expose] public section
+public section
 
 section SymbolSequenceMap
+
+-- the compiler requires exposing this definition
+@[expose]
 def SymbolSequenceMap (τ : Signature) [DecidableEq τ.vars] [DecidableEq τ.constants] [DecidableEq τ.relationSymbols] [Hashable τ.constants] [Hashable τ.vars] [Hashable τ.relationSymbols] :=
   Std.HashMap (List τ.relationSymbols) (List (Rule τ))
 

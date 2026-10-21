@@ -4,7 +4,7 @@ public import CertifyingDatalog.Unification
 public import CertifyingDatalog.Datalog.Semantics
 import Mathlib.Data.Finset.Lattice.Lemmas
 
-@[expose] public section
+public section
 
 structure PartialGroundRule (τ: Signature) where
   head: Atom τ

@@ -6,7 +6,7 @@ public import CertifyingDatalog.Datastructures.HashSet
 import CertifyingDatalog.Datastructures.Except
 import Std.Data.HashSet.Lemmas
 
-@[expose] public section
+public section
 
 section FoldlExcept
   namespace List
@@ -217,14 +217,20 @@ section FoldlExcept
 end FoldlExcept
 
 section Dfs
-  variable {A: Type u} [DecidableEq A] [Hashable A]
   open Std
 
+  -- required by the compiler
+  @[expose]
   def NodeCondition (A : Type u) := A -> Except String Unit
 
+  -- no good lemma found as an alternative
+  @[expose]
   def NodeCondition.true (a : A) (cond : NodeCondition A) : Prop := cond a = Except.ok ()
 
   namespace Graph
+    variable {A: Type u} [DecidableEq A] [Hashable A]
+
+
     structure DFS_State {A : Type u} [DecidableEq A] [Hashable A] (G : Graph A) where
       (currNode : A)
       (cond : NodeCondition A)
@@ -232,7 +238,7 @@ section Dfs
       (fastStack : HashSet A)
       (stacks_eq : ∀ (a : A), a ∈ stack ↔ a ∈ fastStack)
       (nonempty : stack.1 ≠ [])
-      (is_front : stack.1.head nonempty = currNode)
+      (is_front : stack.head nonempty = currNode)
 
     def initalize_DFS_State (a : A) (G : Graph A) (cond : NodeCondition A) (h : a ∈ G.vertices) : DFS_State G where
       currNode := a
@@ -240,29 +246,23 @@ section Dfs
       stack := Walk.singleton G a h
       fastStack := HashSet.emptyWithCapacity.insert a
       stacks_eq := by simp; grind
-      nonempty := by simp [Walk.singleton]
-      is_front := by simp [Walk.singleton]
+      nonempty := Walk.singleton_neq_nil
+      is_front := by simp
 
     def extend_DFS_State {G : Graph A} (state : DFS_State G) (a : A) (h : a ∈ G.predecessors state.currNode) : DFS_State G where
       currNode := a
       cond := state.cond
-      stack := state.stack.prependPredecessor a (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
+      stack := state.stack.prependPredecessor a (by rw[← state.is_front, Walk.mem_predecessors_of_nonempty_iff] at h; exact h)
       fastStack := state.fastStack.insert a
       stacks_eq := by
         intro a'
-        simp only [Walk.prependPredecessor, HashSet.mem_insert, beq_iff_eq, ← state.stacks_eq]
-        rw [Walk.mem_walk_iff]
-        simp only [List.mem_cons, Eq.comm]
-        rw [Walk.mem_walk_iff]
-      nonempty := Walk.nonempty_prependPredecessor (Walk.mem_predecessors_of_nonempty state.nonempty state.is_front h)
-      is_front := by simp [Walk.prependPredecessor]
+        simp [Walk.mem_prependPredecessors, Eq.comm (a := a), state.stacks_eq]
+      nonempty := Walk.nonempty_prependPredecessor (by rw [← state.is_front, Walk.mem_predecessors_of_nonempty_iff] at h; exact h)
+      is_front := by simp [Walk.head_prependPredecessors]
 
     lemma currNode_mem_of_DFS_State {G : Graph A} {state : DFS_State G} : state.currNode ∈ G.vertices := by
-      have := state.stack.2
-      simp only [List.isWalk, Nat.pred_eq_sub_one, gt_iff_lt] at this
-      apply this.1
-      rw [← state.is_front]
-      simp
+      apply Walk.mem_graph_of_mem_walk (w:= state.stack)
+      simp [← state.is_front, Walk.head_mem]
 
     def isContained {G : Graph A} (state : DFS_State G) (node : A) : Bool :=
       node ∈ state.fastStack
@@ -300,9 +300,7 @@ section Dfs
       constructor
       · intro h a _ b reach
         apply h
-        unfold canReach at reach
-        rcases reach with ⟨w, neq, head, _⟩
-        apply w.prop.left; rw [← head]; apply List.head_mem
+        apply Graph.mem_of_canReach_left reach
       · intro h a mem
         apply h a mem
         apply canReach_refl; apply mem
@@ -314,7 +312,7 @@ section Dfs
         simp only [Finset.mem_sdiff, List.mem_toFinset, not_and, Decidable.not_not]
         exists b
         constructor
-        · simp [extend_DFS_State, Walk.prependPredecessor]
+        · simp [extend_DFS_State, ← Walk.mem_walk_iff, Walk.mem_prependPredecessors]
         · rw [Finset.insert_subset_iff]
           constructor
           · simp only [Finset.mem_sdiff, List.mem_toFinset]
@@ -325,8 +323,8 @@ section Dfs
             · simp
             · rw [Finset.subset_iff]
               intro node mem_walk_a
-              simp only [List.mem_toFinset] at mem_walk_a
-              simp [extend_DFS_State, Walk.prependPredecessor, mem_walk_a]
+              simp only [List.mem_toFinset, ← Walk.mem_walk_iff] at mem_walk_a
+              simp [extend_DFS_State, ← Walk.mem_walk_iff, Walk.mem_prependPredecessors, mem_walk_a]
 
     def verify_via_dfs_step {G : Graph A} (state : DFS_State G) (verifiedNodes : HashSet A) : Except String (HashSet A) :=
       if verifiedNodes.contains state.currNode then Except.ok verifiedNodes
@@ -504,10 +502,8 @@ section Dfs
       have : state.currNode ∉ verifiedNodes := by
         by_contra p
         apply (verifiedNodesValid state.currNode p).1
-        obtain ⟨cyc, isCyc, b, hb, hb'⟩ := reachableFromCycle_of_predecessesor_in_walk state.nonempty state.is_front ha ha'
-        use cyc, isCyc, b, hb
-        apply canReach_trans hb'
-        apply canReach_pred ha
+        have := reachableFromCycle_of_predecessesor_in_walk state.nonempty state.is_front ha ha'
+        apply reachableFromCycle_of_pred_reachableFromCycle this ha
       unfold verify_via_dfs_step
       simp [this, isContained_iff]
       cases state.cond state.currNode with
@@ -572,9 +568,7 @@ section Dfs
           simp [verify_via_dfs_step_mem_stack hx hx' verifiedNodesValid]
           have := cycle_construction hx hx'
           have : G.reachableFromCycle state.currNode := by
-            obtain ⟨cyc, isCyc, a, ha, ha'⟩ := this
-            use cyc, isCyc, a, ha
-            apply canReach_trans ha' (canReach_pred hx)
+            apply reachableFromCycle_of_pred_reachableFromCycle this hx
           grind
     termination_by Finset.card (List.toFinset G.vertices \ List.toFinset state.stack.val)
     decreasing_by

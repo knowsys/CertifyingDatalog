@@ -1,9 +1,10 @@
 module
 
 public import CertifyingDatalog.OrderedGraphValidation
-public import CertifyingDatalog.GraphValidation.Dfs
+public import CertifyingDatalog.GraphValidation.Basic
+import CertifyingDatalog.GraphValidation.Dfs
 
-@[expose] public section
+public section
 
 def Nat.toString (n: ℕ): String :=
   match n with
@@ -109,6 +110,8 @@ namespace ParseArityHelper
   def fromInputProgram (prog : List InputRule) : Except String ParseArityHelper :=
     ParseArityHelper.empty.extend_inputRuleList prog
 
+  -- required for instances to work
+  @[expose]
   def toSignature (helper : ParseArityHelper) : Signature :=
     {constants:= String, vars:= String, relationSymbols := {x // x ∈ helper.relationList}, relationArity := helper.arity}
 
