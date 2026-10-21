@@ -262,7 +262,7 @@ section Dfs
 
     lemma currNode_mem_of_DFS_State {G : Graph A} {state : DFS_State G} : state.currNode ∈ G.vertices := by
       apply Walk.mem_graph_of_mem_walk (w:= state.stack)
-      simp [← state.is_front, Walk.mem_head]
+      simp [← state.is_front, Walk.head_mem]
 
     def isContained {G : Graph A} (state : DFS_State G) (node : A) : Bool :=
       node ∈ state.fastStack

@@ -73,7 +73,7 @@ namespace Walk
 
   lemma head_eq_head_list {G : Graph A} {w : Walk G} (h : w.1 ≠ []) : w.head h = w.1.head h := by rfl
 
-  lemma mem_head {G : Graph A} {w : Walk G} (h : w.1 ≠ []) :
+  lemma head_mem {G : Graph A} {w : Walk G} (h : w.1 ≠ []) :
       (w.head h) ∈ w := by
     simp [head, mem_walk_iff]
 
@@ -82,7 +82,7 @@ namespace Walk
       w.1[0]'(by grind) = w.head h := by
     simp [head, List.head_eq_getElem]
 
-  theorem walk_tail {G: Graph A} {w: Walk G} : w.1.tail.isWalk G:= by
+  theorem isWalk_tail {G: Graph A} {w: Walk G} : w.1.tail.isWalk G:= by
     have prop := w.prop
     unfold List.isWalk at *
     rcases prop with ⟨subs, conn⟩
@@ -108,9 +108,9 @@ namespace Walk
           apply i_gt_0
         · apply i_lt_len
 
-  def tail {G: Graph A} (walk: Walk G) : Walk G := ⟨walk.val.tail, walk_tail⟩
+  def tail {G: Graph A} (walk: Walk G) : Walk G := ⟨walk.val.tail, isWalk_tail⟩
 
-  lemma neq_nil_of_tail_neq_nil {G : Graph A} {w : Walk G} (h : w.tail.1 ≠ []) :
+  lemma ne_nil_of_tail_ne_nil {G : Graph A} {w : Walk G} (h : w.tail.1 ≠ []) :
       w.1 ≠ [] := by
     simp [tail] at h
     grind
@@ -213,7 +213,7 @@ namespace Walk
     · rename_i hd h
       apply G.complete
       apply mem_graph_of_mem_walk
-      apply mem_head
+      apply head_mem
 
   lemma mem_predecessors_of_nonempty_iff {G : Graph A} {w : Walk G} {a : A} (h : w.1 ≠ []) :
       a ∈ G.predecessors (w.head h) ↔ a ∈ predecessors w := by
@@ -290,7 +290,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     rcases prop with ⟨walk,_⟩
     apply walk
 
-  lemma head_in_tail_predecessors {G : Graph A} (w : Walk G) (neq : w.tail.1 ≠ []) : w.head (neq_nil_of_tail_neq_nil neq) ∈ w.tail.predecessors := by
+  lemma head_in_tail_predecessors {G : Graph A} (w : Walk G) (neq : w.tail.1 ≠ []) : w.head (ne_nil_of_tail_ne_nil neq) ∈ w.tail.predecessors := by
     rw [← mem_predecessors_of_nonempty_iff neq , ← getElem_zero_eq_head,
       ← getElem_zero_eq_head, getElem_tail]
     apply w.2.2
@@ -407,7 +407,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
         obtain ⟨hd, tl, h'⟩ := List.exists_of_length_succ _ h
         simp only [h', List.length_cons, Nat.add_right_cancel_iff] at hl ⊢ h
         have htl : tl.isWalk G := by
-          have := walk_tail (w := ⟨hd::tl, hl⟩)
+          have := isWalk_tail (w := ⟨hd::tl, hl⟩)
           simp only [List.tail_cons] at this
           apply this
         by_cases hhd : hd ∈ tl
@@ -447,7 +447,7 @@ namespace Graph
     rcases h with ⟨w, h₁, h₂, h₃⟩
     rw [← h₂]
     apply Walk.mem_graph_of_mem_walk
-    apply Walk.mem_head
+    apply Walk.head_mem
 
   lemma mem_of_canReach_right {G : Graph A} {a b : A} (h : canReach G a b) :
       b ∈ G.vertices := by
