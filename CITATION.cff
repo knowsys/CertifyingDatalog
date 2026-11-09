@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Tantow"
+  given-names: "Johannes"
+  orcid: "https://orcid.org/0009-0006-0408-6966"
+- family-names: "Gerlach"
+  given-names: "Lukas"
+  orcid: "https://orcid.org/0000-0003-4566-0224"
+- family-names: "Mennicke"
+  given-names: "Stephan"
+  orcid: "https://orcid.org/0000-0002-3293-2940"
+- family-names: "Krötzsch"
+  given-names: "Markus"
+  orcid: "https://orcid.org/0000-0002-9172-2601"
+title: "Certifying Datalog"
+version : v0.2.0
+doi: 10.4230/artifacts.23826
+date-released: 2025-09-22 
+url: "https://github.com/knowsys/CertifyingDatalog"
+preferred-citation:
+  type: conference-paper
+  title: Verifying Datalog Reasoning with Lean
+  authors:
+    - family-names: "Tantow"
+      given-names: "Johannes"
+      orcid: "https://orcid.org/0009-0006-0408-6966"
+    - family-names: "Gerlach"
+      given-names: "Lukas"
+      orcid: "https://orcid.org/0000-0003-4566-0224"
+    - family-names: "Mennicke"
+      given-names: "Stephan"
+      orcid: "https://orcid.org/0000-0002-3293-2940"
+    - family-names: "Krötzsch"
+      given-names: "Markus"
+      orcid: "https://orcid.org/0000-0002-9172-2601"
+  conference:
+    name: 16th International Conference on Interactive Theorem Proving, ITP 2025, Reykjavik, Iceland, September 28 - October 1, 2025
+  publisher:
+    name: Schloss Dagstuhl - Leibniz-Zentrum für Informatik
+  volume: 352
+  start: '36:1'
+  end: '36:19'
+  year: 2025
+  doi: 10.4230/LIPICS.ITP.2025.36
+  url: https://doi.org/10.4230/LIPIcs.ITP.2025.36
