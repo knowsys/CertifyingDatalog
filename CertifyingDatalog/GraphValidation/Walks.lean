@@ -397,7 +397,7 @@ theorem mem_of_mem_successors {G : Graph A} {w : Walk G} {a : A} :
     suffices ∀ (l : List A), l.isWalk G → (List.removeCycles l).isWalk G from this w.1 w.2
     intro l hl
     induction h:l.length using Nat.strong_induction_on generalizing l with
-    | h n ih =>
+    | ind n ih =>
       cases n with
       | zero =>
         simp only [List.length_eq_zero_iff] at h
