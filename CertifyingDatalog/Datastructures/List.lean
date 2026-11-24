@@ -3,6 +3,7 @@ module
 public import Mathlib.Data.Finset.Empty
 public import Mathlib.Data.Finset.Lattice.Basic
 import Mathlib.Data.Finset.Lattice.Lemmas
+import Mathlib.Tactic.Lemma
 
 public section
 

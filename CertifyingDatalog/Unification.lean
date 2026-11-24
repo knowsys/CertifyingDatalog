@@ -2,6 +2,7 @@ module
 
 public import CertifyingDatalog.Datalog.Substitution
 import CertifyingDatalog.Basic
+import Mathlib.Tactic.Lemma
 
 public section
 

@@ -2,6 +2,7 @@ module
 
 public import CertifyingDatalog.Datalog.Grounding
 public import CertifyingDatalog.Datastructures.Finset
+import Mathlib.Tactic.Lemma
 
 public section
 

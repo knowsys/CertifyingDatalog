@@ -5,6 +5,7 @@ public import CertifyingDatalog.GraphValidation.Walks
 public import CertifyingDatalog.Datastructures.HashSet
 import CertifyingDatalog.Datastructures.Except
 import Std.Data.HashSet.Lemmas
+import Mathlib.Tactic.Lemma
 
 public section
 

@@ -6,6 +6,8 @@ public import Mathlib.Data.Finset.Filter
 public import CertifyingDatalog.Basic --shake: keep
 import Mathlib.Data.Finset.Attr
 public import Mathlib.Data.Finset.Dedup
+import Mathlib.Tactic.Lemma
+import Mathlib.Tactic.Linter.Style
 
 public section
 

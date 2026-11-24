@@ -3,6 +3,7 @@ module
 public import CertifyingDatalog.Unification
 public import CertifyingDatalog.Datalog.Semantics
 import Mathlib.Data.Finset.Lattice.Lemmas
+import Mathlib.Tactic.Lemma
 
 public section
 

@@ -6,6 +6,7 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Lemma
 
 public section
 

@@ -4,6 +4,7 @@ public import CertifyingDatalog.Unification
 public import CertifyingDatalog.Datalog.Semantics
 import Std.Data.HashMap.Lemmas
 import CertifyingDatalog.Datastructures.Except
+import Mathlib.Tactic.Lemma
 
 public section
 

@@ -7,7 +7,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.SetLike
 import Std.Data.HashMap.Lemmas
-public import Mathlib.Tactic.ToDual
+public import Std.Data.HashMap.Basic
 
 public section
 
