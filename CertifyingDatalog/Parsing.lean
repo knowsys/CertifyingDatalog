@@ -3,6 +3,7 @@ module
 public import CertifyingDatalog.OrderedGraphValidation
 public import CertifyingDatalog.GraphValidation.Basic
 import CertifyingDatalog.GraphValidation.Dfs
+public import Lean.Data.Json.FromToJson.Basic
 
 public section
 
