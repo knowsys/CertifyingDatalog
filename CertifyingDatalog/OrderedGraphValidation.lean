@@ -2,7 +2,6 @@ module
 
 public import CertifyingDatalog.TreeValidation
 import CertifyingDatalog.Datastructures.Array
-import Mathlib.Tactic.Lemma
 
 public section
 

@@ -2,7 +2,6 @@ module
 
 public import CertifyingDatalog.TreeValidation
 public import CertifyingDatalog.GraphValidation.Dfs
-import Mathlib.Tactic.Lemma
 
 public section
 

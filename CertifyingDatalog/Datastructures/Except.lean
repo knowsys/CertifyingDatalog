@@ -1,5 +1,4 @@
 module
-import Batteries.Data.List.Lemmas
 
 public section
 

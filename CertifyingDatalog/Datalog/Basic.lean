@@ -4,8 +4,6 @@ public import CertifyingDatalog.Datastructures.List
 import Mathlib.Data.Finset.Lattice.Lemmas
 import Mathlib.Data.Finset.SDiff
 public import Mathlib.Data.Finset.Insert
-public import Aesop.BuiltinRules
-import Mathlib.Tactic.Lemma
 
 public section
 

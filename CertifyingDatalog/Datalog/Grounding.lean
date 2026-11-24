@@ -1,7 +1,6 @@
 module
 
 public import CertifyingDatalog.Datalog.Basic
-import Mathlib.Tactic.Lemma
 
 public section
 
