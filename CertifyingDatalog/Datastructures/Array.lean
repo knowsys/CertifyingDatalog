@@ -1,11 +1,7 @@
 module
 
-import Aesop.BuiltinRules
 import Mathlib.Data.Finset.Attr
 import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 
 public section
 
