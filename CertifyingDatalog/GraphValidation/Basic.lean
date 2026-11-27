@@ -1,6 +1,7 @@
 module
 
-public import Std.Data.HashMap.Lemmas
+public import Std.Data.HashMap.Basic
+import Std.Data.HashMap.Lemmas
 
 
 public section

@@ -1,6 +1,6 @@
 module
 
-import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Nat.Basic--shake: keep
 
 public section
 
